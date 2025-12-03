@@ -19,7 +19,7 @@
         <div class="navbar-start">
             <a class="btn btn-text text-xl" href="/">
                 <span class="icon-[tabler--brand-laravel] text-primary size-6"></span>
-                Laravel + FlyonUI
+                Laravel + FlyonUI   
             </a>
         </div>
         <div class="navbar-end gap-2">
