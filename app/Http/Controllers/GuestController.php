@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Mail\GuestInvitationMail;
-use App\Models\ClientCrm;
+use App\Models\User;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,18 +18,24 @@ use Intervention\Image\Laravel\Facades\Image;
 class GuestController extends Controller
 {
     /**
-     * Display a listing of guests/clients.
+     * Guest types (for categorization in UI).
+     */
+    public const TYPES = [
+        'client' => ['label' => 'Client', 'color' => 'primary'],
+        'contractor' => ['label' => 'Contractor', 'color' => 'warning'],
+        'partner' => ['label' => 'Partner', 'color' => 'success'],
+        'vendor' => ['label' => 'Vendor', 'color' => 'info'],
+        'other' => ['label' => 'Other', 'color' => 'neutral'],
+    ];
+
+    /**
+     * Display a listing of guests.
      */
     public function index(Request $request): View
     {
-        $query = ClientCrm::query()
-            ->where('company_id', $request->user()->company_id)
+        $query = User::query()
+            ->where('is_guest', true)
             ->orderBy('first_name');
-
-        // Filter by type
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
 
         // Filter by status
         if ($request->filled('status')) {
@@ -37,7 +44,7 @@ class GuestController extends Controller
 
         // Filter by workspace
         if ($request->filled('workspace')) {
-            $query->whereHas('workspaces', function ($q) use ($request) {
+            $query->whereHas('guestWorkspaces', function ($q) use ($request) {
                 $q->where('workspace_id', $request->workspace);
             });
         }
@@ -49,17 +56,17 @@ class GuestController extends Controller
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%");
+                    ->orWhere('guest_company_name', 'like', "%{$search}%");
             });
         }
 
-        $guests = $query->with('workspaces')->paginate(20)->withQueryString();
+        $guests = $query->with('guestWorkspaces')->paginate(20)->withQueryString();
 
-        // Get counts by type
-        $typeCounts = ClientCrm::where('company_id', $request->user()->company_id)
-            ->selectRaw('type, count(*) as count')
-            ->groupBy('type')
-            ->pluck('count', 'type')
+        // Get counts by status
+        $statusCounts = User::where('is_guest', true)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
             ->toArray();
 
         // Get workspaces for filter
@@ -72,11 +79,14 @@ class GuestController extends Controller
 
         return view('guests.index', [
             'guests' => $guests,
-            'types' => ClientCrm::TYPES,
-            'statuses' => ClientCrm::STATUSES,
-            'typeCounts' => $typeCounts,
+            'types' => self::TYPES,
+            'statuses' => [
+                User::STATUS_ACTIVE => ['label' => 'Active', 'color' => 'success'],
+                User::STATUS_INVITED => ['label' => 'Invited', 'color' => 'warning'],
+                User::STATUS_SUSPENDED => ['label' => 'Suspended', 'color' => 'error'],
+            ],
+            'statusCounts' => $statusCounts,
             'workspaces' => $workspaces,
-            'currentType' => $request->type,
             'currentStatus' => $request->status,
             'currentWorkspace' => $request->workspace,
             'search' => $request->search,
@@ -97,7 +107,7 @@ class GuestController extends Controller
             ->get(['id', 'name']);
 
         return view('guests.create', [
-            'types' => ClientCrm::TYPES,
+            'types' => self::TYPES,
             'workspaces' => $workspaces,
         ]);
     }
@@ -110,12 +120,9 @@ class GuestController extends Controller
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s\-\']+$/'],
             'last_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z\s\-\']*$/'],
-            'email' => ['required', 'email', 'unique:client_crm,email'],
-            'type' => ['required', Rule::in(array_keys(ClientCrm::TYPES))],
+            'email' => ['required', 'email'],
             'workspaces' => ['nullable', 'array'],
             'workspaces.*' => ['exists:workspaces,id'],
-            'client_portal_access' => ['required', 'boolean'],
-            'tags' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'max:50'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
@@ -125,50 +132,61 @@ class GuestController extends Controller
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
         ]);
 
-        // Parse tags from comma-separated string
-        $tags = null;
-        if (!empty($validated['tags'])) {
-            $tags = array_map('trim', explode(',', $validated['tags']));
-            $tags = array_filter($tags);
+        $email = strtolower($validated['email']);
+
+        // Check if user already exists
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            // User already exists - just add them as guest to workspaces
+            if (!$user->is_guest) {
+                // This is a full user, mark them as also having guest access
+                $user->update(['is_guest' => true]);
+            }
+        } else {
+            // Create new user as guest
+            $invitationToken = Str::random(64);
+
+            $user = User::create([
+                'email' => $email,
+                'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? '')),
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'] ?? '',
+                'password' => Hash::make(Str::random(32)), // Temporary password, will be set during signup
+                'role' => User::ROLE_GUEST,
+                'status' => User::STATUS_INVITED,
+                'is_guest' => true,
+                'guest_company_name' => $validated['company_name'] ?? null,
+                'guest_position' => $validated['position'] ?? null,
+                'guest_phone' => $validated['phone'] ?? null,
+                'guest_notes' => $validated['notes'] ?? null,
+                'invitation_token' => $invitationToken,
+                'invitation_expires_at' => now()->addDays(7),
+                'invited_by' => $request->user()->id,
+                'invited_at' => now(),
+            ]);
+
+            // Send invitation email
+            Mail::to($user->email)->send(new GuestInvitationMail(
+                $user,
+                $request->user(),
+                $invitationToken
+            ));
         }
 
-        // Generate invitation token
-        $invitationToken = Str::random(64);
-
-        $client = ClientCrm::create([
-            'company_id' => $request->user()->company_id,
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'] ?? '',
-            'email' => $validated['email'],
-            'type' => $validated['type'],
-            'client_portal_access' => $validated['client_portal_access'],
-            'tags' => $tags,
-            'status' => ClientCrm::STATUS_INVITED,
-            'invitation_token' => $invitationToken,
-            'invitation_expires_at' => now()->addDays(7),
-            'invited_at' => now(),
-            'phone' => $validated['phone'] ?? null,
-            'company_name' => $validated['company_name'] ?? null,
-            'position' => $validated['position'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'created_by' => $request->user()->id,
-        ]);
-
-        // Attach workspaces
+        // Add to workspaces as guest
         if (!empty($validated['workspaces'])) {
-            $client->workspaces()->attach($validated['workspaces']);
+            foreach ($validated['workspaces'] as $workspaceId) {
+                $workspace = Workspace::find($workspaceId);
+                if ($workspace) {
+                    $workspace->addGuest($user, $request->user());
+                }
+            }
         }
-
-        // Send invitation email
-        Mail::to($client->email)->send(new GuestInvitationMail(
-            $client,
-            $request->user(),
-            $invitationToken
-        ));
 
         return response()->json([
             'success' => true,
-            'message' => 'Guest invited successfully! An invitation email has been sent.',
+            'message' => 'Guest invited successfully!' . ($user->wasRecentlyCreated ? ' An invitation email has been sent.' : ''),
             'redirect' => route('guests.index'),
         ]);
     }
@@ -176,14 +194,14 @@ class GuestController extends Controller
     /**
      * Show guest details (for drawer/API).
      */
-    public function show(Request $request, ClientCrm $guest): JsonResponse
+    public function show(Request $request, User $guest): JsonResponse
     {
-        // Ensure guest belongs to same company
-        if ($guest->company_id !== $request->user()->company_id) {
+        // Ensure this is a guest user
+        if (!$guest->is_guest) {
             return response()->json(['error' => 'Guest not found'], 404);
         }
 
-        $guest->load('workspaces', 'creator');
+        $guest->load('guestWorkspaces');
 
         return response()->json([
             'guest' => [
@@ -193,26 +211,19 @@ class GuestController extends Controller
                 'last_name' => $guest->last_name,
                 'full_name' => $guest->full_name,
                 'email' => $guest->email,
-                'type' => $guest->type,
-                'type_label' => $guest->type_label,
-                'type_color' => $guest->type_color,
                 'status' => $guest->status,
-                'status_label' => $guest->status_label,
-                'status_color' => $guest->status_color,
-                'client_portal_access' => $guest->client_portal_access,
-                'tags' => $guest->tags ?? [],
-                'phone' => $guest->phone,
-                'company_name' => $guest->company_name,
-                'position' => $guest->position,
-                'notes' => $guest->notes,
+                'status_label' => ucfirst($guest->status),
+                'phone' => $guest->guest_phone,
+                'company_name' => $guest->guest_company_name,
+                'position' => $guest->guest_position,
+                'notes' => $guest->guest_notes,
                 'avatar_url' => $guest->avatar_url,
                 'initials' => $guest->initials,
-                'workspaces' => $guest->workspaces->map(fn($w) => [
+                'workspaces' => $guest->guestWorkspaces->map(fn($w) => [
                     'id' => $w->id,
                     'name' => $w->name,
                 ]),
                 'created_at' => $guest->created_at->format('M d, Y'),
-                'created_by' => $guest->creator ? $guest->creator->full_name : null,
             ],
         ]);
     }
@@ -220,14 +231,14 @@ class GuestController extends Controller
     /**
      * Show the form for editing a guest.
      */
-    public function edit(Request $request, ClientCrm $guest): View
+    public function edit(Request $request, User $guest): View
     {
-        // Ensure guest belongs to same company
-        if ($guest->company_id !== $request->user()->company_id) {
+        // Ensure this is a guest user
+        if (!$guest->is_guest) {
             abort(404);
         }
 
-        $guest->load('workspaces');
+        $guest->load('guestWorkspaces');
 
         // Get workspaces for the dropdown
         $workspaces = Workspace::where('owner_id', $request->user()->id)
@@ -239,33 +250,34 @@ class GuestController extends Controller
 
         return view('guests.edit', [
             'guest' => $guest,
-            'types' => ClientCrm::TYPES,
-            'statuses' => ClientCrm::STATUSES,
+            'types' => self::TYPES,
+            'statuses' => [
+                User::STATUS_ACTIVE => ['label' => 'Active', 'color' => 'success'],
+                User::STATUS_INVITED => ['label' => 'Invited', 'color' => 'warning'],
+                User::STATUS_SUSPENDED => ['label' => 'Suspended', 'color' => 'error'],
+            ],
             'workspaces' => $workspaces,
-            'selectedWorkspaces' => $guest->workspaces->pluck('id')->toArray(),
+            'selectedWorkspaces' => $guest->guestWorkspaces->pluck('id')->toArray(),
         ]);
     }
 
     /**
      * Update the specified guest.
      */
-    public function update(Request $request, ClientCrm $guest): JsonResponse
+    public function update(Request $request, User $guest): JsonResponse
     {
-        // Ensure guest belongs to same company
-        if ($guest->company_id !== $request->user()->company_id) {
+        // Ensure this is a guest user
+        if (!$guest->is_guest) {
             return response()->json(['error' => 'Guest not found'], 404);
         }
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s\-\']+$/'],
             'last_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z\s\-\']*$/'],
-            'email' => ['required', 'email', Rule::unique('client_crm')->ignore($guest->id)],
-            'type' => ['required', Rule::in(array_keys(ClientCrm::TYPES))],
+            'email' => ['required', 'email', Rule::unique('users')->ignore($guest->id)],
             'workspaces' => ['nullable', 'array'],
             'workspaces.*' => ['exists:workspaces,id'],
-            'client_portal_access' => ['required', 'boolean'],
-            'tags' => ['nullable', 'string'],
-            'status' => ['required', Rule::in(array_keys(ClientCrm::STATUSES))],
+            'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INVITED, User::STATUS_SUSPENDED])],
             'phone' => ['nullable', 'string', 'max:50'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
@@ -276,13 +288,6 @@ class GuestController extends Controller
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
         ]);
 
-        // Parse tags from comma-separated string
-        $tags = null;
-        if (!empty($validated['tags'])) {
-            $tags = array_map('trim', explode(',', $validated['tags']));
-            $tags = array_filter($tags);
-        }
-
         // Handle avatar upload
         $avatarPath = $guest->avatar_path;
         if ($request->hasFile('avatar')) {
@@ -292,7 +297,7 @@ class GuestController extends Controller
             }
 
             $file = $request->file('avatar');
-            $filename = 'client-avatars/' . \Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $filename = 'user-avatars/' . \Str::uuid() . '.' . $file->getClientOriginalExtension();
 
             $image = Image::read($file);
             $image->cover(200, 200);
@@ -304,20 +309,18 @@ class GuestController extends Controller
         $guest->update([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'] ?? '',
-            'email' => $validated['email'],
-            'type' => $validated['type'],
-            'client_portal_access' => $validated['client_portal_access'],
-            'tags' => $tags,
+            'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? '')),
+            'email' => strtolower($validated['email']),
             'status' => $validated['status'],
-            'phone' => $validated['phone'] ?? null,
-            'company_name' => $validated['company_name'] ?? null,
-            'position' => $validated['position'] ?? null,
-            'notes' => $validated['notes'] ?? null,
+            'guest_phone' => $validated['phone'] ?? null,
+            'guest_company_name' => $validated['company_name'] ?? null,
+            'guest_position' => $validated['position'] ?? null,
+            'guest_notes' => $validated['notes'] ?? null,
             'avatar_path' => $avatarPath,
         ]);
 
-        // Sync workspaces
-        $guest->workspaces()->sync($validated['workspaces'] ?? []);
+        // Sync guest workspaces
+        $guest->guestWorkspaces()->sync($validated['workspaces'] ?? []);
 
         return response()->json([
             'success' => true,
@@ -328,19 +331,25 @@ class GuestController extends Controller
     /**
      * Remove the specified guest.
      */
-    public function destroy(Request $request, ClientCrm $guest): JsonResponse
+    public function destroy(Request $request, User $guest): JsonResponse
     {
-        // Ensure guest belongs to same company
-        if ($guest->company_id !== $request->user()->company_id) {
+        // Ensure this is a guest user
+        if (!$guest->is_guest) {
             return response()->json(['error' => 'Guest not found'], 404);
         }
 
-        // Delete avatar if exists
-        if ($guest->avatar_path) {
-            Storage::disk('public')->delete($guest->avatar_path);
+        // If this user only has guest role (not a member of any company), delete them
+        if ($guest->role === User::ROLE_GUEST && !$guest->company_id) {
+            // Delete avatar if exists
+            if ($guest->avatar_path) {
+                Storage::disk('public')->delete($guest->avatar_path);
+            }
+            $guest->delete();
+        } else {
+            // User is also a team member somewhere, just remove guest flag
+            $guest->update(['is_guest' => false]);
+            $guest->guestWorkspaces()->detach();
         }
-
-        $guest->delete();
 
         return response()->json([
             'success' => true,
@@ -351,15 +360,15 @@ class GuestController extends Controller
     /**
      * Resend invitation email to a guest.
      */
-    public function resendInvitation(Request $request, ClientCrm $guest): JsonResponse
+    public function resendInvitation(Request $request, User $guest): JsonResponse
     {
-        // Ensure guest belongs to same company
-        if ($guest->company_id !== $request->user()->company_id) {
+        // Ensure this is a guest user
+        if (!$guest->is_guest) {
             return response()->json(['error' => 'Guest not found'], 404);
         }
 
         // Check if guest is in invited status
-        if ($guest->status !== ClientCrm::STATUS_INVITED) {
+        if ($guest->status !== User::STATUS_INVITED) {
             return response()->json(['error' => 'This guest has already accepted the invitation.'], 400);
         }
 

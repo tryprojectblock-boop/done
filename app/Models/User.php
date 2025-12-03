@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Modules\Auth\Models\Company;
+use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -195,6 +197,11 @@ class User extends Authenticatable
         'description',
         'role',
         'status',
+        'is_guest',
+        'guest_company_name',
+        'guest_position',
+        'guest_phone',
+        'guest_notes',
         'invited_by',
         'invited_at',
         'invitation_token',
@@ -235,7 +242,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'invited_at' => 'datetime',
             'invitation_expires_at' => 'datetime',
+            'is_guest' => 'boolean',
             'settings' => 'array',
         ];
     }
@@ -258,6 +267,32 @@ class User extends Authenticatable
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Get workspaces where this user is added as a guest.
+     */
+    public function guestWorkspaces(): BelongsToMany
+    {
+        return $this->belongsToMany(Workspace::class, 'workspace_guests')
+            ->withPivot('invited_by')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if user is a guest in a specific workspace.
+     */
+    public function isGuestOf(Workspace $workspace): bool
+    {
+        return $this->guestWorkspaces()->where('workspaces.id', $workspace->id)->exists();
+    }
+
+    /**
+     * Check if user has any guest access (to any workspace).
+     */
+    public function hasGuestAccess(): bool
+    {
+        return $this->guestWorkspaces()->exists();
     }
 
     /**

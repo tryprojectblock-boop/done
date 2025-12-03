@@ -100,7 +100,7 @@
                class="tab tab-lg {{ request('tab') === 'people' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--users] size-5 mr-2"></span>
                 People
-                <span class="badge badge-ghost badge-xs ml-2">{{ $workspace->members->count() }}</span>
+                <span class="badge badge-ghost badge-xs ml-2">{{ $workspace->members->count() + $workspace->guests->count() }}</span>
             </a>
         </div>
 

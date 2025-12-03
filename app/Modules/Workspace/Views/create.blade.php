@@ -224,24 +224,27 @@
                 <div class="card-body">
                     <h2 class="card-title text-lg mb-4">
                         <span class="icon-[tabler--user-plus] size-5"></span>
-                        Invite Guest Members
+                        Invite Guests
                         <span class="text-base-content/50 font-normal text-sm">(Optional)</span>
                     </h2>
-                    <p class="text-sm text-base-content/60 mb-4">Add existing guests or invite new ones by email.</p>
+                    <p class="text-sm text-base-content/60 mb-4">Add existing guests or invite new ones by email. Guests have limited access to this workspace.</p>
 
                     <!-- Guest List -->
                     <div id="guests-list" class="space-y-3">
                         <!-- Guests will be added here dynamically -->
                     </div>
 
-                    <!-- Add Guest Row -->
+                    @if($existingGuests->count() > 0)
+                    <!-- Select Existing Guest -->
                     <div class="flex flex-col md:flex-row gap-3 mt-4 p-4 bg-base-200 rounded-lg">
                         <div class="flex-1">
                             <select id="guest-select" class="select select-bordered w-full">
                                 <option value="">Select an existing guest...</option>
-                                @foreach($guests as $guest)
-                                    <option value="{{ $guest->id }}" data-name="{{ $guest->first_name }} {{ $guest->last_name }}" data-email="{{ $guest->email }}" data-type="{{ $guest->type }}">
-                                        {{ $guest->first_name }} {{ $guest->last_name }} ({{ $guest->email }})
+                                @foreach($existingGuests as $guest)
+                                    <option value="{{ $guest->id }}"
+                                            data-name="{{ $guest->full_name }}"
+                                            data-email="{{ $guest->email }}">
+                                        {{ $guest->full_name }} ({{ $guest->email }})
                                     </option>
                                 @endforeach
                             </select>
@@ -252,10 +255,11 @@
                         </button>
                     </div>
 
-                    <div class="divider text-sm text-base-content/50">OR invite by email</div>
+                    <div class="divider text-sm text-base-content/50">OR invite new guest by email</div>
+                    @endif
 
                     <!-- Invite by Email -->
-                    <div class="flex flex-col md:flex-row gap-3 p-4 bg-base-200 rounded-lg">
+                    <div class="flex flex-col md:flex-row gap-3 {{ $existingGuests->count() > 0 ? '' : 'mt-4' }} p-4 bg-base-200 rounded-lg">
                         <div class="flex-1">
                             <input type="email" id="guest-email" class="input input-bordered w-full" placeholder="Enter guest email address...">
                         </div>
@@ -304,8 +308,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let memberIndex = 0;
     let guestIndex = 0;
     const addedMembers = new Set();
-    const addedGuests = new Set();
-    const addedGuestIds = new Set();
+    const addedGuests = new Set(); // Track by email
+    const addedGuestIds = new Set(); // Track by ID
 
     // Add member
     addMemberBtn.addEventListener('click', function() {
@@ -372,65 +376,66 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Add existing guest from dropdown
-    addGuestSelectBtn.addEventListener('click', function() {
-        const guestId = guestSelect.value;
-        const selectedOption = guestSelect.options[guestSelect.selectedIndex];
+    if (addGuestSelectBtn) {
+        addGuestSelectBtn.addEventListener('click', function() {
+            if (!guestSelect) return;
 
-        if (!guestId) {
-            alert('Please select a guest');
-            return;
-        }
+            const guestId = guestSelect.value;
+            const selectedOption = guestSelect.options[guestSelect.selectedIndex];
 
-        if (addedGuestIds.has(guestId)) {
-            alert('This guest has already been added');
-            return;
-        }
+            if (!guestId) {
+                alert('Please select a guest');
+                return;
+            }
 
-        const name = selectedOption.dataset.name;
-        const email = selectedOption.dataset.email;
-        const type = selectedOption.dataset.type;
-        const typeLabel = type === 'client' ? 'Client' : 'External Consultant';
-        const typeColor = type === 'client' ? 'success' : 'info';
+            if (addedGuestIds.has(guestId)) {
+                alert('This guest has already been added');
+                return;
+            }
 
-        const guestRow = document.createElement('div');
-        guestRow.className = 'flex items-center justify-between p-3 bg-base-200 rounded-lg';
-        guestRow.dataset.guestId = guestId;
-        guestRow.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="avatar placeholder">
-                    <div class="bg-${typeColor} text-${typeColor}-content rounded-full w-10">
-                        <span class="text-sm">${name.charAt(0).toUpperCase()}</span>
+            const name = selectedOption.dataset.name;
+            const email = selectedOption.dataset.email;
+
+            const guestRow = document.createElement('div');
+            guestRow.className = 'flex items-center justify-between p-3 bg-base-200 rounded-lg';
+            guestRow.dataset.guestId = guestId;
+            guestRow.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="avatar placeholder">
+                        <div class="bg-warning text-warning-content rounded-full w-10">
+                            <span class="text-sm">${name.charAt(0).toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="font-medium text-base-content">${name}</p>
+                        <p class="text-sm text-base-content/60">${email}</p>
                     </div>
                 </div>
-                <div>
-                    <p class="font-medium text-base-content">${name}</p>
-                    <p class="text-sm text-base-content/60">${email}</p>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-warning">Guest</span>
+                    <input type="hidden" name="guest_ids[]" value="${guestId}">
+                    <button type="button" class="btn btn-ghost btn-sm btn-square text-error remove-guest">
+                        <span class="icon-[tabler--x] size-4"></span>
+                    </button>
                 </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="badge badge-${typeColor}">${typeLabel}</span>
-                <input type="hidden" name="guest_ids[]" value="${guestId}">
-                <button type="button" class="btn btn-ghost btn-sm btn-square text-error remove-guest">
-                    <span class="icon-[tabler--x] size-4"></span>
-                </button>
-            </div>
-        `;
+            `;
 
-        guestsList.appendChild(guestRow);
-        addedGuestIds.add(guestId);
-        addedGuests.add(email.toLowerCase());
-        guestIndex++;
+            guestsList.appendChild(guestRow);
+            addedGuestIds.add(guestId);
+            addedGuests.add(email.toLowerCase());
+            guestIndex++;
 
-        // Reset select
-        guestSelect.value = '';
+            // Reset select
+            guestSelect.value = '';
 
-        // Remove guest event
-        guestRow.querySelector('.remove-guest').addEventListener('click', function() {
-            addedGuestIds.delete(guestId);
-            addedGuests.delete(email.toLowerCase());
-            guestRow.remove();
+            // Remove guest event
+            guestRow.querySelector('.remove-guest').addEventListener('click', function() {
+                addedGuestIds.delete(guestId);
+                addedGuests.delete(email.toLowerCase());
+                guestRow.remove();
+            });
         });
-    });
+    }
 
     // Add guest by email
     addGuestBtn.addEventListener('click', function() {

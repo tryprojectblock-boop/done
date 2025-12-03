@@ -23,12 +23,12 @@
                 <span class="text-xl font-bold">{{ config('app.name') }}</span>
             </a>
         </div>
-        <div class="flex-none gap-2">
-            <form action="{{ route('guest.portal.logout') }}" method="POST">
+        <div class="flex-none flex items-center gap-2">
+            <form action="{{ route('guest.portal.logout') }}" method="POST" class="flex">
                 @csrf
-                <button type="submit" class="btn btn-ghost btn-sm text-error">
-                    <span class="icon-[tabler--logout] size-5"></span>
-                    <span class="hidden sm:inline">Logout</span>
+                <button type="submit" class="btn btn-outline btn-error btn-sm">
+                    <span class="icon-[tabler--logout] size-4"></span>
+                    Logout
                 </button>
             </form>
             <div class="dropdown dropdown-end">

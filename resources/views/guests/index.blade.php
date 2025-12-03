@@ -6,8 +6,8 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-base-content">Guests & Clients</h1>
-                <p class="text-base-content/60">Manage external consultants and clients</p>
+                <h1 class="text-2xl font-bold text-base-content">Guests</h1>
+                <p class="text-base-content/60">Manage external guests with limited workspace access</p>
             </div>
             <a href="{{ route('guests.create') }}" class="btn btn-primary">
                 <span class="icon-[tabler--plus] size-5"></span>
@@ -26,14 +26,6 @@
                             <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, email, or company..." class="input input-bordered w-full pl-10">
                         </div>
                     </div>
-
-                    <!-- Type Filter -->
-                    <select name="type" class="select select-bordered w-full lg:w-48">
-                        <option value="">All Types</option>
-                        @foreach($types as $key => $type)
-                            <option value="{{ $key }}" {{ $currentType === $key ? 'selected' : '' }}>{{ $type['label'] }}</option>
-                        @endforeach
-                    </select>
 
                     <!-- Status Filter -->
                     <select name="status" class="select select-bordered w-full lg:w-40">
@@ -56,7 +48,7 @@
                         Filter
                     </button>
 
-                    @if($search || $currentType || $currentStatus || $currentWorkspace)
+                    @if($search || $currentStatus || $currentWorkspace)
                         <a href="{{ route('guests.index') }}" class="btn btn-ghost">
                             <span class="icon-[tabler--x] size-5"></span>
                             Clear
@@ -66,14 +58,14 @@
             </div>
         </div>
 
-        <!-- Type Tabs -->
+        <!-- Status Tabs -->
         <div class="tabs tabs-bordered mb-6">
-            <a href="{{ route('guests.index') }}" class="tab {{ !$currentType ? 'tab-active' : '' }}">
-                All ({{ array_sum($typeCounts) }})
+            <a href="{{ route('guests.index') }}" class="tab {{ !$currentStatus ? 'tab-active' : '' }}">
+                All ({{ array_sum($statusCounts) }})
             </a>
-            @foreach($types as $key => $type)
-                <a href="{{ route('guests.index', ['type' => $key]) }}" class="tab {{ $currentType === $key ? 'tab-active' : '' }}">
-                    {{ $type['label'] }} ({{ $typeCounts[$key] ?? 0 }})
+            @foreach($statuses as $key => $status)
+                <a href="{{ route('guests.index', ['status' => $key]) }}" class="tab {{ $currentStatus === $key ? 'tab-active' : '' }}">
+                    {{ $status['label'] }} ({{ $statusCounts[$key] ?? 0 }})
                 </a>
             @endforeach
         </div>
@@ -85,8 +77,8 @@
                     <thead>
                         <tr>
                             <th>Guest</th>
-                            <th>Type</th>
-                            <th>Portal Access</th>
+                            <th>Company</th>
+                            <th>Workspaces</th>
                             <th>Status</th>
                             <th class="text-right">Actions</th>
                         </tr>
@@ -110,30 +102,42 @@
                                         <div>
                                             <div class="font-medium">{{ $guest->full_name }}</div>
                                             <div class="text-sm text-base-content/60">{{ $guest->email }}</div>
-                                            @if($guest->company_name)
-                                                <div class="text-xs text-base-content/50">{{ $guest->company_name }}</div>
-                                            @endif
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge badge-{{ $guest->type_color }}">{{ $guest->type_label }}</span>
-                                </td>
-                                <td>
-                                    @if($guest->client_portal_access)
-                                        <span class="badge badge-success badge-sm gap-1">
-                                            <span class="icon-[tabler--check] size-3"></span>
-                                            Yes
-                                        </span>
+                                    @if($guest->guest_company_name)
+                                        <div>{{ $guest->guest_company_name }}</div>
+                                        @if($guest->guest_position)
+                                            <div class="text-xs text-base-content/50">{{ $guest->guest_position }}</div>
+                                        @endif
                                     @else
-                                        <span class="badge badge-ghost badge-sm gap-1">
-                                            <span class="icon-[tabler--x] size-3"></span>
-                                            No
-                                        </span>
+                                        <span class="text-base-content/40">-</span>
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge badge-{{ $guest->status_color }}">{{ $guest->status_label }}</span>
+                                    @if($guest->guestWorkspaces->count() > 0)
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach($guest->guestWorkspaces->take(2) as $ws)
+                                                <span class="badge badge-ghost badge-sm">{{ $ws->name }}</span>
+                                            @endforeach
+                                            @if($guest->guestWorkspaces->count() > 2)
+                                                <span class="badge badge-ghost badge-sm">+{{ $guest->guestWorkspaces->count() - 2 }}</span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-base-content/40">None</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $statusColors = [
+                                            'active' => 'success',
+                                            'invited' => 'warning',
+                                            'suspended' => 'error',
+                                        ];
+                                    @endphp
+                                    <span class="badge badge-{{ $statusColors[$guest->status] ?? 'ghost' }}">{{ ucfirst($guest->status) }}</span>
                                 </td>
                                 <td>
                                     <div class="flex items-center justify-end gap-1">
@@ -249,13 +253,15 @@ function viewGuest(id) {
 }
 
 function renderGuestDetails(guest) {
-    const tagsHtml = guest.tags && guest.tags.length > 0
-        ? guest.tags.map(tag => `<span class="badge badge-ghost badge-sm">${tag}</span>`).join('')
-        : '<span class="text-base-content/50">No tags</span>';
-
     const workspacesHtml = guest.workspaces && guest.workspaces.length > 0
         ? guest.workspaces.map(ws => `<span class="badge badge-ghost badge-sm">${ws.name}</span>`).join('')
         : '<span class="text-base-content/50">None assigned</span>';
+
+    const statusColors = {
+        'active': 'success',
+        'invited': 'warning',
+        'suspended': 'error'
+    };
 
     const html = `
         <div class="text-center mb-6">
@@ -272,16 +278,8 @@ function renderGuestDetails(guest) {
 
         <div class="space-y-4">
             <div class="flex items-center justify-between py-2 border-b border-base-200">
-                <span class="text-base-content/60">Type</span>
-                <span class="badge badge-${guest.type_color}">${guest.type_label}</span>
-            </div>
-            <div class="flex items-center justify-between py-2 border-b border-base-200">
                 <span class="text-base-content/60">Status</span>
-                <span class="badge badge-${guest.status_color}">${guest.status_label}</span>
-            </div>
-            <div class="flex items-center justify-between py-2 border-b border-base-200">
-                <span class="text-base-content/60">Portal Access</span>
-                <span class="badge badge-${guest.client_portal_access ? 'success' : 'ghost'}">${guest.client_portal_access ? 'Yes' : 'No'}</span>
+                <span class="badge badge-${statusColors[guest.status] || 'ghost'}">${guest.status_label}</span>
             </div>
             ${guest.company_name ? `
             <div class="flex items-center justify-between py-2 border-b border-base-200">
@@ -299,10 +297,6 @@ function renderGuestDetails(guest) {
                 <span class="text-base-content/60 block mb-2">Workspaces</span>
                 <div class="flex flex-wrap gap-1">${workspacesHtml}</div>
             </div>
-            <div class="py-2 border-b border-base-200">
-                <span class="text-base-content/60 block mb-2">Tags</span>
-                <div class="flex flex-wrap gap-1">${tagsHtml}</div>
-            </div>
             ${guest.notes ? `
             <div class="py-2 border-b border-base-200">
                 <span class="text-base-content/60 block mb-2">Notes</span>
@@ -313,12 +307,6 @@ function renderGuestDetails(guest) {
                 <span class="text-base-content/60">Added</span>
                 <span class="text-sm">${guest.created_at}</span>
             </div>
-            ${guest.created_by ? `
-            <div class="flex items-center justify-between py-2 border-b border-base-200">
-                <span class="text-base-content/60">Added By</span>
-                <span class="text-sm">${guest.created_by}</span>
-            </div>
-            ` : ''}
         </div>
 
         <div class="mt-6 flex gap-2">

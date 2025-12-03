@@ -33,7 +33,7 @@
                     <h2 class="text-xl font-bold text-base-content">Welcome, {{ $guest->first_name }}!</h2>
                     <p class="text-base-content/60 text-sm mt-1">
                         You've been invited to join as a
-                        <span class="badge badge-{{ $guest->type_color }} badge-sm">{{ $guest->type_label }}</span>
+                        <span class="badge badge-warning badge-sm">Guest</span>
                     </p>
                 </div>
 
@@ -63,7 +63,7 @@
                     <!-- Type (Read Only) -->
                     <div class="mb-4">
                         <label class="label"><span class="label-text">Access Type</span></label>
-                        <input type="text" value="{{ $guest->type_label }}" class="input input-bordered w-full bg-base-200" readonly disabled />
+                        <input type="text" value="Guest" class="input input-bordered w-full bg-base-200" readonly disabled />
                     </div>
 
                     <!-- Password -->

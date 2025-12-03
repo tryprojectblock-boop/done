@@ -32,6 +32,9 @@
     <!-- Global Delete Confirmation Modal -->
     @include('partials.delete-modal')
 
+    <!-- Global Confirmation Modal -->
+    @include('partials.confirm-modal')
+
     @stack('scripts')
 </body>
 </html>

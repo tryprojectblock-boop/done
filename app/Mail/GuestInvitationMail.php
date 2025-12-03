@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\ClientCrm;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -20,7 +19,7 @@ class GuestInvitationMail extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public ClientCrm $guest,
+        public User $guest,
         public User $invitedBy,
         public string $invitationToken
     ) {

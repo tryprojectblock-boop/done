@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Workspace\Models;
 
-use App\Models\ClientCrm;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Modules\Core\Support\BaseModel;
@@ -94,8 +93,45 @@ class Workspace extends BaseModel
 
     public function guests(): BelongsToMany
     {
-        return $this->belongsToMany(ClientCrm::class, 'client_crm_workspace')
+        return $this->belongsToMany(User::class, 'workspace_guests')
+            ->withPivot('invited_by')
             ->withTimestamps();
+    }
+
+    /**
+     * Check if a user has guest access to this workspace.
+     */
+    public function hasGuest(User $user): bool
+    {
+        return $this->guests()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Add a guest to this workspace.
+     */
+    public function addGuest(User $user, ?User $invitedBy = null): void
+    {
+        if (!$this->hasGuest($user)) {
+            $this->guests()->attach($user->id, [
+                'invited_by' => $invitedBy?->id,
+            ]);
+        }
+    }
+
+    /**
+     * Remove a guest from this workspace.
+     */
+    public function removeGuest(User $user): void
+    {
+        $this->guests()->detach($user->id);
+    }
+
+    /**
+     * Check if user has any access (member or guest).
+     */
+    public function hasAccess(User $user): bool
+    {
+        return $this->hasMember($user) || $this->hasGuest($user);
     }
 
     /*

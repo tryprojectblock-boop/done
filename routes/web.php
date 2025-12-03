@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\GuestSignupController;
+use App\Http\Controllers\GuestUpgradeController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamSignupController;
@@ -76,6 +77,10 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/guests/{guest}', [GuestController::class, 'update'])->name('guests.update');
     Route::delete('/guests/{guest}', [GuestController::class, 'destroy'])->name('guests.destroy');
     Route::post('/guests/{guest}/resend-invitation', [GuestController::class, 'resendInvitation'])->name('guests.resend-invitation');
+
+    // Guest Upgrade Routes (for guest-only users to upgrade to full account)
+    Route::get('/upgrade', [GuestUpgradeController::class, 'index'])->name('guest.upgrade');
+    Route::post('/upgrade', [GuestUpgradeController::class, 'store'])->name('guest.upgrade.store');
 });
 
 /*

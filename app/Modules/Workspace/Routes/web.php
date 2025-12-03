@@ -22,6 +22,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::prefix('{workspace:uuid}')->group(function () {
             Route::get('/', [WorkspaceController::class, 'show'])->name('show');
+            Route::get('/guest-view', [WorkspaceController::class, 'guestView'])->name('guest-view');
             Route::get('/settings', [WorkspaceController::class, 'settings'])->name('settings');
             Route::put('/', [WorkspaceController::class, 'update'])->name('update');
             Route::delete('/', [WorkspaceController::class, 'destroy'])->name('destroy');

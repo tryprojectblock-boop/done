@@ -217,6 +217,13 @@
                     </thead>
                     <tbody>
                         @foreach($workspace->guests as $guest)
+                        @php
+                            $guestStatusColors = [
+                                'active' => 'success',
+                                'invited' => 'warning',
+                                'suspended' => 'error',
+                            ];
+                        @endphp
                         <tr>
                             <td>
                                 <div class="flex items-center gap-3">
@@ -232,10 +239,10 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge badge-{{ $guest->type_color }}">{{ $guest->type_label }}</span>
+                                <span class="badge badge-warning">Guest</span>
                             </td>
                             <td>
-                                <span class="badge badge-{{ $guest->status_color }}">{{ $guest->status_label }}</span>
+                                <span class="badge badge-{{ $guestStatusColors[$guest->status] ?? 'ghost' }}">{{ ucfirst($guest->status) }}</span>
                             </td>
                             <td class="text-right">
                                 @if($workspace->isOwner(auth()->user()) || $workspace->getMemberRole(auth()->user())?->isAdmin())

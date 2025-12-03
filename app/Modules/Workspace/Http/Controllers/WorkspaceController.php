@@ -7,6 +7,8 @@ namespace App\Modules\Workspace\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Workflow;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Modules\Workspace\Contracts\WorkspaceServiceInterface;
 use App\Modules\Workspace\DTOs\CreateWorkspaceDTO;
 use App\Modules\Workspace\Enums\WorkspaceRole;
@@ -27,18 +29,31 @@ class WorkspaceController extends Controller
      */
     public function index(Request $request): View
     {
-        $workspaces = $this->workspaceService->getForUser($request->user());
+        $user = $request->user();
+        $workspaces = $this->workspaceService->getForUser($user);
+
+        // Get workspaces where user is added as a guest
+        $guestWorkspaces = $user->guestWorkspaces()->with(['owner'])->get();
 
         return view('workspace::index', [
             'workspaces' => $workspaces,
+            'guestWorkspaces' => $guestWorkspaces,
         ]);
     }
 
     /**
      * Show the form for creating a new workspace.
      */
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        $user = $request->user();
+
+        // Guest-only users cannot create workspaces
+        if ($user->role === User::ROLE_GUEST && !$user->company_id) {
+            return redirect()->route('workspace.index')
+                ->with('upgrade_required', 'Please upgrade your account to create workspaces.');
+        }
+
         // Get team members for invitation (excluding current user)
         $teamMembers = User::where('company_id', $request->user()->company_id)
             ->where('id', '!=', $request->user()->id)
@@ -53,9 +68,9 @@ class WorkspaceController extends Controller
             ->orderByRaw('is_default DESC, name ASC')
             ->get();
 
-        // Get guests/clients for this company
-        $guests = \App\Models\ClientCrm::where('company_id', $request->user()->company_id)
-            ->whereIn('status', [\App\Models\ClientCrm::STATUS_ACTIVE, \App\Models\ClientCrm::STATUS_INVITED])
+        // Get existing guests (users with is_guest = true)
+        $existingGuests = User::where('is_guest', true)
+            ->where('status', User::STATUS_ACTIVE)
             ->orderBy('first_name')
             ->get();
 
@@ -63,7 +78,7 @@ class WorkspaceController extends Controller
             'workspaceRoles' => WorkspaceRole::cases(),
             'teamMembers' => $teamMembers,
             'workflows' => $workflows,
-            'guests' => $guests,
+            'existingGuests' => $existingGuests,
         ]);
     }
 
@@ -72,6 +87,14 @@ class WorkspaceController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
+        // Guest-only users cannot create workspaces
+        if ($user->role === User::ROLE_GUEST && !$user->company_id) {
+            return redirect()->route('workspace.index')
+                ->with('upgrade_required', 'Please upgrade your account to create workspaces.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:classic,product'],
@@ -83,7 +106,7 @@ class WorkspaceController extends Controller
             'members.*.user_id' => ['required_with:members', 'exists:users,id'],
             'members.*.role' => ['required_with:members', 'string', 'in:admin,member,reviewer'],
             'guest_ids' => ['nullable', 'array'],
-            'guest_ids.*' => ['exists:client_crm,id'],
+            'guest_ids.*' => ['exists:users,id'],
             'guest_emails' => ['nullable', 'array'],
             'guest_emails.*' => ['email'],
         ]);
@@ -113,20 +136,49 @@ class WorkspaceController extends Controller
             }
         }
 
-        // Add existing guests to workspace
+        // Add existing guests by ID
         if (!empty($validated['guest_ids'])) {
             foreach ($validated['guest_ids'] as $guestId) {
-                $guest = \App\Models\ClientCrm::find($guestId);
-                if ($guest && $guest->company_id === $request->user()->company_id) {
-                    $workspace->guests()->attach($guest->id);
+                $guestUser = User::find($guestId);
+                if ($guestUser && $guestUser->is_guest) {
+                    $workspace->addGuest($guestUser, $request->user());
                 }
             }
         }
 
-        // Send invitation emails to new guests
+        // Add new guests by email - creates User if not exists
         if (!empty($validated['guest_emails'])) {
             foreach ($validated['guest_emails'] as $guestEmail) {
-                // TODO: Create guest entry and send invitation email
+                $guestUser = User::where('email', strtolower($guestEmail))->first();
+
+                if (!$guestUser) {
+                    // Create new user as guest
+                    $invitationToken = Str::random(64);
+
+                    $guestUser = User::create([
+                        'email' => strtolower($guestEmail),
+                        'name' => explode('@', $guestEmail)[0],
+                        'first_name' => explode('@', $guestEmail)[0],
+                        'password' => Hash::make(Str::random(32)), // Temporary password
+                        'role' => User::ROLE_GUEST,
+                        'status' => User::STATUS_INVITED,
+                        'is_guest' => true,
+                        'invitation_token' => $invitationToken,
+                        'invitation_expires_at' => now()->addDays(7),
+                        'invited_by' => $request->user()->id,
+                        'invited_at' => now(),
+                    ]);
+
+                    // TODO: Send invitation email to guest
+                } else {
+                    // Existing user - mark as guest if not already
+                    if (!$guestUser->is_guest) {
+                        $guestUser->update(['is_guest' => true]);
+                    }
+                }
+
+                // Add to workspace as guest
+                $workspace->addGuest($guestUser, $request->user());
             }
         }
 
@@ -143,6 +195,23 @@ class WorkspaceController extends Controller
 
         return view('workspace::show', [
             'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow', 'guests']),
+        ]);
+    }
+
+    /**
+     * Display workspace as guest (limited view).
+     */
+    public function guestView(Request $request, Workspace $workspace): View
+    {
+        $user = $request->user();
+
+        // Check if user has guest access to this workspace
+        if (!$workspace->hasGuest($user)) {
+            abort(403, 'You do not have guest access to this workspace.');
+        }
+
+        return view('workspace::guest-view', [
+            'workspace' => $workspace->load(['members', 'owner', 'workflow']),
         ]);
     }
 

@@ -27,15 +27,17 @@ class LoginController extends Controller
 
         $email = strtolower($request->email);
 
-        // First, try to find a regular user
+        // First, try to find a regular user - always prioritize user login
         $user = User::where('email', $email)->first();
 
         if ($user) {
             return $this->loginUser($request, $user);
         }
 
-        // If not found, try to find a guest
-        $guest = ClientCrm::where('email', $email)->first();
+        // If no user found, try to find a guest
+        $guest = ClientCrm::where('email', $email)
+            ->where('status', '!=', ClientCrm::STATUS_INVITED)
+            ->first();
 
         if ($guest) {
             return $this->loginGuest($request, $guest);
@@ -127,6 +129,47 @@ class LoginController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Your account has been deactivated. Please contact an administrator.',
+            ], 403);
+        }
+
+        // Log the guest in using the guest guard
+        Auth::guard('guest')->login($guest, $request->boolean('remember'));
+
+        // Update last login info
+        $guest->update([
+            'last_login_at' => now(),
+            'last_login_ip' => $request->ip(),
+        ]);
+
+        // Regenerate session
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful.',
+            'data' => [
+                'user' => [
+                    'uuid' => $guest->uuid,
+                    'name' => $guest->full_name,
+                    'email' => $guest->email,
+                    'is_guest' => true,
+                ],
+                'redirect_url' => '/guest/portal',
+            ],
+        ]);
+    }
+
+    /**
+     * Handle guest login without password check (already validated).
+     * Used when user also exists and we've already validated against user's password.
+     */
+    protected function loginGuestDirectly(Request $request, ClientCrm $guest): JsonResponse
+    {
+        // Check if guest is inactive
+        if ($guest->status === ClientCrm::STATUS_INACTIVE) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your guest account has been deactivated. Please contact an administrator.',
             ], 403);
         }
 

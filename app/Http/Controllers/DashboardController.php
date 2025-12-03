@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -10,6 +11,11 @@ class DashboardController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+
+        // If user is a guest-only (no company, guest role), show guest dashboard
+        if ($user->role === User::ROLE_GUEST && !$user->company_id) {
+            return view('guest.dashboard');
+        }
 
         // Check if this is the user's first login (no last_login_at or created recently)
         $isFirstLogin = is_null($user->last_login_at) ||

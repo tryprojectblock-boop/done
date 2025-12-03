@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ClientCrm;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,8 +15,8 @@ class GuestSignupController extends Controller
      */
     public function show(string $token): View
     {
-        $guest = ClientCrm::where('invitation_token', $token)
-            ->where('status', ClientCrm::STATUS_INVITED)
+        $guest = User::where('invitation_token', $token)
+            ->where('status', User::STATUS_INVITED)
             ->first();
 
         if (!$guest) {
@@ -24,7 +24,7 @@ class GuestSignupController extends Controller
         }
 
         // Check if invitation has expired
-        if ($guest->isInvitationExpired()) {
+        if ($guest->invitation_expires_at && $guest->invitation_expires_at->isPast()) {
             return view('auth.guest-invitation-expired', [
                 'email' => $guest->email,
             ]);
@@ -45,8 +45,8 @@ class GuestSignupController extends Controller
      */
     public function complete(Request $request, string $token): JsonResponse
     {
-        $guest = ClientCrm::where('invitation_token', $token)
-            ->where('status', ClientCrm::STATUS_INVITED)
+        $guest = User::where('invitation_token', $token)
+            ->where('status', User::STATUS_INVITED)
             ->first();
 
         if (!$guest) {
@@ -54,7 +54,7 @@ class GuestSignupController extends Controller
         }
 
         // Check if invitation has expired
-        if ($guest->isInvitationExpired()) {
+        if ($guest->invitation_expires_at && $guest->invitation_expires_at->isPast()) {
             return response()->json(['error' => 'This invitation has expired. Please request a new invitation.'], 400);
         }
 
@@ -69,17 +69,18 @@ class GuestSignupController extends Controller
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
         ]);
 
-        // Update guest
+        // Update user/guest
         $guest->update([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
+            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
             'password' => Hash::make($validated['password']),
-            'notes' => $validated['description'] ?? $guest->notes,
+            'description' => $validated['description'] ?? $guest->description,
             'timezone' => $validated['timezone'],
-            'status' => ClientCrm::STATUS_ACTIVE,
+            'status' => User::STATUS_ACTIVE,
             'invitation_token' => null,
             'invitation_expires_at' => null,
-            'accepted_at' => now(),
+            'email_verified_at' => now(),
         ]);
 
         return response()->json([
