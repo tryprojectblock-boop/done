@@ -23,6 +23,7 @@ final class CreateWorkspaceAction extends BaseAction
             'description' => $dto->description,
             'type' => $dto->type,
             'owner_id' => $dto->ownerId,
+            'workflow_id' => $dto->workflowId,
             'tenant_id' => $dto->tenantId ?? current_tenant_id(),
             'color' => $dto->color,
             'enabled_modules' => ! empty($dto->enabledModules)

@@ -8,12 +8,12 @@
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
                 <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
-                <a href="{{ route('workflow.index', $workspace) }}" class="hover:text-primary">Workflows</a>
+                <a href="{{ route('workflows.index') }}" class="hover:text-primary">Workflows</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
                 <span>Create</span>
             </div>
             <h1 class="text-2xl font-bold text-base-content">Create New Workflow</h1>
-            <p class="text-base-content/60">Define a workflow for {{ $workspace->name }}</p>
+            <p class="text-base-content/60">Define a workflow for your organization</p>
         </div>
 
         <!-- Error Messages -->
@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <form action="{{ route('workflow.store', $workspace) }}" method="POST" id="workflow-form">
+        <form action="{{ route('workflows.store') }}" method="POST" id="workflow-form">
             @csrf
 
             <!-- Section 1: Workflow Settings -->
@@ -73,10 +73,11 @@
                     <!-- Column Headers -->
                     <div class="grid grid-cols-12 gap-3 px-3 py-2 text-sm font-medium text-base-content/60">
                         <div class="col-span-1"></div>
-                        <div class="col-span-4">Status Name</div>
+                        <div class="col-span-3">Status Name</div>
                         <div class="col-span-1 text-center">Color</div>
+                        <div class="col-span-2">Responsibility</div>
                         <div class="col-span-2 text-center">Active</div>
-                        <div class="col-span-3">Preview</div>
+                        <div class="col-span-2">Preview</div>
                         <div class="col-span-1 text-center">Action</div>
                     </div>
 
@@ -95,7 +96,7 @@
                                 </div>
 
                                 <!-- Status Name -->
-                                <div class="col-span-4">
+                                <div class="col-span-3">
                                     <input type="text" name="statuses[0][name]" class="input input-bordered input-sm w-full status-name" placeholder="Status name" value="{{ old('statuses.0.name', 'Open') }}" required maxlength="40">
                                 </div>
 
@@ -118,6 +119,14 @@
                                     </div>
                                 </div>
 
+                                <!-- Responsibility -->
+                                <div class="col-span-2">
+                                    <select name="statuses[0][responsibility]" class="select select-bordered select-sm w-full">
+                                        <option value="creator" {{ old('statuses.0.responsibility', 'creator') === 'creator' ? 'selected' : '' }}>Creator</option>
+                                        <option value="assignee" {{ old('statuses.0.responsibility') === 'assignee' ? 'selected' : '' }}>Assignee</option>
+                                    </select>
+                                </div>
+
                                 <!-- Active Toggle (Readonly - Always Active) -->
                                 <div class="col-span-2 flex justify-center">
                                     <div class="flex items-center gap-2">
@@ -127,7 +136,7 @@
                                 </div>
 
                                 <!-- Preview -->
-                                <div class="col-span-3">
+                                <div class="col-span-2">
                                     <span class="status-preview px-2.5 py-1 rounded text-xs font-medium" style="background-color: {{ $colors['blue']['bg'] }}; color: {{ $colors['blue']['text'] }};">Open</span>
                                 </div>
 
@@ -159,7 +168,7 @@
                                 </div>
 
                                 <!-- Status Name -->
-                                <div class="col-span-4">
+                                <div class="col-span-3">
                                     <input type="text" name="statuses[1][name]" class="input input-bordered input-sm w-full status-name" placeholder="Status name" value="{{ old('statuses.1.name', 'Closed') }}" required maxlength="40">
                                 </div>
 
@@ -182,6 +191,14 @@
                                     </div>
                                 </div>
 
+                                <!-- Responsibility -->
+                                <div class="col-span-2">
+                                    <select name="statuses[1][responsibility]" class="select select-bordered select-sm w-full">
+                                        <option value="creator" {{ old('statuses.1.responsibility') === 'creator' ? 'selected' : '' }}>Creator</option>
+                                        <option value="assignee" {{ old('statuses.1.responsibility', 'assignee') === 'assignee' ? 'selected' : '' }}>Assignee</option>
+                                    </select>
+                                </div>
+
                                 <!-- Active Toggle (Readonly - Always Inactive) -->
                                 <div class="col-span-2 flex justify-center">
                                     <div class="flex items-center gap-2">
@@ -191,7 +208,7 @@
                                 </div>
 
                                 <!-- Preview -->
-                                <div class="col-span-3">
+                                <div class="col-span-2">
                                     <span class="status-preview px-2.5 py-1 rounded text-xs font-medium" style="background-color: {{ $colors['slate']['bg'] }}; color: {{ $colors['slate']['text'] }};">Closed</span>
                                 </div>
 
@@ -219,7 +236,7 @@
                     <span class="icon-[tabler--plus] size-5"></span>
                     Create Workflow
                 </button>
-                <a href="{{ route('workflow.index', $workspace) }}" class="btn btn-ghost">Cancel</a>
+                <a href="{{ route('workflows.index') }}" class="btn btn-ghost">Cancel</a>
             </div>
         </form>
     </div>
@@ -305,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <!-- Status Name -->
-                <div class="col-span-4">
+                <div class="col-span-3">
                     <input type="text" name="statuses[${statusIndex}][name]" class="input input-bordered input-sm w-full status-name" placeholder="Status name" required maxlength="40">
                 </div>
 
@@ -328,6 +345,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <!-- Responsibility -->
+                <div class="col-span-2">
+                    <select name="statuses[${statusIndex}][responsibility]" class="select select-bordered select-sm w-full">
+                        <option value="assignee" selected>Assignee</option>
+                        <option value="creator">Creator</option>
+                    </select>
+                </div>
+
                 <!-- Active Toggle -->
                 <div class="col-span-2 flex justify-center">
                     <label class="flex items-center gap-2 cursor-pointer">
@@ -338,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <!-- Preview -->
-                <div class="col-span-3">
+                <div class="col-span-2">
                     <span class="status-preview px-2.5 py-1 rounded text-xs font-medium" style="background-color: ${colors[defaultColor].bg}; color: ${colors[defaultColor].text};">New Status</span>
                 </div>
 

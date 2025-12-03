@@ -117,15 +117,28 @@
                         @enderror
                     </div>
 
-                    <!-- Workspace Type (Read-only display) -->
+                    <!-- Workflow Selection -->
                     <div class="form-control mb-4">
                         <label class="label">
-                            <span class="label-text font-medium">Type</span>
+                            <span class="label-text font-medium">Workflow <span class="text-error">*</span></span>
                         </label>
-                        <div class="input input-bordered bg-base-200 flex items-center" id="selected-type-display">
-                            <span class="icon-[tabler--briefcase] size-4 mr-2 text-blue-500"></span>
-                            <span>Classic Workspace</span>
-                        </div>
+                        <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required>
+                            <option value="">Select a workflow...</option>
+                            @foreach($workflows as $workflow)
+                                <option value="{{ $workflow->id }}" {{ old('workflow_id') == $workflow->id ? 'selected' : '' }}>
+                                    {{ $workflow->name }}
+                                    @if($workflow->isBuiltIn()) (Built-in) @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <label class="label">
+                            <span class="label-text-alt text-base-content/60">Choose a workflow to manage task statuses in this workspace</span>
+                        </label>
+                        @error('workflow_id')
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ $message }}</span>
+                            </label>
+                        @enderror
                     </div>
 
                     <!-- Description -->
@@ -183,9 +196,9 @@
                         </div>
                         <div class="w-full md:w-48">
                             <select id="member-role" class="select select-bordered w-full">
-                                <option value="member">Member</option>
+                                <option value="">Select role...</option>
                                 <option value="admin">Admin</option>
-                                <option value="guest">Guest</option>
+                                <option value="member">Member</option>
                                 <option value="reviewer">Reviewer</option>
                             </select>
                         </div>
@@ -198,9 +211,8 @@
                     <!-- Role descriptions -->
                     <div class="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
                         <p class="text-sm text-base-content/70">
-                            <strong>Member:</strong> Can create and manage their own content.
                             <strong>Admin:</strong> Can manage members and settings.
-                            <strong>Guest:</strong> Limited access to assigned items.
+                            <strong>Member:</strong> Can create and manage their own content.
                             <strong>Reviewer:</strong> Can review and comment on items.
                         </p>
                     </div>
@@ -243,15 +255,15 @@
             </div>
 
             <!-- Actions -->
-            <div class="flex justify-between">
-                <a href="{{ route('workspace.index') }}" class="btn btn-ghost">
-                    <span class="icon-[tabler--arrow-left] size-5"></span>
-                    Cancel
-                </a>
+            <div class="flex justify">
                 <button type="submit" class="btn btn-primary" id="submit-btn">
                     <span class="icon-[tabler--check] size-5"></span>
                     Create Workspace
                 </button>
+                <a href="{{ route('workspace.index') }}" class="btn btn-ghost">
+                    <span class="icon-[tabler--arrow-left] size-5"></span>
+                    Cancel
+                </a>
             </div>
         </form>
     </div>
@@ -268,24 +280,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const guestEmail = document.getElementById('guest-email');
     const addGuestBtn = document.getElementById('add-guest-btn');
 
-    const typeRadios = document.querySelectorAll('input[name="type"]');
-    const typeDisplay = document.getElementById('selected-type-display');
-
     let memberIndex = 0;
     let guestIndex = 0;
     const addedMembers = new Set();
     const addedGuests = new Set();
-
-    // Update type display when selection changes
-    typeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'classic') {
-                typeDisplay.innerHTML = '<span class="icon-[tabler--briefcase] size-4 mr-2 text-blue-500"></span><span>Classic Workspace</span>';
-            } else {
-                typeDisplay.innerHTML = '<span class="icon-[tabler--rocket] size-4 mr-2 text-purple-500"></span><span>Product Workspace</span>';
-            }
-        });
-    });
 
     // Add member
     addMemberBtn.addEventListener('click', function() {
@@ -297,6 +295,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const role = memberRole.value;
+        if (!role) {
+            alert('Please select a role');
+            return;
+        }
+
         if (addedMembers.has(userId)) {
             alert('This member has already been added');
             return;
@@ -304,7 +308,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const name = selectedOption.dataset.name;
         const email = selectedOption.dataset.email;
-        const role = memberRole.value;
         const roleLabel = memberRole.options[memberRole.selectedIndex].text;
 
         const memberRow = document.createElement('div');

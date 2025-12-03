@@ -46,6 +46,7 @@ class Workflow extends Model
     ];
 
     protected $fillable = [
+        'company_id',
         'workspace_id',
         'name',
         'description',
@@ -60,6 +61,14 @@ class Workflow extends Model
             'is_default' => 'boolean',
             'is_archived' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the company that owns the workflow.
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -213,5 +222,21 @@ class Workflow extends Model
     public function scopeArchived($query)
     {
         return $query->where('is_archived', true);
+    }
+
+    /**
+     * Scope for workflows belonging to a specific company.
+     */
+    public function scopeForCompany($query, int $companyId)
+    {
+        return $query->where('company_id', $companyId);
+    }
+
+    /**
+     * Scope for built-in workflows.
+     */
+    public function scopeBuiltIn($query)
+    {
+        return $query->where('is_default', true);
     }
 }

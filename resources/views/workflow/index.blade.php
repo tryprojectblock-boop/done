@@ -8,17 +8,15 @@
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
                 <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
-                <span>{{ $workspace->name }}</span>
-                <span class="icon-[tabler--chevron-right] size-4"></span>
                 <span>Workflows</span>
             </div>
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-base-content">Workflows</h1>
-                    <p class="text-base-content/60">Manage task workflows for {{ $workspace->name }}</p>
+                    <p class="text-base-content/60">Manage task workflows for your organization</p>
                 </div>
                 @if($canManage)
-                <a href="{{ route('workflow.create', $workspace) }}" class="btn btn-primary">
+                <a href="{{ route('workflows.create') }}" class="btn btn-primary">
                     <span class="icon-[tabler--plus] size-5"></span>
                     Add Workflow
                 </a>
@@ -49,10 +47,10 @@
                         <span class="icon-[tabler--git-branch] size-16 text-base-content/20"></span>
                     </div>
                     <h3 class="text-lg font-semibold text-base-content">No Workflows Yet</h3>
-                    <p class="text-base-content/60 mb-4">Create your first workflow to define how tasks move through your process.</p>
+                    <p class="text-base-content/60 mb-4">Create workflows to define how tasks move through your process.</p>
                     @if($canManage)
                     <div>
-                        <a href="{{ route('workflow.create', $workspace) }}" class="btn btn-primary">
+                        <a href="{{ route('workflows.create') }}" class="btn btn-primary">
                             <span class="icon-[tabler--plus] size-5"></span>
                             Create Workflow
                         </a>
@@ -72,7 +70,7 @@
                             <div class="flex-1 min-w-0">
                                 <h3 class="font-semibold text-lg text-base-content truncate">{{ $workflow->name }}</h3>
                                 @if($workflow->description)
-                                    <p class="text-sm text-base-content/60 line-clamp-2">{{ $workflow->description }}</p>
+                                    <p class="text-sm text-base-content/60 line-clamp-2 mt-1">{{ $workflow->description }}</p>
                                 @endif
                             </div>
                             @if($workflow->isBuiltIn())
@@ -127,14 +125,14 @@
                                 <ul tabindex="0" class="dropdown-menu dropdown-open:opacity-100 hidden min-w-40 z-50">
                                     @if($canManage)
                                     <li>
-                                        <a href="{{ route('workflow.edit', [$workspace, $workflow]) }}" class="dropdown-item">
+                                        <a href="{{ route('workflows.edit', $workflow) }}" class="dropdown-item">
                                             <span class="icon-[tabler--edit] size-4"></span>
                                             Edit
                                         </a>
                                     </li>
                                     @endif
                                     <li>
-                                        <form action="{{ route('workflow.duplicate', [$workspace, $workflow]) }}" method="POST">
+                                        <form action="{{ route('workflows.duplicate', $workflow) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="dropdown-item w-full text-left">
                                                 <span class="icon-[tabler--copy] size-4"></span>
@@ -144,7 +142,7 @@
                                     </li>
                                     @if($canManage)
                                     <li class="border-t border-base-200 mt-1 pt-1">
-                                        <form action="{{ route('workflow.archive', [$workspace, $workflow]) }}" method="POST">
+                                        <form action="{{ route('workflows.archive', $workflow) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="dropdown-item w-full text-left text-warning">
                                                 <span class="icon-[tabler--archive] size-4"></span>
@@ -156,7 +154,7 @@
                                     <li>
                                         <button type="button" class="dropdown-item w-full text-left text-error"
                                             data-delete
-                                            data-delete-action="{{ route('workflow.destroy', [$workspace, $workflow]) }}"
+                                            data-delete-action="{{ route('workflows.destroy', $workflow) }}"
                                             data-delete-title="Delete Workflow"
                                             data-delete-name="{{ $workflow->name }}"
                                             data-delete-warning="This action cannot be undone. All statuses in this workflow will be deleted.">
@@ -169,7 +167,7 @@
                                 </ul>
                             </div>
                             @if($canManage)
-                            <a href="{{ route('workflow.edit', [$workspace, $workflow]) }}" class="btn btn-ghost btn-sm">
+                            <a href="{{ route('workflows.edit', $workflow) }}" class="btn btn-ghost btn-sm">
                                 <span class="icon-[tabler--edit] size-4"></span>
                                 Edit
                             </a>
@@ -200,22 +198,12 @@
                                     </div>
                                     @if($canManage)
                                     <div class="flex gap-1">
-                                        <form action="{{ route('workflow.restore', [$workspace, $workflow]) }}" method="POST">
+                                        <form action="{{ route('workflows.restore', $workflow) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="btn btn-ghost btn-xs" title="Restore">
                                                 <span class="icon-[tabler--archive-off] size-4"></span>
                                             </button>
                                         </form>
-                                        @if(!$workflow->isBuiltIn())
-                                        <button type="button" class="btn btn-ghost btn-xs text-error" title="Delete"
-                                            data-delete
-                                            data-delete-action="{{ route('workflow.destroy', [$workspace, $workflow]) }}"
-                                            data-delete-title="Delete Workflow"
-                                            data-delete-name="{{ $workflow->name }}"
-                                            data-delete-warning="This action cannot be undone. All statuses in this workflow will be deleted.">
-                                            <span class="icon-[tabler--trash] size-4"></span>
-                                        </button>
-                                        @endif
                                     </div>
                                     @endif
                                 </div>
@@ -237,6 +225,7 @@
             <p class="text-sm text-base-content/70">
                 A workflow is a set of statuses that define how tasks move from start to finish.
                 Create workflows to customize your task management process and track progress effectively.
+                Each workflow can be assigned to workspaces to manage tasks.
             </p>
         </div>
     </div>

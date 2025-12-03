@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Workspace\Models;
 
 use App\Models\User;
+use App\Models\Workflow;
 use App\Modules\Core\Support\BaseModel;
 use App\Modules\Core\Traits\BelongsToTenant;
 use App\Modules\Core\Traits\HasUuid;
@@ -33,6 +34,7 @@ class Workspace extends BaseModel
         'settings',
         'enabled_modules',
         'owner_id',
+        'workflow_id',
         'logo_path',
         'color',
     ];
@@ -69,6 +71,11 @@ class Workspace extends BaseModel
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
     }
 
     public function members(): BelongsToMany

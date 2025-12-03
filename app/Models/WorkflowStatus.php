@@ -19,6 +19,17 @@ class WorkflowStatus extends Model
     public const TYPE_CLOSED = 'closed';
 
     /**
+     * Responsibility types.
+     */
+    public const RESPONSIBILITY_CREATOR = 'creator';
+    public const RESPONSIBILITY_ASSIGNEE = 'assignee';
+
+    public const RESPONSIBILITIES = [
+        self::RESPONSIBILITY_CREATOR => 'Creator',
+        self::RESPONSIBILITY_ASSIGNEE => 'Assignee',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
@@ -31,6 +42,7 @@ class WorkflowStatus extends Model
         'type',
         'sort_order',
         'is_active',
+        'responsibility',
         'created_by',
     ];
 
@@ -143,5 +155,13 @@ class WorkflowStatus extends Model
             ->max('sort_order');
 
         return ($maxOrder ?? 0) + 1;
+    }
+
+    /**
+     * Get the responsibility label.
+     */
+    public function getResponsibilityLabelAttribute(): string
+    {
+        return self::RESPONSIBILITIES[$this->responsibility] ?? 'Assignee';
     }
 }

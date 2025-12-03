@@ -6,6 +6,7 @@ namespace App\Modules\Workspace\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Workflow;
 use App\Modules\Workspace\Contracts\WorkspaceServiceInterface;
 use App\Modules\Workspace\DTOs\CreateWorkspaceDTO;
 use App\Modules\Workspace\Enums\WorkspaceRole;
@@ -45,10 +46,17 @@ class WorkspaceController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Get all available workflows for this company (built-in and user-created)
+        $workflows = Workflow::forCompany($request->user()->company_id)
+            ->active()
+            ->with('statuses')
+            ->orderByRaw('is_default DESC, name ASC')
+            ->get();
+
         return view('workspace::create', [
-            'workspaceTypes' => WorkspaceType::cases(),
             'workspaceRoles' => WorkspaceRole::cases(),
             'teamMembers' => $teamMembers,
+            'workflows' => $workflows,
         ]);
     }
 
@@ -60,12 +68,13 @@ class WorkspaceController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:classic,product'],
+            'workflow_id' => ['required', 'exists:workflows,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'members' => ['nullable', 'array'],
             'members.*.user_id' => ['required_with:members', 'exists:users,id'],
-            'members.*.role' => ['required_with:members', 'string', 'in:admin,member,guest,reviewer'],
+            'members.*.role' => ['required_with:members', 'string', 'in:admin,member,reviewer'],
             'guests' => ['nullable', 'array'],
             'guests.*' => ['email'],
         ]);
@@ -75,6 +84,7 @@ class WorkspaceController extends Controller
             type: WorkspaceType::from($validated['type']),
             ownerId: $request->user()->id,
             description: $validated['description'] ?? null,
+            workflowId: (int) $validated['workflow_id'],
             settings: [
                 'start_date' => $validated['start_date'] ?? null,
                 'end_date' => $validated['end_date'] ?? null,

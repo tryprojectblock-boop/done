@@ -117,18 +117,18 @@ Route::middleware(['auth'])->prefix('files')->name('files.')->group(function () 
 
 /*
 |--------------------------------------------------------------------------
-| Workflow Routes (Workspace Settings)
+| Workflow Routes (Company-based)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('workspace/{workspace}')->name('workflow.')->group(function () {
-    Route::get('/workflows', [WorkflowController::class, 'index'])->name('index');
-    Route::get('/workflows/create', [WorkflowController::class, 'create'])->name('create');
-    Route::post('/workflows', [WorkflowController::class, 'store'])->name('store');
-    Route::get('/workflows/{workflow}/edit', [WorkflowController::class, 'edit'])->name('edit');
-    Route::put('/workflows/{workflow}', [WorkflowController::class, 'update'])->name('update');
-    Route::delete('/workflows/{workflow}', [WorkflowController::class, 'destroy'])->name('destroy');
-    Route::post('/workflows/{workflow}/duplicate', [WorkflowController::class, 'duplicate'])->name('duplicate');
-    Route::post('/workflows/{workflow}/archive', [WorkflowController::class, 'archive'])->name('archive');
-    Route::post('/workflows/{workflow}/restore', [WorkflowController::class, 'restore'])->name('restore');
-    Route::post('/workflows/{workflow}/reorder-statuses', [WorkflowController::class, 'reorderStatuses'])->name('reorder-statuses');
+Route::middleware(['auth'])->prefix('workflows')->name('workflows.')->group(function () {
+    Route::get('/', [WorkflowController::class, 'index'])->name('index');
+    Route::get('/create', [WorkflowController::class, 'create'])->name('create');
+    Route::post('/', [WorkflowController::class, 'store'])->name('store');
+    Route::get('/{workflow}/edit', [WorkflowController::class, 'edit'])->name('edit');
+    Route::put('/{workflow}', [WorkflowController::class, 'update'])->name('update');
+    Route::delete('/{workflow}', [WorkflowController::class, 'destroy'])->name('destroy');
+    Route::post('/{workflow}/duplicate', [WorkflowController::class, 'duplicate'])->name('duplicate');
+    Route::post('/{workflow}/archive', [WorkflowController::class, 'archive'])->name('archive');
+    Route::post('/{workflow}/restore', [WorkflowController::class, 'restore'])->name('restore');
 });
+

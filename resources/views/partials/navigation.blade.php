@@ -15,9 +15,9 @@
                 </a>
             </li>
             <li>
-                <a href="/workspace" class="{{ request()->is('workspace*') ? 'active' : '' }}">
+                <a href="{{ route('workspace.index') }}" class="{{ request()->is('workspaces*') ? 'active' : '' }}">
                     <span class="icon-[tabler--briefcase] size-5"></span>
-                    Workspace
+                    Workspaces
                 </a>
             </li>
             <li>
@@ -52,12 +52,7 @@
                     @if(auth()->user()->isAdminOrHigher())
                     <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
                     @endif
-                    @php
-                        $firstWorkspace = \App\Modules\Workspace\Models\Workspace::forUser(auth()->user())->active()->first();
-                    @endphp
-                    @if($firstWorkspace)
-                    <li><a class="dropdown-item" href="/workspace/{{ $firstWorkspace->uuid }}/workflows"><span class="icon-[tabler--git-branch] size-4 me-2"></span>Workflows</a></li>
-                    @endif
+                    <li><a class="dropdown-item" href="/workflows"><span class="icon-[tabler--git-branch] size-4 me-2"></span>Workflows</a></li>
                     <li><a class="dropdown-item" href="/drive"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
                     <li><a class="dropdown-item" href="/documents"><span class="icon-[tabler--file-text] size-4 me-2"></span>Documents</a></li>
                 </ul>
@@ -76,7 +71,7 @@
             <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-52" role="menu" aria-orientation="vertical" aria-labelledby="add-dropdown">
                 <li><a class="dropdown-item" href="#"><span class="icon-[tabler--checkbox] size-4 me-2 text-primary"></span>Add Task</a></li>
                 <li><a class="dropdown-item" href="#"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
-                <li><a class="dropdown-item" href="#"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
+                <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
                 <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
                 <li><a class="dropdown-item" href="#"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
                 <li><a class="dropdown-item" href="#"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
@@ -161,7 +156,7 @@
             </button>
             <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-56" role="menu" aria-orientation="vertical" aria-labelledby="mobile-menu-dropdown">
                 <li><a class="dropdown-item" href="/dashboard"><span class="icon-[tabler--layout-dashboard] size-4 me-2"></span>Dashboard</a></li>
-                <li><a class="dropdown-item" href="/workspace"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspace</a></li>
+                <li><a class="dropdown-item" href="{{ route('workspace.index') }}"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspaces</a></li>
                 <li><a class="dropdown-item" href="/tasks"><span class="icon-[tabler--checkbox] size-4 me-2"></span>Tasks</a></li>
                 <li><a class="dropdown-item" href="/discussions"><span class="icon-[tabler--messages] size-4 me-2"></span>Discussion</a></li>
                 <li><a class="dropdown-item" href="/calendar"><span class="icon-[tabler--calendar] size-4 me-2"></span>Calendar</a></li>
