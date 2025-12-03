@@ -53,114 +53,73 @@
         <!-- Description -->
         @if($workspace->description)
             <div class="card bg-base-100 shadow mb-6">
-                <div class="card-body">
+                <div class="card-body py-3">
                     <p class="text-base-content/70">{{ $workspace->description }}</p>
                 </div>
             </div>
         @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Main Content -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Quick Actions -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg mb-4">Quick Actions</h2>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <a href="#" class="btn btn-ghost flex-col h-auto py-4">
-                                <span class="icon-[tabler--list-check] size-6 text-primary"></span>
-                                <span class="text-sm mt-1">Tasks</span>
-                            </a>
-                            <a href="{{ route('workflow.index', $workspace) }}" class="btn btn-ghost flex-col h-auto py-4">
-                                <span class="icon-[tabler--git-branch] size-6 text-success"></span>
-                                <span class="text-sm mt-1">Workflows</span>
-                            </a>
-                            <a href="#" class="btn btn-ghost flex-col h-auto py-4">
-                                <span class="icon-[tabler--file-text] size-6 text-warning"></span>
-                                <span class="text-sm mt-1">Documents</span>
-                            </a>
-                            <a href="#" class="btn btn-ghost flex-col h-auto py-4">
-                                <span class="icon-[tabler--calendar] size-6 text-info"></span>
-                                <span class="text-sm mt-1">Schedule</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg mb-4">Recent Activity</h2>
-                        <div class="text-center py-8 text-base-content/50">
-                            <span class="icon-[tabler--activity] size-12 mb-2"></span>
-                            <p>No recent activity</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sidebar -->
-            <div class="space-y-6">
-                <!-- Workspace Info -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg mb-4">Workspace Info</h2>
-                        <div class="space-y-3">
-                            <div class="flex justify-between">
-                                <span class="text-base-content/60">Owner</span>
-                                <span class="font-medium">{{ $workspace->owner->name }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-base-content/60">Created</span>
-                                <span>{{ $workspace->created_at->format('M d, Y') }}</span>
-                            </div>
-                            @if($workspace->settings['start_date'] ?? null)
-                            <div class="flex justify-between">
-                                <span class="text-base-content/60">Start Date</span>
-                                <span>{{ \Carbon\Carbon::parse($workspace->settings['start_date'])->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                            @if($workspace->settings['end_date'] ?? null)
-                            <div class="flex justify-between">
-                                <span class="text-base-content/60">End Date</span>
-                                <span>{{ \Carbon\Carbon::parse($workspace->settings['end_date'])->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Members -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="card-title text-lg">Members</h2>
-                            <span class="badge badge-ghost">{{ $workspace->members->count() }}</span>
-                        </div>
-                        <div class="space-y-3">
-                            @foreach($workspace->members->take(5) as $member)
-                            <div class="flex items-center gap-3">
-                                <div class="avatar placeholder">
-                                    <div class="bg-primary text-primary-content rounded-full w-8">
-                                        <span class="text-xs">{{ substr($member->name, 0, 1) }}</span>
-                                    </div>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-sm truncate">{{ $member->name }}</p>
-                                    <p class="text-xs text-base-content/60">{{ $member->pivot->role->label() }}</p>
-                                </div>
-                            </div>
-                            @endforeach
-                            @if($workspace->members->count() > 5)
-                            <a href="{{ route('workspace.members.index', $workspace) }}" class="btn btn-ghost btn-sm w-full">
-                                View all {{ $workspace->members->count() }} members
-                            </a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Module Tabs -->
+        <div class="tabs tabs-bordered mb-6">
+            <a href="{{ route('workspace.show', $workspace) }}"
+               class="tab tab-lg {{ !request()->has('tab') || request('tab') === 'overview' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--home] size-5 mr-2"></span>
+                Overview
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}"
+               class="tab tab-lg {{ request('tab') === 'tasks' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--list-check] size-5 mr-2"></span>
+                Tasks
+                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'discussions']) }}"
+               class="tab tab-lg {{ request('tab') === 'discussions' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--messages] size-5 mr-2"></span>
+                Discussions
+                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'milestones']) }}"
+               class="tab tab-lg {{ request('tab') === 'milestones' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--flag] size-5 mr-2"></span>
+                Milestones
+                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'files']) }}"
+               class="tab tab-lg {{ request('tab') === 'files' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--files] size-5 mr-2"></span>
+                Files
+                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'time']) }}"
+               class="tab tab-lg {{ request('tab') === 'time' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--clock] size-5 mr-2"></span>
+                Time
+                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'people']) }}"
+               class="tab tab-lg {{ request('tab') === 'people' ? 'tab-active' : '' }}">
+                <span class="icon-[tabler--users] size-5 mr-2"></span>
+                People
+                <span class="badge badge-ghost badge-xs ml-2">{{ $workspace->members->count() }}</span>
+            </a>
         </div>
+
+        <!-- Tab Content -->
+        @if(!request()->has('tab') || request('tab') === 'overview')
+            @include('workspace::partials.tab-overview')
+        @elseif(request('tab') === 'tasks')
+            @include('workspace::partials.tab-coming-soon', ['title' => 'Tasks', 'icon' => 'tabler--list-check', 'description' => 'Manage tasks with workflows, assignments, and progress tracking.'])
+        @elseif(request('tab') === 'discussions')
+            @include('workspace::partials.tab-coming-soon', ['title' => 'Discussions', 'icon' => 'tabler--messages', 'description' => 'Team discussions and message boards for collaboration.'])
+        @elseif(request('tab') === 'milestones')
+            @include('workspace::partials.tab-coming-soon', ['title' => 'Milestones', 'icon' => 'tabler--flag', 'description' => 'Track project milestones and key deliverables.'])
+        @elseif(request('tab') === 'files')
+            @include('workspace::partials.tab-coming-soon', ['title' => 'Files', 'icon' => 'tabler--files', 'description' => 'Store and share files with your team.'])
+        @elseif(request('tab') === 'time')
+            @include('workspace::partials.tab-coming-soon', ['title' => 'Time Management', 'icon' => 'tabler--clock', 'description' => 'Track time spent on tasks and projects.'])
+        @elseif(request('tab') === 'people')
+            @include('workspace::partials.tab-people')
+        @endif
     </div>
 </div>
 @endsection

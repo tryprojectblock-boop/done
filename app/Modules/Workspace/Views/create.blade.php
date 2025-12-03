@@ -227,7 +227,7 @@
                         Invite Guest Members
                         <span class="text-base-content/50 font-normal text-sm">(Optional)</span>
                     </h2>
-                    <p class="text-sm text-base-content/60 mb-4">Invite external collaborators by email. They will receive an invitation to join this workspace.</p>
+                    <p class="text-sm text-base-content/60 mb-4">Add existing guests or invite new ones by email.</p>
 
                     <!-- Guest List -->
                     <div id="guests-list" class="space-y-3">
@@ -237,31 +237,50 @@
                     <!-- Add Guest Row -->
                     <div class="flex flex-col md:flex-row gap-3 mt-4 p-4 bg-base-200 rounded-lg">
                         <div class="flex-1">
+                            <select id="guest-select" class="select select-bordered w-full">
+                                <option value="">Select an existing guest...</option>
+                                @foreach($guests as $guest)
+                                    <option value="{{ $guest->id }}" data-name="{{ $guest->first_name }} {{ $guest->last_name }}" data-email="{{ $guest->email }}" data-type="{{ $guest->type }}">
+                                        {{ $guest->first_name }} {{ $guest->last_name }} ({{ $guest->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="button" id="add-guest-select-btn" class="btn btn-primary">
+                            <span class="icon-[tabler--plus] size-5"></span>
+                            Add
+                        </button>
+                    </div>
+
+                    <div class="divider text-sm text-base-content/50">OR invite by email</div>
+
+                    <!-- Invite by Email -->
+                    <div class="flex flex-col md:flex-row gap-3 p-4 bg-base-200 rounded-lg">
+                        <div class="flex-1">
                             <input type="email" id="guest-email" class="input input-bordered w-full" placeholder="Enter guest email address...">
                         </div>
-                        <button type="button" id="add-guest-btn" class="btn btn-primary">
+                        <button type="button" id="add-guest-btn" class="btn btn-outline btn-primary">
                             <span class="icon-[tabler--send] size-5"></span>
-                            Add Guest
+                            Invite
                         </button>
                     </div>
 
                     <div class="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg">
                         <p class="text-sm text-base-content/70 flex items-center gap-2">
                             <span class="icon-[tabler--info-circle] size-4"></span>
-                            Guests will receive an email invitation to join this workspace with limited access.
+                            Guests have limited access to view and comment on items they are invited to.
                         </p>
                     </div>
                 </div>
             </div>
 
             <!-- Actions -->
-            <div class="flex justify">
+            <div class="flex justify-start gap-3">
                 <button type="submit" class="btn btn-primary" id="submit-btn">
                     <span class="icon-[tabler--check] size-5"></span>
                     Create Workspace
                 </button>
                 <a href="{{ route('workspace.index') }}" class="btn btn-ghost">
-                    <span class="icon-[tabler--arrow-left] size-5"></span>
                     Cancel
                 </a>
             </div>
@@ -277,6 +296,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const addMemberBtn = document.getElementById('add-member-btn');
 
     const guestsList = document.getElementById('guests-list');
+    const guestSelect = document.getElementById('guest-select');
+    const addGuestSelectBtn = document.getElementById('add-guest-select-btn');
     const guestEmail = document.getElementById('guest-email');
     const addGuestBtn = document.getElementById('add-guest-btn');
 
@@ -284,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let guestIndex = 0;
     const addedMembers = new Set();
     const addedGuests = new Set();
+    const addedGuestIds = new Set();
 
     // Add member
     addMemberBtn.addEventListener('click', function() {
@@ -349,7 +371,68 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add guest
+    // Add existing guest from dropdown
+    addGuestSelectBtn.addEventListener('click', function() {
+        const guestId = guestSelect.value;
+        const selectedOption = guestSelect.options[guestSelect.selectedIndex];
+
+        if (!guestId) {
+            alert('Please select a guest');
+            return;
+        }
+
+        if (addedGuestIds.has(guestId)) {
+            alert('This guest has already been added');
+            return;
+        }
+
+        const name = selectedOption.dataset.name;
+        const email = selectedOption.dataset.email;
+        const type = selectedOption.dataset.type;
+        const typeLabel = type === 'client' ? 'Client' : 'External Consultant';
+        const typeColor = type === 'client' ? 'success' : 'info';
+
+        const guestRow = document.createElement('div');
+        guestRow.className = 'flex items-center justify-between p-3 bg-base-200 rounded-lg';
+        guestRow.dataset.guestId = guestId;
+        guestRow.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="avatar placeholder">
+                    <div class="bg-${typeColor} text-${typeColor}-content rounded-full w-10">
+                        <span class="text-sm">${name.charAt(0).toUpperCase()}</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="font-medium text-base-content">${name}</p>
+                    <p class="text-sm text-base-content/60">${email}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="badge badge-${typeColor}">${typeLabel}</span>
+                <input type="hidden" name="guest_ids[]" value="${guestId}">
+                <button type="button" class="btn btn-ghost btn-sm btn-square text-error remove-guest">
+                    <span class="icon-[tabler--x] size-4"></span>
+                </button>
+            </div>
+        `;
+
+        guestsList.appendChild(guestRow);
+        addedGuestIds.add(guestId);
+        addedGuests.add(email.toLowerCase());
+        guestIndex++;
+
+        // Reset select
+        guestSelect.value = '';
+
+        // Remove guest event
+        guestRow.querySelector('.remove-guest').addEventListener('click', function() {
+            addedGuestIds.delete(guestId);
+            addedGuests.delete(email.toLowerCase());
+            guestRow.remove();
+        });
+    });
+
+    // Add guest by email
     addGuestBtn.addEventListener('click', function() {
         const email = guestEmail.value.trim();
 
@@ -386,8 +469,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <span class="badge badge-warning">Pending Invite</span>
-                <input type="hidden" name="guests[]" value="${email}">
+                <span class="badge badge-warning">New Invite</span>
+                <input type="hidden" name="guest_emails[]" value="${email}">
                 <button type="button" class="btn btn-ghost btn-sm btn-square text-error remove-guest">
                     <span class="icon-[tabler--x] size-4"></span>
                 </button>

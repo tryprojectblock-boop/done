@@ -16,14 +16,21 @@
 </head>
 <body class="min-h-screen bg-base-200">
     <!-- Navbar -->
-    <nav class="navbar bg-base-100 shadow-sm fixed top-0 z-50">
+    <nav class="navbar bg-base-100 shadow-sm fixed top-0 left-0 right-0 z-50 px-4">
         <div class="flex-1">
-            <a href="/guest/portal" class="flex items-center gap-2 px-4">
+            <a href="/guest/portal" class="flex items-center gap-2">
                 <span class="icon-[tabler--checkbox] size-8 text-primary"></span>
                 <span class="text-xl font-bold">{{ config('app.name') }}</span>
             </a>
         </div>
         <div class="flex-none gap-2">
+            <form action="{{ route('guest.portal.logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-ghost btn-sm text-error">
+                    <span class="icon-[tabler--logout] size-5"></span>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </form>
             <div class="dropdown dropdown-end">
                 <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
                     @if($guest->avatar_url)
@@ -87,17 +94,58 @@
                 </div>
             </div>
 
-            <!-- Portal Content -->
+            <!-- Workspaces -->
             <div class="card bg-base-100 shadow">
-                <div class="card-body text-center py-12">
-                    <div class="flex justify-center mb-4">
-                        <span class="icon-[tabler--building] size-16 text-base-content/20"></span>
+                <div class="card-body">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="card-title text-lg">
+                            <span class="icon-[tabler--layout-grid] size-5"></span>
+                            Your Workspaces
+                        </h2>
+                        <span class="badge badge-ghost">{{ $workspaces->count() }}</span>
                     </div>
-                    <h2 class="text-xl font-semibold mb-2">Guest Portal</h2>
-                    <p class="text-base-content/60 max-w-md mx-auto">
-                        The guest portal is under development. Soon you'll be able to view shared projects,
-                        tasks, and collaborate with the team here.
-                    </p>
+
+                    @if($workspaces->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($workspaces as $workspace)
+                            <a href="{{ route('guest.portal.workspace', $workspace) }}" class="card bg-base-100 border border-base-200 hover:border-primary hover:shadow-md transition-all cursor-pointer">
+                                <div class="card-body p-4">
+                                    <div class="flex items-start gap-3">
+                                        <div class="avatar placeholder">
+                                            @if($workspace->getLogoUrl())
+                                                <div class="w-12 h-12 rounded-lg">
+                                                    <img src="{{ $workspace->getLogoUrl() }}" alt="{{ $workspace->name }}" />
+                                                </div>
+                                            @else
+                                                <div class="bg-primary text-primary-content rounded-lg w-12 h-12 flex items-center justify-center">
+                                                    <span class="text-lg font-bold">{{ substr($workspace->name, 0, 1) }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="font-semibold truncate">{{ $workspace->name }}</h3>
+                                            <p class="text-sm text-base-content/60 truncate">{{ $workspace->description ?? 'No description' }}</p>
+                                            <div class="flex items-center gap-2 mt-2">
+                                                <span class="badge badge-warning badge-sm">Guest</span>
+                                                <span class="text-xs text-base-content/50">by {{ $workspace->owner->name }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <div class="flex justify-center mb-4">
+                                <span class="icon-[tabler--folder-off] size-16 text-base-content/20"></span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">No Workspaces Yet</h3>
+                            <p class="text-base-content/60 max-w-md mx-auto">
+                                You haven't been added to any workspaces yet. Once you're invited to a workspace, it will appear here.
+                            </p>
+                        </div>
+                    @endif
                 </div>
             </div>
 

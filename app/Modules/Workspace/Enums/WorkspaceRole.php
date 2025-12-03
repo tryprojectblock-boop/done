@@ -9,6 +9,7 @@ enum WorkspaceRole: string
     case OWNER = 'owner';
     case ADMIN = 'admin';
     case MEMBER = 'member';
+    case REVIEWER = 'reviewer';
     case GUEST = 'guest';
 
     public function label(): string
@@ -17,6 +18,7 @@ enum WorkspaceRole: string
             self::OWNER => 'Owner',
             self::ADMIN => 'Administrator',
             self::MEMBER => 'Member',
+            self::REVIEWER => 'Reviewer',
             self::GUEST => 'Guest',
         };
     }
@@ -27,6 +29,7 @@ enum WorkspaceRole: string
             self::OWNER => 'Full control over workspace settings, billing, and can delete the workspace.',
             self::ADMIN => 'Can manage members, settings, and all content within the workspace.',
             self::MEMBER => 'Can create and manage their own content, collaborate with others.',
+            self::REVIEWER => 'Can view and comment on items only.',
             self::GUEST => 'Limited access to specific projects or items they are invited to.',
         };
     }
@@ -62,10 +65,24 @@ enum WorkspaceRole: string
                 'content.delete.own',
                 'content.view',
             ],
+            self::REVIEWER => [
+                'content.view',
+                'content.comment',
+            ],
             self::GUEST => [
                 'content.view.assigned',
             ],
         };
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this === self::ADMIN;
+    }
+
+    public function isOwner(): bool
+    {
+        return $this === self::OWNER;
     }
 
     public function canManageMembers(): bool
@@ -89,6 +106,7 @@ enum WorkspaceRole: string
             self::OWNER => 100,
             self::ADMIN => 75,
             self::MEMBER => 50,
+            self::REVIEWER => 35,
             self::GUEST => 25,
         };
     }

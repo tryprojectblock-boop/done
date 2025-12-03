@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Workspace\Models;
 
+use App\Models\ClientCrm;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Modules\Core\Support\BaseModel;
@@ -89,6 +90,12 @@ class Workspace extends BaseModel
     public function invitations(): HasMany
     {
         return $this->hasMany(WorkspaceInvitation::class);
+    }
+
+    public function guests(): BelongsToMany
+    {
+        return $this->belongsToMany(ClientCrm::class, 'client_crm_workspace')
+            ->withTimestamps();
     }
 
     /*

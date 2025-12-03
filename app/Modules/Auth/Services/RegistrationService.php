@@ -16,19 +16,12 @@ use App\Modules\Auth\Exceptions\RegistrationException;
 use App\Modules\Auth\Mail\ActivationCodeMail;
 use App\Modules\Auth\Models\Company;
 use App\Modules\Auth\Models\PendingRegistration;
-use App\Modules\Workspace\DTOs\CreateWorkspaceDTO;
-use App\Modules\Workspace\DTOs\InviteMemberDTO;
-use App\Modules\Workspace\Enums\WorkspaceRole;
-use App\Modules\Workspace\Enums\WorkspaceType;
-use App\Modules\Workspace\Services\WorkspaceService;
+use Database\Seeders\WorkflowTemplateSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 final class RegistrationService implements RegistrationServiceInterface
 {
-    public function __construct(
-        private readonly WorkspaceService $workspaceService,
-    ) {}
 
     public function registerEmail(RegisterEmailDTO $dto): PendingRegistration
     {
@@ -183,41 +176,15 @@ final class RegistrationService implements RegistrationServiceInterface
             // Update user with company
             $user->update(['company_id' => $company->id]);
 
-            // Create default workspace
-            $workspace = $this->workspaceService->create(
-                CreateWorkspaceDTO::fromArray([
-                    'name' => $registration->company_name,
-                    'type' => WorkspaceType::CLASSIC->value,
-                    'owner_id' => $user->id,
-                ])
-            );
-
-            // Send invitations
-            $validEmails = array_filter($invitedEmails, fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
-            foreach ($validEmails as $email) {
-                if (strtolower($email) !== strtolower($registration->email)) {
-                    try {
-                        $this->workspaceService->invite(
-                            InviteMemberDTO::fromArray([
-                                'workspace_id' => $workspace->id,
-                                'email' => $email,
-                                'role' => WorkspaceRole::MEMBER->value,
-                                'invited_by' => $user->id,
-                            ])
-                        );
-                    } catch (\Throwable $e) {
-                        // Log but don't fail registration
-                        report($e);
-                    }
-                }
-            }
+            // Create default workflows for the company
+            WorkflowTemplateSeeder::createForCompany($company, $user->id);
 
             // Mark registration as completed
             $registration->markAsCompleted();
 
             // Fire events
             event(new UserRegistered($user));
-            event(new RegistrationCompleted($user, $company, $workspace));
+            event(new RegistrationCompleted($user, $company));
 
             return $user;
         });

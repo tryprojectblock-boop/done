@@ -101,6 +101,7 @@ Route::post('/guest/signup/{token}', [GuestSignupController::class, 'complete'])
 */
 Route::middleware(['auth:guest'])->prefix('guest')->name('guest.portal.')->group(function () {
     Route::get('/portal', [GuestPortalController::class, 'index'])->name('index');
+    Route::get('/portal/workspace/{workspace:uuid}', [GuestPortalController::class, 'workspace'])->name('workspace');
     Route::post('/logout', [GuestPortalController::class, 'logout'])->name('logout');
 });
 

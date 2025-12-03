@@ -38,6 +38,11 @@ Route::middleware(['auth'])->group(function () {
                 Route::post('/transfer-ownership/{user}', [WorkspaceMemberController::class, 'transferOwnership'])->name('transfer-ownership');
             });
 
+            // Guests
+            Route::prefix('guests')->name('guests.')->group(function () {
+                Route::delete('/{guest}', [WorkspaceMemberController::class, 'removeGuest'])->name('remove');
+            });
+
             // Modules
             Route::post('/modules', [WorkspaceController::class, 'updateModules'])->name('modules.update');
         });

@@ -53,10 +53,17 @@ class WorkspaceController extends Controller
             ->orderByRaw('is_default DESC, name ASC')
             ->get();
 
+        // Get guests/clients for this company
+        $guests = \App\Models\ClientCrm::where('company_id', $request->user()->company_id)
+            ->whereIn('status', [\App\Models\ClientCrm::STATUS_ACTIVE, \App\Models\ClientCrm::STATUS_INVITED])
+            ->orderBy('first_name')
+            ->get();
+
         return view('workspace::create', [
             'workspaceRoles' => WorkspaceRole::cases(),
             'teamMembers' => $teamMembers,
             'workflows' => $workflows,
+            'guests' => $guests,
         ]);
     }
 
@@ -75,8 +82,10 @@ class WorkspaceController extends Controller
             'members' => ['nullable', 'array'],
             'members.*.user_id' => ['required_with:members', 'exists:users,id'],
             'members.*.role' => ['required_with:members', 'string', 'in:admin,member,reviewer'],
-            'guests' => ['nullable', 'array'],
-            'guests.*' => ['email'],
+            'guest_ids' => ['nullable', 'array'],
+            'guest_ids.*' => ['exists:client_crm,id'],
+            'guest_emails' => ['nullable', 'array'],
+            'guest_emails.*' => ['email'],
         ]);
 
         $dto = new CreateWorkspaceDTO(
@@ -104,10 +113,20 @@ class WorkspaceController extends Controller
             }
         }
 
-        // Send guest invitations
-        if (!empty($validated['guests'])) {
-            foreach ($validated['guests'] as $guestEmail) {
-                // TODO: Send invitation email to guest
+        // Add existing guests to workspace
+        if (!empty($validated['guest_ids'])) {
+            foreach ($validated['guest_ids'] as $guestId) {
+                $guest = \App\Models\ClientCrm::find($guestId);
+                if ($guest && $guest->company_id === $request->user()->company_id) {
+                    $workspace->guests()->attach($guest->id);
+                }
+            }
+        }
+
+        // Send invitation emails to new guests
+        if (!empty($validated['guest_emails'])) {
+            foreach ($validated['guest_emails'] as $guestEmail) {
+                // TODO: Create guest entry and send invitation email
             }
         }
 
@@ -123,7 +142,7 @@ class WorkspaceController extends Controller
         $this->authorizeWorkspaceAccess($request, $workspace);
 
         return view('workspace::show', [
-            'workspace' => $workspace->load(['members', 'owner']),
+            'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow', 'guests']),
         ]);
     }
 

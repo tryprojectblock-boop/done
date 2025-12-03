@@ -7,8 +7,6 @@ namespace App\Modules\Workspace\Providers;
 use App\Modules\Core\Providers\ModuleServiceProvider;
 use App\Modules\Workspace\Contracts\WorkspaceServiceInterface;
 use App\Modules\Workspace\Events\MemberInvited;
-use App\Modules\Workspace\Events\WorkspaceCreated;
-use App\Modules\Workspace\Listeners\CreateDefaultWorkflows;
 use App\Modules\Workspace\Listeners\SendWorkspaceInvitationEmail;
 use App\Modules\Workspace\Services\WorkspaceService;
 use Illuminate\Support\Facades\Event;
@@ -57,11 +55,6 @@ final class WorkspaceServiceProvider extends ModuleServiceProvider
         Event::listen(
             MemberInvited::class,
             SendWorkspaceInvitationEmail::class
-        );
-
-        Event::listen(
-            WorkspaceCreated::class,
-            CreateDefaultWorkflows::class
         );
     }
 }
