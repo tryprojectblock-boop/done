@@ -1,0 +1,219 @@
+/*
+|--------------------------------------------------------------------------
+| NewDone Theme Configuration
+|--------------------------------------------------------------------------
+|
+| This file contains all customizable theme variables for the application.
+| Modify these CSS custom properties to change the look and feel of the
+| entire application in one place.
+|
+| Color Format: HSL values (hue saturation lightness)
+| Usage: var(--color-name) or Tailwind classes like bg-primary, text-secondary
+|
+*/
+
+/* ==========================================================================
+   1. COLOR PALETTE - Primary Brand Colors
+   ========================================================================== */
+
+@theme {
+    /* Primary Colors - Main brand color used for buttons, links, accents */
+    --color-primary: oklch(0.546 0.245 262.881);
+    --color-primary-content: oklch(1 0 0);
+
+    /* Secondary Colors - Supporting brand color */
+    --color-secondary: oklch(0.651 0.143 264.071);
+    --color-secondary-content: oklch(1 0 0);
+
+    /* Accent Colors - Highlight color for special elements */
+    --color-accent: oklch(0.795 0.184 86.047);
+    --color-accent-content: oklch(0 0 0);
+
+    /* Neutral Colors - For text, borders, subtle backgrounds */
+    --color-neutral: oklch(0.313 0.021 285.756);
+    --color-neutral-content: oklch(0.977 0.001 286.375);
+}
+
+/* ==========================================================================
+   2. SEMANTIC COLORS - Status & Feedback Colors
+   ========================================================================== */
+
+@theme {
+    /* Info - Informational messages, tooltips */
+    --color-info: oklch(0.705 0.155 236.805);
+    --color-info-content: oklch(0 0 0);
+
+    /* Success - Positive feedback, confirmations */
+    --color-success: oklch(0.723 0.191 149.579);
+    --color-success-content: oklch(0 0 0);
+
+    /* Warning - Caution messages, alerts */
+    --color-warning: oklch(0.828 0.189 84.429);
+    --color-warning-content: oklch(0 0 0);
+
+    /* Error - Error messages, destructive actions */
+    --color-error: oklch(0.628 0.258 29.234);
+    --color-error-content: oklch(1 0 0);
+}
+
+/* ==========================================================================
+   3. BASE/SURFACE COLORS - Backgrounds & Surfaces
+   ========================================================================== */
+
+@theme {
+    /* Base Colors - Main background surfaces */
+    --color-base-100: oklch(1 0 0);           /* Lightest - main background */
+    --color-base-200: oklch(0.961 0.001 286.375);  /* Cards, elevated surfaces */
+    --color-base-300: oklch(0.924 0.002 286.375);  /* Borders, dividers */
+    --color-base-content: oklch(0.313 0.021 285.756); /* Default text color */
+}
+
+/* ==========================================================================
+   4. TYPOGRAPHY SETTINGS
+   ========================================================================== */
+
+@theme {
+    /* Font Families */
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+    /* Font Sizes - Using rem for accessibility */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --text-3xl: 1.875rem;   /* 30px */
+    --text-4xl: 2.25rem;    /* 36px */
+}
+
+/* ==========================================================================
+   5. SPACING & SIZING
+   ========================================================================== */
+
+@theme {
+    /* Border Radius */
+    --radius-sm: 0.25rem;   /* 4px - Small elements */
+    --radius-md: 0.375rem;  /* 6px - Buttons, inputs */
+    --radius-lg: 0.5rem;    /* 8px - Cards, modals */
+    --radius-xl: 0.75rem;   /* 12px - Large cards */
+    --radius-2xl: 1rem;     /* 16px - Hero sections */
+    --radius-full: 9999px;  /* Pills, avatars */
+}
+
+/* ==========================================================================
+   6. SHADOWS & ELEVATION
+   ========================================================================== */
+
+@theme {
+    /* Box Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* ==========================================================================
+   7. TRANSITIONS & ANIMATIONS
+   ========================================================================== */
+
+@theme {
+    /* Transition Durations */
+    --transition-fast: 150ms;
+    --transition-normal: 200ms;
+    --transition-slow: 300ms;
+
+    /* Easing Functions */
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ==========================================================================
+   8. COMPONENT-SPECIFIC OVERRIDES
+   ========================================================================== */
+
+/* Button customizations */
+.btn {
+    transition: all var(--transition-normal) var(--ease-in-out);
+}
+
+/* Input focus states */
+.input:focus,
+.textarea:focus,
+.select:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Card hover effects */
+.card {
+    transition: box-shadow var(--transition-normal) var(--ease-in-out);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+/* ==========================================================================
+   9. DARK MODE OVERRIDES (Optional - for future use)
+   ========================================================================== */
+
+[data-theme="dark"] {
+    /* Override base colors for dark mode */
+    --color-base-100: oklch(0.253 0.015 252.417);
+    --color-base-200: oklch(0.232 0.014 253.1);
+    --color-base-300: oklch(0.211 0.012 254.087);
+    --color-base-content: oklch(0.928 0.006 264.531);
+
+    /* Neutral adjustments */
+    --color-neutral: oklch(0.37 0.014 257.827);
+    --color-neutral-content: oklch(0.928 0.006 264.531);
+}
+
+/* ==========================================================================
+   10. UTILITY CLASSES - Custom helpers
+   ========================================================================== */
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
+.bg-gradient-accent {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-warning) 100%);
+}
+
+/* Text gradients */
+.text-gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glass effect */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth scrolling */
+.smooth-scroll {
+    scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}

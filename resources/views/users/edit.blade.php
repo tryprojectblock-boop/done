@@ -1,0 +1,327 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="{{ route('users.index') }}" class="btn btn-ghost btn-sm gap-1 mb-4">
+                <span class="icon-[tabler--arrow-left] size-4"></span>
+                Back to Users
+            </a>
+            <h1 class="text-2xl font-bold text-base-content">Edit User</h1>
+            <p class="text-base-content/60">Update {{ $user->full_name }}'s information</p>
+        </div>
+
+        <!-- Form -->
+        <form id="edit-user-form">
+            @csrf
+            @method('PUT')
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <!-- User Avatar & Info Header -->
+                    <div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-200">
+                        <div class="avatar {{ $user->avatar_url ? '' : 'placeholder' }}">
+                            @if($user->avatar_url)
+                                <div class="w-16 h-16 rounded-full overflow-hidden">
+                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->full_name }}" class="w-full h-full object-cover">
+                                </div>
+                            @else
+                                <div class="bg-neutral text-neutral-content rounded-full w-16 h-16 flex items-center justify-center">
+                                    <span class="text-xl font-bold">{{ $user->initials }}</span>
+                                </div>
+                            @endif
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold flex items-center gap-2">
+                                {{ $user->full_name }}
+                                @if($isCompanyOwner)
+                                    <span class="icon-[tabler--crown] size-5 text-warning" title="Company Owner"></span>
+                                @endif
+                            </h3>
+                            <p class="text-base-content/60">{{ $user->email }}</p>
+                            <span class="badge badge-{{ $user->role_color }} badge-sm mt-1">{{ $user->role_label }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Read-only Fields -->
+                    <div class="bg-base-200/50 rounded-lg p-4 mb-6">
+                        <h4 class="text-sm font-medium text-base-content/70 mb-3">Read-only Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Email (Read Only) -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Email Address</span>
+                                    <span class="label-text-alt">
+                                        <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
+                                    </span>
+                                </label>
+                                <input type="email" value="{{ $user->email }}" class="input input-bordered bg-base-200" readonly disabled>
+                            </div>
+
+                            <!-- Joined Date (Read Only) -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Joined</span>
+                                    <span class="label-text-alt">
+                                        <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
+                                    </span>
+                                </label>
+                                <input type="text" value="{{ $user->created_at->format('M d, Y') }}" class="input input-bordered bg-base-200" readonly disabled>
+                            </div>
+
+                            <!-- Last Login (Read Only) -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Last Login</span>
+                                    <span class="label-text-alt">
+                                        <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
+                                    </span>
+                                </label>
+                                <input type="text" value="{{ $user->last_login_at ? $user->last_login_at->format('M d, Y h:i A') : 'Never' }}" class="input input-bordered bg-base-200" readonly disabled>
+                            </div>
+
+                            <!-- Timezone (Read Only) -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Timezone</span>
+                                    <span class="label-text-alt">
+                                        <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
+                                    </span>
+                                </label>
+                                <input type="text" value="{{ $user->timezone ?? 'UTC' }}" class="input input-bordered bg-base-200" readonly disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider">Editable Fields</div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- First Name -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
+                            </label>
+                            <input type="text" name="first_name" value="{{ $user->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Last Name <span class="text-error">*</span></span>
+                            </label>
+                            <input type="text" name="last_name" value="{{ $user->last_name }}" placeholder="Doe" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <!-- Role -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Role <span class="text-error">*</span></span>
+                            </label>
+                            @if($isCompanyOwner)
+                                <input type="hidden" name="role" value="{{ $user->role }}">
+                                <div class="input input-bordered bg-base-200 flex items-center">
+                                    <span class="badge badge-{{ $user->role_color }}">{{ $user->role_label }}</span>
+                                    <span class="text-xs text-base-content/50 ml-2">(Company owner role cannot be changed)</span>
+                                </div>
+                            @else
+                                <select name="role" class="select select-bordered" required>
+                                    @foreach($roles as $key => $role)
+                                        <option value="{{ $key }}" {{ $user->role === $key ? 'selected' : '' }}>{{ $role['label'] }}</option>
+                                    @endforeach
+                                </select>
+                                <label class="label">
+                                    <span class="label-text-alt text-base-content/50">
+                                        @if($user->role === 'owner')
+                                            Changing from Owner will revoke full access
+                                        @endif
+                                    </span>
+                                </label>
+                            @endif
+                        </div>
+
+                        <!-- Status -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Status</span>
+                            </label>
+                            @if($isCompanyOwner)
+                                <input type="hidden" name="status" value="{{ $user->status }}">
+                                <div class="input input-bordered bg-base-200 flex items-center">
+                                    <span class="badge badge-success">Active</span>
+                                    <span class="text-xs text-base-content/50 ml-2">(Company owner cannot be suspended)</span>
+                                </div>
+                            @elseif($user->status === 'invited')
+                                <div class="input input-bordered bg-base-200 flex items-center">
+                                    <span class="badge badge-warning">Invited</span>
+                                    <span class="text-xs text-base-content/50 ml-2">(Pending acceptance)</span>
+                                </div>
+                            @else
+                                <select name="status" class="select select-bordered">
+                                    @foreach($statuses as $key => $label)
+                                        <option value="{{ $key }}" {{ $user->status === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <label class="label">
+                                    <span class="label-text-alt text-base-content/50">
+                                        Suspended users cannot log in
+                                    </span>
+                                </label>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Role Permissions Info -->
+                    <div class="mt-6">
+                        <div class="collapse collapse-arrow bg-base-200/50 rounded-lg">
+                            <input type="checkbox" class="peer hidden" id="role-permissions-toggle" />
+                            <label for="role-permissions-toggle" class="collapse-title font-medium cursor-pointer">
+                                <span class="icon-[tabler--info-circle] size-4 mr-2"></span>
+                                Role Permissions Guide
+                            </label>
+                            <div class="collapse-content">
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex gap-3">
+                                        <span class="badge badge-error badge-sm">Owner</span>
+                                        <span class="text-base-content/70">Full access including billing, subscription, and user management</span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <span class="badge badge-warning badge-sm">Admin</span>
+                                        <span class="text-base-content/70">Manage projects, invite members & guests, workspace settings</span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <span class="badge badge-info badge-sm">Member</span>
+                                        <span class="text-base-content/70">Day-to-day work: create tasks, comment, upload files</span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <span class="badge badge-neutral badge-sm">Guest</span>
+                                        <span class="text-base-content/70">Limited access to explicitly shared projects only</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body border-t border-base-200 pt-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            @if(!$isCompanyOwner && $user->id !== auth()->id())
+                                <button type="button" class="btn btn-ghost text-error btn-sm" onclick="confirmDelete()">
+                                    <span class="icon-[tabler--trash] size-4"></span>
+                                    Remove User
+                                </button>
+                            @endif
+                        </div>
+                        <div class="flex gap-3">
+                            <a href="{{ route('users.index') }}" class="btn btn-ghost">Cancel</a>
+                            <button type="submit" id="submit-btn" class="btn btn-primary">
+                                <span class="icon-[tabler--check] size-5"></span>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<dialog id="delete-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Remove User</h3>
+        <p class="py-4">Are you sure you want to remove <strong>{{ $user->full_name }}</strong> from your workspace? This action cannot be undone.</p>
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn btn-ghost">Cancel</button>
+            </form>
+            <button type="button" id="confirm-delete-btn" class="btn btn-error">Remove User</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+@endsection
+
+@push('scripts')
+<script>
+// Form submission
+document.getElementById('edit-user-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submit-btn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Saving...';
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    fetch('{{ route("users.update", $user) }}', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ route("users.index") }}';
+        } else if (data.errors) {
+            let errorMessages = [];
+            for (const [field, messages] of Object.entries(data.errors)) {
+                errorMessages.push(...messages);
+            }
+            alert(errorMessages.join('\n'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        } else {
+            alert(data.error || 'An error occurred');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+function confirmDelete() {
+    document.getElementById('delete-modal').showModal();
+}
+
+document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+    fetch('{{ route("users.destroy", $user) }}', {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ route("users.index") }}';
+        } else {
+            alert(data.error || 'Failed to remove user');
+        }
+    })
+    .catch(error => {
+        alert('An error occurred. Please try again.');
+    });
+
+    document.getElementById('delete-modal').close();
+});
+</script>
+@endpush

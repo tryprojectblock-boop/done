@@ -1,0 +1,355 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Mail\UserInvitationMail;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class UsersController extends Controller
+{
+    /**
+     * Display a listing of users.
+     */
+    public function index(Request $request): View
+    {
+        $query = User::query()
+            ->where('company_id', $request->user()->company_id)
+            ->orderByRaw("FIELD(role, 'owner', 'admin', 'member', 'guest')")
+            ->orderBy('first_name');
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate(20)->withQueryString();
+
+        // Get counts by role
+        $roleCounts = User::where('company_id', $request->user()->company_id)
+            ->selectRaw('role, count(*) as count')
+            ->groupBy('role')
+            ->pluck('count', 'role')
+            ->toArray();
+
+        return view('users.index', [
+            'users' => $users,
+            'roles' => User::ROLES,
+            'roleCounts' => $roleCounts,
+            'currentRole' => $request->role,
+            'currentStatus' => $request->status,
+            'search' => $request->search,
+        ]);
+    }
+
+    /**
+     * Show the invite members page.
+     */
+    public function invitePage(Request $request): View
+    {
+        $currentUser = $request->user();
+
+        // Filter roles that the current user can invite
+        $availableRoles = array_filter(User::ROLES, function ($role, $key) use ($currentUser) {
+            return $currentUser->canInviteRole($key);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return view('users.invite', [
+            'roles' => $availableRoles,
+        ]);
+    }
+
+    /**
+     * Show user details (for drawer/API).
+     */
+    public function show(Request $request, User $user): JsonResponse
+    {
+        // Ensure user belongs to same company
+        if ($user->company_id !== $request->user()->company_id) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'uuid' => $user->uuid,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'role_label' => $user->role_label,
+                'role_color' => $user->role_color,
+                'status' => $user->status,
+                'description' => $user->description,
+                'timezone' => $user->timezone,
+                'avatar_url' => $user->avatar_url,
+                'initials' => $user->initials,
+                'created_at' => $user->created_at->format('M d, Y'),
+                'last_login_at' => $user->last_login_at?->format('M d, Y h:i A'),
+                'can_edit' => $request->user()->canManage($user),
+                'can_delete' => $request->user()->canRemoveRole($user->role) && $user->id !== $request->user()->id && $user->canBeDeleted(),
+                'is_company_owner' => $user->isCompanyOwner(),
+            ],
+        ]);
+    }
+
+    /**
+     * Show the edit user page.
+     */
+    public function edit(Request $request, User $user): View
+    {
+        // Ensure user belongs to same company
+        if ($user->company_id !== $request->user()->company_id) {
+            abort(404);
+        }
+
+        // Check permissions
+        if (!$request->user()->canManage($user)) {
+            abort(403, 'You do not have permission to edit this user');
+        }
+
+        $currentUser = $request->user();
+
+        // Filter roles that the current user can assign
+        $availableRoles = array_filter(User::ROLES, function ($role, $key) use ($currentUser, $user) {
+            // Can always keep current role
+            if ($key === $user->role) {
+                return true;
+            }
+            // Only owners can assign owner role
+            if ($key === User::ROLE_OWNER) {
+                return $currentUser->isOwner();
+            }
+            // Admins can only assign member and guest roles
+            if ($currentUser->isAdmin()) {
+                return in_array($key, [User::ROLE_MEMBER, User::ROLE_GUEST]);
+            }
+            // Owners can assign all roles
+            return $currentUser->isOwner();
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return view('users.edit', [
+            'user' => $user,
+            'roles' => $availableRoles,
+            'statuses' => [
+                User::STATUS_ACTIVE => 'Active',
+                User::STATUS_SUSPENDED => 'Suspended',
+            ],
+            'canChangeRole' => $currentUser->canManage($user),
+            'isCompanyOwner' => $user->isCompanyOwner(),
+        ]);
+    }
+
+    /**
+     * Send invitations to multiple members.
+     */
+    public function sendInvitations(Request $request): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        if (!$currentUser->canManageUsers()) {
+            return response()->json(['error' => 'You do not have permission to invite users'], 403);
+        }
+
+        $validated = $request->validate([
+            'members' => ['required', 'array', 'min:1', 'max:8'],
+            'members.*.first_name' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z\s\-\']+$/'],
+            'members.*.email' => ['required', 'email', 'distinct'],
+            'members.*.role' => ['required', Rule::in(array_keys(User::ROLES))],
+        ], [
+            'members.*.first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
+            'members.*.email.distinct' => 'Duplicate email addresses are not allowed.',
+        ]);
+
+        $invitedCount = 0;
+        $errors = [];
+
+        foreach ($validated['members'] as $index => $memberData) {
+            // Check if email already exists
+            if (User::where('email', $memberData['email'])->exists()) {
+                $errors["members.{$index}.email"] = ["The email {$memberData['email']} is already registered."];
+                continue;
+            }
+
+            // Check if user can invite this role
+            if (!$currentUser->canInviteRole($memberData['role'])) {
+                $roleLabel = User::ROLES[$memberData['role']]['label'] ?? $memberData['role'];
+                $errors["members.{$index}.role"] = ["You don't have permission to invite {$roleLabel}s."];
+                continue;
+            }
+
+            // Generate invitation token
+            $invitationToken = Str::random(64);
+
+            $user = User::create([
+                'first_name' => $memberData['first_name'],
+                'last_name' => '',
+                'name' => $memberData['first_name'],
+                'email' => $memberData['email'],
+                'password' => '',
+                'company_id' => $currentUser->company_id,
+                'role' => $memberData['role'],
+                'status' => User::STATUS_INVITED,
+                'invited_by' => $currentUser->id,
+                'invited_at' => now(),
+                'invitation_token' => $invitationToken,
+                'invitation_expires_at' => now()->addDays(7),
+                'timezone' => 'UTC',
+            ]);
+
+            // Send invitation email
+            Mail::to($user->email)->send(new UserInvitationMail($user, $currentUser, $invitationToken));
+
+            $invitedCount++;
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'success' => false,
+                'errors' => $errors,
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $invitedCount === 1
+                ? 'Invitation sent successfully!'
+                : "All {$invitedCount} invitations sent successfully!",
+            'invited_count' => $invitedCount,
+        ]);
+    }
+
+    /**
+     * Update user details.
+     */
+    public function update(Request $request, User $user): JsonResponse
+    {
+        // Ensure user belongs to same company
+        if ($user->company_id !== $request->user()->company_id) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Check permissions
+        if (!$request->user()->canManage($user)) {
+            return response()->json(['error' => 'You do not have permission to edit this user'], 403);
+        }
+
+        $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'role' => ['required', Rule::in(array_keys(User::ROLES))],
+            'status' => ['sometimes', Rule::in([User::STATUS_ACTIVE, User::STATUS_SUSPENDED])],
+        ]);
+
+        // Prevent role escalation
+        $currentUser = $request->user();
+        if ($validated['role'] === User::ROLE_OWNER && !$currentUser->isOwner()) {
+            return response()->json(['error' => 'Only owners can promote users to owner'], 403);
+        }
+
+        $user->update([
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'role' => $validated['role'],
+            'status' => $validated['status'] ?? $user->status,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully.',
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'role_label' => $user->role_label,
+            ],
+        ]);
+    }
+
+    /**
+     * Remove a user.
+     */
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        // Ensure user belongs to same company
+        if ($user->company_id !== $currentUser->company_id) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Cannot delete yourself
+        if ($user->id === $currentUser->id) {
+            return response()->json(['error' => 'You cannot delete your own account'], 403);
+        }
+
+        // Cannot delete the company owner
+        if ($user->isCompanyOwner()) {
+            return response()->json(['error' => 'The company owner cannot be deleted'], 403);
+        }
+
+        // Check if current user can remove this role
+        if (!$currentUser->canRemoveRole($user->role)) {
+            return response()->json(['error' => 'You do not have permission to remove this user'], 403);
+        }
+
+        // Soft delete
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User removed successfully.',
+        ]);
+    }
+
+    /**
+     * Resend invitation email.
+     */
+    public function resendInvitation(Request $request, User $user): JsonResponse
+    {
+        // Ensure user belongs to same company
+        if ($user->company_id !== $request->user()->company_id) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        if ($user->status !== User::STATUS_INVITED) {
+            return response()->json(['error' => 'User has already accepted the invitation'], 400);
+        }
+
+        // Generate new invitation token
+        $invitationToken = Str::random(64);
+        $user->update([
+            'invitation_token' => $invitationToken,
+            'invitation_expires_at' => now()->addDays(7),
+        ]);
+
+        // Resend invitation email
+        Mail::to($user->email)->send(new UserInvitationMail($user, $request->user(), $invitationToken));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation email resent successfully.',
+        ]);
+    }
+}

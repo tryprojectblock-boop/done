@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(composer require:*)",
+      "Bash(composer search:*)",
+      "Bash(composer show:*)",
+      "Bash(php artisan migrate:status:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(php artisan:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
