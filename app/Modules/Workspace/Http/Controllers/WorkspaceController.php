@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Workspace\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Mail\GuestInvitationMail;
 use App\Models\User;
 use App\Models\Workflow;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Modules\Workspace\Contracts\WorkspaceServiceInterface;
 use App\Modules\Workspace\DTOs\CreateWorkspaceDTO;
@@ -169,7 +171,12 @@ class WorkspaceController extends Controller
                         'invited_at' => now(),
                     ]);
 
-                    // TODO: Send invitation email to guest
+                    // Send invitation email to guest
+                    Mail::to($guestUser->email)->send(new GuestInvitationMail(
+                        $guestUser,
+                        $request->user(),
+                        $invitationToken
+                    ));
                 } else {
                     // Existing user - mark as guest if not already
                     if (!$guestUser->is_guest) {

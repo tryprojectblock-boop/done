@@ -25,18 +25,8 @@
                 </label>
             </div>
 
-            <!-- Invite Code Toggle -->
-            <div class="flex items-center justify-between mt-4 py-2">
-                <span class="text-sm text-base-content">I have an invite code</span>
-                <input
-                    type="checkbox"
-                    v-model="hasInviteCode"
-                    class="switch switch-primary"
-                />
-            </div>
-
-            <!-- Invite Code Input (shown when toggle is on) -->
-            <div v-if="hasInviteCode" class="form-control mt-2">
+            <!-- Invite Code Input (always visible) -->
+            <div class="form-control mt-4">
                 <label class="label" for="inviteCode">
                     <span class="label-text">Invite Code <span class="text-error">*</span></span>
                 </label>
@@ -47,21 +37,20 @@
                         v-model="inviteCode"
                         type="text"
                         class="grow bg-transparent border-0 focus:outline-none"
-                        placeholder="Enter your invite code"
+                        placeholder="Enter the code you received"
                     />
                     <span v-if="isValidInviteCode" class="icon-[tabler--check] size-5 text-success"></span>
                 </div>
-                <label class="label">
-                    <span v-if="inviteCode && !isValidInviteCode" class="label-text-alt text-error">Invalid invite code</span>
-                    <span v-else-if="isValidInviteCode" class="label-text-alt text-success">Valid invite code</span>
-                    <span v-else class="label-text-alt text-base-content/50">Enter the code you received</span>
+                <label v-if="inviteCode" class="label">
+                    <span v-if="!isValidInviteCode" class="label-text-alt text-error">Invalid invite code</span>
+                    <span v-else class="label-text-alt text-success">Valid invite code</span>
                 </label>
             </div>
 
-            <!-- Message when toggle is off -->
-            <div v-else class="alert alert-warning mt-4">
+            <!-- Info message -->
+            <div class="alert alert-info mt-2">
                 <span class="icon-[tabler--info-circle] size-5"></span>
-                <span class="text-sm">An invite code is required to create an account. Toggle on if you have one.</span>
+                <span class="text-sm">An invite code is required to create an account.</span>
             </div>
 
             <button
@@ -95,7 +84,6 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 
 const email = ref('');
-const hasInviteCode = ref(false);
 const inviteCode = ref('');
 
 // Valid invite codes
@@ -110,18 +98,17 @@ const isValidInviteCode = computed(() => {
 
 // Determine if form can be submitted
 const canSubmit = computed(() => {
-    // Must have email, not be loading, toggle must be on, and invite code must be valid
+    // Must have email, not be loading, and invite code must be valid
     if (props.state.loading || !email.value) {
         return false;
     }
-    // Invite code is always required - toggle must be on and code must be valid
-    return hasInviteCode.value && isValidInviteCode.value;
+    return isValidInviteCode.value;
 });
 
 function handleSubmit() {
     emit('submit', {
         email: email.value,
-        inviteCode: hasInviteCode.value ? inviteCode.value : null
+        inviteCode: inviteCode.value
     });
 }
 </script>

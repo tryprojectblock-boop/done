@@ -280,6 +280,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user who invited this guest.
+     */
+    public function invitedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invited_by');
+    }
+
+    /**
      * Check if user is a guest in a specific workspace.
      */
     public function isGuestOf(Workspace $workspace): bool
@@ -528,12 +536,52 @@ class User extends Authenticatable
 
     /**
      * Get avatar URL.
+     * Returns uploaded avatar or generates a default one using UI Avatars.
      */
-    public function getAvatarUrlAttribute(): ?string
+    public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar_path) {
             return \Storage::url($this->avatar_path);
         }
-        return null;
+
+        // Generate default avatar using UI Avatars
+        $name = urlencode($this->name ?? $this->email ?? 'User');
+        $background = $this->getAvatarBackgroundColor();
+
+        return "https://ui-avatars.com/api/?name={$name}&background={$background}&color=ffffff&size=128&bold=true";
+    }
+
+    /**
+     * Get a consistent background color based on user ID or email.
+     */
+    protected function getAvatarBackgroundColor(): string
+    {
+        $colors = [
+            '6366f1', // indigo
+            '8b5cf6', // violet
+            'ec4899', // pink
+            'f43f5e', // rose
+            'ef4444', // red
+            'f97316', // orange
+            'eab308', // yellow
+            '22c55e', // green
+            '14b8a6', // teal
+            '06b6d4', // cyan
+            '3b82f6', // blue
+        ];
+
+        // Use a hash of the email or ID to get a consistent color
+        $hash = crc32($this->email ?? $this->id ?? 'default');
+        $index = abs($hash) % count($colors);
+
+        return $colors[$index];
+    }
+
+    /**
+     * Check if user has a custom avatar uploaded.
+     */
+    public function hasCustomAvatar(): bool
+    {
+        return !empty($this->avatar_path);
     }
 }

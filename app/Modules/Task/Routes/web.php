@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Modules\Task\Http\Controllers\TaskAttachmentController;
+use App\Modules\Task\Http\Controllers\TaskCommentController;
+use App\Modules\Task\Http\Controllers\TaskController;
+use App\Modules\Task\Http\Controllers\TaskTagController;
+use App\Modules\Task\Http\Controllers\TaskWatcherController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['web', 'auth'])->group(function () {
+    // Main task routes
+    Route::resource('tasks', TaskController::class);
+
+    // Task actions
+    Route::post('tasks/{task}/close', [TaskController::class, 'close'])->name('tasks.close');
+    Route::post('tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
+    Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
+    Route::patch('tasks/{task}/assignee', [TaskController::class, 'updateAssignee'])->name('tasks.update-assignee');
+
+    // Task comments
+    Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');
+    Route::patch('comments/{comment}', [TaskCommentController::class, 'update'])->name('tasks.comments.update');
+    Route::delete('comments/{comment}', [TaskCommentController::class, 'destroy'])->name('tasks.comments.destroy');
+
+    // Task watchers
+    Route::post('tasks/{task}/watchers', [TaskWatcherController::class, 'store'])->name('tasks.watchers.store');
+    Route::delete('tasks/{task}/watchers/{user}', [TaskWatcherController::class, 'destroy'])->name('tasks.watchers.destroy');
+    Route::post('tasks/{task}/watch', [TaskWatcherController::class, 'toggle'])->name('tasks.watch.toggle');
+
+    // Task tags
+    Route::get('tags', [TaskTagController::class, 'index'])->name('tags.index');
+    Route::post('tags', [TaskTagController::class, 'store'])->name('tags.store');
+    Route::patch('tags/{tag}', [TaskTagController::class, 'update'])->name('tags.update');
+    Route::delete('tags/{tag}', [TaskTagController::class, 'destroy'])->name('tags.destroy');
+    Route::post('tasks/{task}/tags', [TaskTagController::class, 'attachToTask'])->name('tasks.tags.attach');
+    Route::delete('tasks/{task}/tags/{tag}', [TaskTagController::class, 'detachFromTask'])->name('tasks.tags.detach');
+
+    // Task attachments
+    Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
+    Route::get('attachments/{attachment}/download', [TaskAttachmentController::class, 'download'])->name('tasks.attachments.download');
+    Route::delete('attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('tasks.attachments.destroy');
+});

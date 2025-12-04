@@ -98,7 +98,7 @@
                     <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 transition-transform"></span>
                 </button>
                 <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-52" role="menu" aria-orientation="vertical" aria-labelledby="add-dropdown">
-                    <li><a class="dropdown-item" href="#"><span class="icon-[tabler--checkbox] size-4 me-2 text-primary"></span>Add Task</a></li>
+                    <li><a class="dropdown-item" href="{{ route('tasks.create') }}"><span class="icon-[tabler--checkbox] size-4 me-2 text-primary"></span>Add Task</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
                     <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>

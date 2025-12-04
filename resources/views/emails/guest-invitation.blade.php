@@ -118,12 +118,8 @@
 
         <div class="content">
             <p>Hi {{ $guest->first_name }},</p>
-            <p>You've been invited to join <strong>{{ $invitedBy->company->name ?? config('app.name') }}</strong> as a <span class="type-badge type-{{ $guest->type }}">{{ $guest->type_label }}</span>.</p>
-            @if($guest->client_portal_access)
-                <p>You will have access to the client portal where you can view shared projects, tasks, and collaborate with the team.</p>
-            @else
-                <p>You will be able to view and interact with projects and tasks that are shared with you.</p>
-            @endif
+            <p>You've been invited to join <strong>{{ $invitedBy->company->name ?? config('app.name') }}</strong> as a guest.</p>
+            <p>You will be able to view and interact with projects and tasks that are shared with you.</p>
             <p>Click the button below to complete your profile and set up your account:</p>
         </div>
 

@@ -33,8 +33,25 @@ class GuestController extends Controller
      */
     public function index(Request $request): View
     {
+        $user = $request->user();
+
+        // Get workspace IDs where the current user is owner or member
+        $userWorkspaceIds = Workspace::where('owner_id', $user->id)
+            ->orWhereHas('members', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->pluck('id');
+
         $query = User::query()
             ->where('is_guest', true)
+            ->where(function ($q) use ($user, $userWorkspaceIds) {
+                // Show guests invited by this user
+                $q->where('invited_by', $user->id)
+                    // Or guests that are in user's workspaces
+                    ->orWhereHas('guestWorkspaces', function ($wsQuery) use ($userWorkspaceIds) {
+                        $wsQuery->whereIn('workspace_id', $userWorkspaceIds);
+                    });
+            })
             ->orderBy('first_name');
 
         // Filter by status
@@ -62,8 +79,14 @@ class GuestController extends Controller
 
         $guests = $query->with('guestWorkspaces')->paginate(20)->withQueryString();
 
-        // Get counts by status
+        // Get counts by status (only for user's guests)
         $statusCounts = User::where('is_guest', true)
+            ->where(function ($q) use ($user, $userWorkspaceIds) {
+                $q->where('invited_by', $user->id)
+                    ->orWhereHas('guestWorkspaces', function ($wsQuery) use ($userWorkspaceIds) {
+                        $wsQuery->whereIn('workspace_id', $userWorkspaceIds);
+                    });
+            })
             ->selectRaw('status, count(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')

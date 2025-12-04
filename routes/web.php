@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\FileUploadController;
+use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\GuestPortalController;
@@ -120,6 +121,13 @@ Route::middleware(['auth'])->prefix('files')->name('files.')->group(function () 
     Route::delete('/delete', [FileUploadController::class, 'delete'])->name('delete');
     Route::post('/temporary-url', [FileUploadController::class, 'getTemporaryUrl'])->name('temporary-url');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Editor Image Upload Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->post('/upload/image', [ImageUploadController::class, 'store'])->name('upload.image');
 
 /*
 |--------------------------------------------------------------------------
