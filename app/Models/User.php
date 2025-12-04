@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -583,5 +584,29 @@ class User extends Authenticatable
     public function hasCustomAvatar(): bool
     {
         return !empty($this->avatar_path);
+    }
+
+    /**
+     * Get user's notifications.
+     */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get user's unread notifications.
+     */
+    public function unreadNotifications(): HasMany
+    {
+        return $this->appNotifications()->whereNull('read_at');
+    }
+
+    /**
+     * Get unread notification count.
+     */
+    public function getUnreadNotificationCountAttribute(): int
+    {
+        return $this->unreadNotifications()->count();
     }
 }

@@ -11,11 +11,16 @@ use App\Modules\Task\Models\Tag;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskActivity;
 use App\Modules\Task\Models\TaskComment;
+use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class TaskService implements TaskServiceInterface
 {
+    public function __construct(
+        private readonly NotificationService $notificationService
+    ) {}
+
     public function getTasksForUser(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Task::query()
@@ -174,6 +179,19 @@ class TaskService implements TaskServiceInterface
             // Log activity
             TaskActivity::log($task, $user, ActivityType::CREATED);
 
+            // Create notifications for mentioned users in description
+            if (!empty($data['description'])) {
+                $this->notificationService->notifyMentionedUsers($data['description'], $user, $task);
+            }
+
+            // Create notification for assignee if assigned to someone else
+            if ($assigneeId && $assigneeId !== $user->id) {
+                $assignee = User::find($assigneeId);
+                if ($assignee) {
+                    $this->notificationService->createTaskAssignedNotification($assignee, $user, $task);
+                }
+            }
+
             return $task->fresh(['workspace', 'status', 'assignee', 'creator', 'tags', 'watchers']);
         });
     }
@@ -301,6 +319,11 @@ class TaskService implements TaskServiceInterface
             $task->watchers()->attach($assigneeId, ['added_by' => $user->id]);
         }
 
+        // Notify new assignee if assigned to someone else
+        if ($newAssignee && $newAssignee->id !== $user->id) {
+            $this->notificationService->createTaskAssignedNotification($newAssignee, $user, $task);
+        }
+
         return $task;
     }
 
@@ -377,6 +400,9 @@ class TaskService implements TaskServiceInterface
         if (!$task->watchers()->where('user_id', $user->id)->exists()) {
             $task->watchers()->attach($user->id, ['added_by' => $user->id]);
         }
+
+        // Create notifications for mentioned users
+        $this->notificationService->notifyMentionedUsers($content, $user, $task, $comment);
 
         return $comment->fresh(['user']);
     }

@@ -1,5 +1,7 @@
 @php
     $user = auth()->user();
+    $editEditorId = 'edit-editor-' . $comment->id;
+    $replyEditorId = 'reply-editor-' . $comment->id;
 @endphp
 
 <div class="flex gap-3" id="comment-{{ $comment->id }}">
@@ -25,26 +27,40 @@
             </div>
 
             <!-- Edit Form (hidden by default) -->
-            <form action="{{ route('tasks.comments.update', $comment) }}" method="POST"
-                  id="comment-edit-{{ $comment->id }}" class="hidden">
-                @csrf
-                @method('PATCH')
-                <textarea name="content" class="textarea textarea-bordered w-full mt-2" rows="3">{{ strip_tags($comment->content) }}</textarea>
-                <div class="flex justify-end gap-2 mt-2">
-                    <button type="button" class="btn btn-ghost btn-xs" onclick="cancelEdit({{ $comment->id }})">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-xs">Save</button>
-                </div>
-            </form>
+            <div id="comment-edit-{{ $comment->id }}" class="hidden mt-2">
+                <form action="{{ route('tasks.comments.update', $comment) }}" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    <div class="border border-base-300 rounded-lg overflow-hidden bg-white">
+                        <div id="{{ $editEditorId }}"
+                             class="quill-editor quill-mini"
+                             data-quill-id="{{ $editEditorId }}"
+                             data-placeholder="Edit your comment..."
+                             data-upload-url="{{ route('upload.image') }}"
+                             data-mentions-url="{{ route('mentions.search') }}"
+                             data-csrf="{{ csrf_token() }}"
+                             data-initial-content="{{ e($comment->content) }}"
+                             data-enable-mentions="true"
+                             data-enable-emoji="true"
+                             style="min-height: 80px;"></div>
+                    </div>
+                    <input type="hidden" name="content" id="{{ $editEditorId }}-input" value="{{ e($comment->content) }}">
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button type="button" class="btn btn-ghost btn-xs" onclick="cancelEdit({{ $comment->id }})">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-xs">Save</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Action Buttons Row -->
         <div class="flex items-center gap-2 mt-1">
-            <button type="button" class="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary transition-colors" onclick="toggleReply({{ $comment->id }})">
+            <button type="button" class="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary transition-colors" onclick="toggleReply({{ $comment->id }}, '{{ $replyEditorId }}')">
                 <span class="icon-[tabler--message] size-4"></span>
                 Reply
             </button>
             @if($comment->canEdit($user))
-                <button type="button" class="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary transition-colors" onclick="editComment({{ $comment->id }})">
+                <button type="button" class="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary transition-colors" onclick="editComment({{ $comment->id }}, '{{ $editEditorId }}')">
                     <span class="icon-[tabler--edit] size-4"></span>
                     Edit
                 </button>
@@ -62,17 +78,30 @@
         </div>
 
         <!-- Reply Form (hidden by default) -->
-        <form action="{{ route('tasks.comments.store', $comment->task) }}" method="POST"
-              id="reply-form-{{ $comment->id }}" class="hidden mt-2">
-            @csrf
-            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-            <textarea name="content" class="textarea textarea-bordered textarea-sm w-full" rows="2"
-                      placeholder="Write a reply..." required></textarea>
-            <div class="flex justify-end gap-2 mt-2">
-                <button type="button" class="btn btn-ghost btn-xs" onclick="toggleReply({{ $comment->id }})">Cancel</button>
-                <button type="submit" class="btn btn-primary btn-xs">Reply</button>
-            </div>
-        </form>
+        <div id="reply-form-{{ $comment->id }}" class="hidden mt-2">
+            <form action="{{ route('tasks.comments.store', $comment->task) }}" method="POST">
+                @csrf
+                <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                <div class="border border-base-300 rounded-lg overflow-hidden bg-white">
+                    <div id="{{ $replyEditorId }}"
+                         class="quill-editor quill-mini"
+                         data-quill-id="{{ $replyEditorId }}"
+                         data-placeholder="Write a reply..."
+                         data-upload-url="{{ route('upload.image') }}"
+                         data-mentions-url="{{ route('mentions.search') }}"
+                         data-csrf="{{ csrf_token() }}"
+                         data-initial-content=""
+                         data-enable-mentions="true"
+                         data-enable-emoji="true"
+                         style="min-height: 60px;"></div>
+                </div>
+                <input type="hidden" name="content" id="{{ $replyEditorId }}-input" value="">
+                <div class="flex justify-end gap-2 mt-2">
+                    <button type="button" class="btn btn-ghost btn-xs" onclick="toggleReply({{ $comment->id }}, '{{ $replyEditorId }}')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-xs">Reply</button>
+                </div>
+            </form>
+        </div>
 
         <!-- Replies -->
         @if($comment->replies->isNotEmpty())
@@ -88,9 +117,11 @@
 @once
 @push('scripts')
 <script>
-function editComment(id) {
+function editComment(id, editorId) {
     document.getElementById('comment-content-' + id).classList.add('hidden');
     document.getElementById('comment-edit-' + id).classList.remove('hidden');
+    // Initialize Quill editor if not already initialized
+    initMiniQuill(editorId);
 }
 
 function cancelEdit(id) {
@@ -98,8 +129,27 @@ function cancelEdit(id) {
     document.getElementById('comment-edit-' + id).classList.add('hidden');
 }
 
-function toggleReply(id) {
-    document.getElementById('reply-form-' + id).classList.toggle('hidden');
+function toggleReply(id, editorId) {
+    const form = document.getElementById('reply-form-' + id);
+    form.classList.toggle('hidden');
+    // Initialize Quill editor if not already initialized
+    if (!form.classList.contains('hidden')) {
+        initMiniQuill(editorId);
+    }
+}
+
+function initMiniQuill(editorId) {
+    const el = document.getElementById(editorId);
+    if (!el || el.quillInstance) return;
+
+    const placeholder = el.dataset.placeholder || 'Write something...';
+    const uploadUrl = el.dataset.uploadUrl;
+    const csrfToken = el.dataset.csrf;
+    const initialContent = el.dataset.initialContent || '';
+
+    if (typeof window.initQuillEditor === 'function') {
+        window.initQuillEditor(editorId, placeholder, uploadUrl, csrfToken, initialContent);
+    }
 }
 </script>
 @endpush

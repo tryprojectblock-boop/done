@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
+use App\Http\Controllers\Api\MentionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\GuestSignupController;
 use App\Http\Controllers\GuestUpgradeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamSignupController;
@@ -128,6 +130,27 @@ Route::middleware(['auth'])->prefix('files')->name('files.')->group(function () 
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->post('/upload/image', [ImageUploadController::class, 'store'])->name('upload.image');
+
+/*
+|--------------------------------------------------------------------------
+| Mention Search Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->get('/api/mentions/search', [MentionController::class, 'search'])->name('mentions.search');
+
+/*
+|--------------------------------------------------------------------------
+| Notification Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/dropdown', [NotificationController::class, 'dropdown'])->name('dropdown');
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+    Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
+    Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+    Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+});
 
 /*
 |--------------------------------------------------------------------------

@@ -119,23 +119,42 @@
             </a>
 
             <!-- Notifications -->
-            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
-                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications">
+            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationDropdown()">
+                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications" @click="loadNotifications">
                     <span class="icon-[tabler--bell] size-5"></span>
-                    <span class="badge badge-primary badge-xs indicator-item">3</span>
+                    <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="badge badge-primary badge-xs indicator-item"></span>
                 </button>
                 <div class="dropdown-menu dropdown-open:opacity-100 hidden w-80" role="menu" aria-orientation="vertical" aria-labelledby="notifications-dropdown">
-                    <div class="p-4 border-b border-base-200">
+                    <div class="p-4 border-b border-base-200 flex items-center justify-between">
                         <h3 class="font-semibold">Notifications</h3>
+                        <button x-show="unreadCount > 0" @click="markAllAsRead" class="text-xs text-primary hover:underline">Mark all read</button>
                     </div>
                     <ul class="p-2 max-h-64 overflow-y-auto">
-                        <li class="p-2 hover:bg-base-200 rounded cursor-pointer">
-                            <p class="text-sm">Welcome to NewDone! Start by creating your first workspace.</p>
-                            <span class="text-xs text-base-content/50">Just now</span>
-                        </li>
+                        <template x-if="loading">
+                            <li class="p-4 text-center text-base-content/50">
+                                <span class="loading loading-spinner loading-sm"></span>
+                            </li>
+                        </template>
+                        <template x-if="!loading && notifications.length === 0">
+                            <li class="p-4 text-center text-base-content/50">
+                                <span class="icon-[tabler--bell-off] size-8 mb-2 block mx-auto opacity-50"></span>
+                                <p class="text-sm">No notifications yet</p>
+                            </li>
+                        </template>
+                        <template x-for="notification in notifications" :key="notification.id">
+                            <li @click="goToNotification(notification)" class="p-2 hover:bg-base-200 rounded cursor-pointer flex items-start gap-3" :class="{ 'bg-primary/5': !notification.is_read }">
+                                <span :class="[notification.icon, notification.color, 'size-5 mt-0.5 flex-shrink-0']"></span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium" :class="{ 'font-semibold': !notification.is_read }" x-text="notification.title"></p>
+                                    <p class="text-xs text-base-content/60 truncate" x-text="notification.message"></p>
+                                    <span class="text-xs text-base-content/40" x-text="notification.time"></span>
+                                </div>
+                                <span x-show="!notification.is_read" class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
+                            </li>
+                        </template>
                     </ul>
                     <div class="p-2 border-t border-base-200">
-                        <a href="/notifications" class="btn btn-ghost btn-sm w-full">View All</a>
+                        <a href="{{ route('notifications.index') }}" class="btn btn-ghost btn-sm w-full">View All</a>
                     </div>
                 </div>
             </div>
@@ -247,3 +266,99 @@
         </div>
     </div>
 </nav>
+
+@once
+@push('scripts')
+<script>
+function notificationDropdown() {
+    return {
+        notifications: [],
+        unreadCount: {{ auth()->user()->unread_notification_count ?? 0 }},
+        loading: false,
+        loaded: false,
+
+        async loadNotifications() {
+            if (this.loaded) return;
+            this.loading = true;
+
+            try {
+                const response = await fetch('{{ route("notifications.dropdown") }}', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                const data = await response.json();
+                this.notifications = data.notifications;
+                this.unreadCount = data.unread_count;
+                this.loaded = true;
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                await fetch('{{ route("notifications.mark-all-read") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
+                this.unreadCount = 0;
+            } catch (error) {
+                console.error('Failed to mark all as read:', error);
+            }
+        },
+
+        async goToNotification(notification) {
+            // Mark as read
+            if (!notification.is_read) {
+                try {
+                    await fetch(`/notifications/${notification.id}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+                    notification.is_read = true;
+                    this.unreadCount = Math.max(0, this.unreadCount - 1);
+                } catch (error) {
+                    console.error('Failed to mark as read:', error);
+                }
+            }
+
+            // Navigate to URL if available
+            if (notification.url) {
+                window.location.href = notification.url;
+            }
+        },
+
+        // Periodically check for new notifications
+        init() {
+            // Check for new notifications every 30 seconds
+            setInterval(async () => {
+                try {
+                    const response = await fetch('{{ route("notifications.unread-count") }}', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await response.json();
+                    if (data.count !== this.unreadCount) {
+                        this.unreadCount = data.count;
+                        this.loaded = false; // Force reload on next open
+                    }
+                } catch (error) {
+                    // Silently fail
+                }
+            }, 30000);
+        }
+    };
+}
+</script>
+@endpush
+@endonce
