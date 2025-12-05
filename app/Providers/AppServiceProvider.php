@@ -20,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Modules\Task\Providers\TaskServiceProvider::class,
         \App\Modules\Idea\Providers\IdeaServiceProvider::class,
         \App\Modules\Discussion\Providers\DiscussionServiceProvider::class,
+        \App\Modules\Drive\Providers\DriveServiceProvider::class,
+        \App\Modules\Calendar\Providers\CalendarServiceProvider::class,
     ];
 
     /**

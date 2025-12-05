@@ -60,7 +60,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="/calendar" class="{{ request()->is('calendar*') ? 'active' : '' }}">
+                    <a href="{{ route('calendar.index') }}" class="{{ request()->is('calendar*') ? 'active' : '' }}">
                         <span class="icon-[tabler--calendar] size-5"></span>
                         Calendar
                     </a>
@@ -80,7 +80,7 @@
                         <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
                         @endif
                         <li><a class="dropdown-item" href="/workflows"><span class="icon-[tabler--git-branch] size-4 me-2"></span>Workflows</a></li>
-                        <li><a class="dropdown-item" href="/drive"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
+                        <li><a class="dropdown-item" href="{{ route('drive.index') }}"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
                         <li><a class="dropdown-item" href="/documents"><span class="icon-[tabler--file-text] size-4 me-2"></span>Documents</a></li>
                     </ul>
                 </li>
@@ -258,11 +258,12 @@
                     <li><a class="dropdown-item" href="{{ route('workspace.index') }}"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspaces</a></li>
                     <li><a class="dropdown-item" href="/tasks"><span class="icon-[tabler--checkbox] size-4 me-2"></span>Tasks</a></li>
                     <li><a class="dropdown-item" href="/discussions"><span class="icon-[tabler--messages] size-4 me-2"></span>Discussion</a></li>
-                    <li><a class="dropdown-item" href="/calendar"><span class="icon-[tabler--calendar] size-4 me-2"></span>Calendar</a></li>
+                    <li><a class="dropdown-item" href="{{ route('calendar.index') }}"><span class="icon-[tabler--calendar] size-4 me-2"></span>Calendar</a></li>
                     <li><hr class="border-base-content/10 my-2"></li>
                     <li><a class="dropdown-item" href="/guests"><span class="icon-[tabler--users] size-4 me-2"></span>Guests</a></li>
                     <li><a class="dropdown-item" href="/time"><span class="icon-[tabler--clock] size-4 me-2"></span>Time</a></li>
                     <li><a class="dropdown-item" href="/ideas"><span class="icon-[tabler--bulb] size-4 me-2"></span>Ideas</a></li>
+                    <li><a class="dropdown-item" href="{{ route('drive.index') }}"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
                     @if($user->isAdminOrHigher())
                     <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
                     @endif

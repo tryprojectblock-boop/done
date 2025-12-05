@@ -36,7 +36,7 @@ class IdeaController extends Controller
             'direction' => $request->get('direction', 'desc'),
         ];
 
-        $viewMode = $request->get('view', 'table');
+        $viewMode = $request->get('view', 'card');
         if (!in_array($viewMode, ['card', 'table'])) {
             $viewMode = 'table';
         }
