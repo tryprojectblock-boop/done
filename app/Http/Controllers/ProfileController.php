@@ -101,12 +101,19 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
             if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
+                Storage::disk('do_spaces')->delete($user->avatar_path);
             }
 
-            // Store new avatar
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $validated['avatar_path'] = $path;
+            // Store new avatar to DigitalOcean Spaces
+            $file = $request->file('avatar');
+            $filename = 'avatars/' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('do_spaces')->putFileAs(
+                dirname($filename),
+                $file,
+                basename($filename),
+                'public'
+            );
+            $validated['avatar_path'] = $filename;
         }
 
         // Update name field (combination of first and last name)
@@ -125,7 +132,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+            Storage::disk('do_spaces')->delete($user->avatar_path);
             $user->update(['avatar_path' => null]);
         }
 

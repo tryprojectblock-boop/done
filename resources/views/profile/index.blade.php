@@ -29,7 +29,7 @@
                         <div class="avatar placeholder">
                             @if($user->avatar_path)
                                 <div class="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
-                                    <img src="{{ Storage::url($user->avatar_path) }}" alt="{{ $user->first_name }}" class="w-full h-full object-cover" />
+                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->first_name }}" class="w-full h-full object-cover" />
                                 </div>
                             @else
                                 <div class="bg-primary text-primary-content rounded-full w-24 h-24 flex items-center justify-center ring ring-primary ring-offset-base-100 ring-offset-2">

@@ -542,7 +542,12 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar_path) {
-            return \Storage::url($this->avatar_path);
+            // Use CDN endpoint for DigitalOcean Spaces
+            $cdnEndpoint = config('filesystems.disks.do_spaces.url');
+            if ($cdnEndpoint) {
+                return rtrim($cdnEndpoint, '/') . '/' . $this->avatar_path;
+            }
+            return \Storage::disk('do_spaces')->url($this->avatar_path);
         }
 
         // Generate default avatar using UI Avatars
