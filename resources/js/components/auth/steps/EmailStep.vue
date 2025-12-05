@@ -86,7 +86,7 @@ const emit = defineEmits(['submit']);
 const email = ref('');
 const inviteCode = ref('');
 
-// Valid invite codes
+// Valid invite codes for register/signup
 const validCodes = ['1000', '2000', '3000', '4000'];
 
 const errors = computed(() => props.state.fieldErrors || {});
