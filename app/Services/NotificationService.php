@@ -6,13 +6,17 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Modules\Discussion\Models\Discussion;
+use App\Modules\Discussion\Models\DiscussionComment;
+use App\Modules\Idea\Models\Idea;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskComment;
+use Illuminate\Database\Eloquent\Model;
 
 class NotificationService
 {
     /**
-     * Create a mention notification.
+     * Create a mention notification for Task.
      */
     public function createMentionNotification(
         User $mentionedUser,
@@ -37,6 +41,64 @@ class NotificationService
                 'task_uuid' => $task->uuid,
                 'task_title' => $task->title,
                 'task_url' => route('tasks.show', $task->uuid),
+                'comment_id' => $comment?->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Create a mention notification for Idea.
+     */
+    public function createIdeaMentionNotification(
+        User $mentionedUser,
+        User $mentioner,
+        Idea $idea
+    ): Notification {
+        return Notification::create([
+            'user_id' => $mentionedUser->id,
+            'type' => Notification::TYPE_MENTION,
+            'title' => "{$mentioner->name} mentioned you",
+            'message' => "You were mentioned in idea: {$idea->title}",
+            'notifiable_type' => Idea::class,
+            'notifiable_id' => $idea->id,
+            'data' => [
+                'mentioner_id' => $mentioner->id,
+                'mentioner_name' => $mentioner->name,
+                'mentioner_avatar' => $mentioner->avatar_url,
+                'idea_id' => $idea->id,
+                'idea_uuid' => $idea->uuid,
+                'idea_title' => $idea->title,
+                'task_url' => route('ideas.show', $idea->uuid),
+            ],
+        ]);
+    }
+
+    /**
+     * Create a mention notification for Discussion.
+     */
+    public function createDiscussionMentionNotification(
+        User $mentionedUser,
+        User $mentioner,
+        Discussion $discussion,
+        ?DiscussionComment $comment = null
+    ): Notification {
+        $context = $comment ? 'comment' : 'discussion';
+
+        return Notification::create([
+            'user_id' => $mentionedUser->id,
+            'type' => Notification::TYPE_MENTION,
+            'title' => "{$mentioner->name} mentioned you",
+            'message' => "You were mentioned in a {$context} on: {$discussion->title}",
+            'notifiable_type' => $comment ? DiscussionComment::class : Discussion::class,
+            'notifiable_id' => $comment ? $comment->id : $discussion->id,
+            'data' => [
+                'mentioner_id' => $mentioner->id,
+                'mentioner_name' => $mentioner->name,
+                'mentioner_avatar' => $mentioner->avatar_url,
+                'discussion_id' => $discussion->id,
+                'discussion_uuid' => $discussion->uuid,
+                'discussion_title' => $discussion->title,
+                'discussion_url' => route('discussions.show', $discussion->uuid),
                 'comment_id' => $comment?->id,
             ],
         ]);
@@ -115,12 +177,13 @@ class NotificationService
 
     /**
      * Create notifications for all mentioned users in content.
+     * Supports Task, Idea, and Discussion models.
      */
     public function notifyMentionedUsers(
         string $content,
         User $author,
-        Task $task,
-        ?TaskComment $comment = null
+        Model $entity,
+        TaskComment|DiscussionComment|null $comment = null
     ): array {
         $mentionedUserIds = $this->parseMentionsFromContent($content);
         $notifications = [];
@@ -135,7 +198,15 @@ class NotificationService
         $users = User::whereIn('id', $mentionedUserIds)->get();
 
         foreach ($users as $user) {
-            $notifications[] = $this->createMentionNotification($user, $author, $task, $comment);
+            if ($entity instanceof Task) {
+                $taskComment = $comment instanceof TaskComment ? $comment : null;
+                $notifications[] = $this->createMentionNotification($user, $author, $entity, $taskComment);
+            } elseif ($entity instanceof Idea) {
+                $notifications[] = $this->createIdeaMentionNotification($user, $author, $entity);
+            } elseif ($entity instanceof Discussion) {
+                $discussionComment = $comment instanceof DiscussionComment ? $comment : null;
+                $notifications[] = $this->createDiscussionMentionNotification($user, $author, $entity, $discussionComment);
+            }
         }
 
         return $notifications;

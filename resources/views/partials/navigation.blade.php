@@ -75,7 +75,7 @@
                     <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-52" role="menu" aria-orientation="vertical" aria-labelledby="more-dropdown">
                         <li><a class="dropdown-item" href="/guests"><span class="icon-[tabler--users] size-4 me-2"></span>Guest / Client</a></li>
                         <li><a class="dropdown-item" href="/time"><span class="icon-[tabler--clock] size-4 me-2"></span>Time Management</a></li>
-                        <li><a class="dropdown-item" href="/ideas"><span class="icon-[tabler--bulb] size-4 me-2"></span>Ideas / Feedback</a></li>
+                        <li><a class="dropdown-item" href="/ideas"><span class="icon-[tabler--bulb] size-4 me-2"></span>Ideas</a></li>
                         @if($user->isAdminOrHigher())
                         <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
                         @endif
@@ -99,11 +99,11 @@
                 </button>
                 <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-52" role="menu" aria-orientation="vertical" aria-labelledby="add-dropdown">
                     <li><a class="dropdown-item" href="{{ route('tasks.create') }}"><span class="icon-[tabler--checkbox] size-4 me-2 text-primary"></span>Add Task</a></li>
-                    <li><a class="dropdown-item" href="#"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
+                    <li><a class="dropdown-item" href="{{ route('discussions.create') }}"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
                     <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
-                    <li><a class="dropdown-item" href="#"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
+                    <li><a class="dropdown-item" href="{{ route('ideas.create') }}"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--clock-plus] size-4 me-2 text-error"></span>Add Time</a></li>
                 </ul>
             </div>
@@ -119,40 +119,45 @@
             </a>
 
             <!-- Notifications -->
-            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationDropdown()">
+            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationDropdown()" x-init="init()">
                 <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications" @click="loadNotifications">
                     <span class="icon-[tabler--bell] size-5"></span>
-                    <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="badge badge-primary badge-xs indicator-item"></span>
+                    <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="badge badge-primary badge-xs indicator-item" x-cloak></span>
                 </button>
                 <div class="dropdown-menu dropdown-open:opacity-100 hidden w-80" role="menu" aria-orientation="vertical" aria-labelledby="notifications-dropdown">
                     <div class="p-4 border-b border-base-200 flex items-center justify-between">
                         <h3 class="font-semibold">Notifications</h3>
-                        <button x-show="unreadCount > 0" @click="markAllAsRead" class="text-xs text-primary hover:underline">Mark all read</button>
+                        <button x-show="unreadCount > 0" @click.stop="markAllAsRead" class="text-xs text-primary hover:underline" x-cloak>Mark all read</button>
                     </div>
-                    <ul class="p-2 max-h-64 overflow-y-auto">
-                        <template x-if="loading">
-                            <li class="p-4 text-center text-base-content/50">
-                                <span class="loading loading-spinner loading-sm"></span>
-                            </li>
-                        </template>
-                        <template x-if="!loading && notifications.length === 0">
-                            <li class="p-4 text-center text-base-content/50">
-                                <span class="icon-[tabler--bell-off] size-8 mb-2 block mx-auto opacity-50"></span>
-                                <p class="text-sm">No notifications yet</p>
-                            </li>
-                        </template>
-                        <template x-for="notification in notifications" :key="notification.id">
-                            <li @click="goToNotification(notification)" class="p-2 hover:bg-base-200 rounded cursor-pointer flex items-start gap-3" :class="{ 'bg-primary/5': !notification.is_read }">
-                                <span :class="[notification.icon, notification.color, 'size-5 mt-0.5 flex-shrink-0']"></span>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium" :class="{ 'font-semibold': !notification.is_read }" x-text="notification.title"></p>
-                                    <p class="text-xs text-base-content/60 truncate" x-text="notification.message"></p>
-                                    <span class="text-xs text-base-content/40" x-text="notification.time"></span>
+                    <div class="max-h-64 overflow-y-auto" id="notifications-list">
+                        <!-- Loading State -->
+                        <div x-show="loading" class="p-4 text-center text-base-content/50">
+                            <span class="loading loading-spinner loading-sm"></span>
+                        </div>
+                        <!-- Empty State -->
+                        <div x-show="!loading && loaded && notifications.length === 0" class="p-4 text-center text-base-content/50">
+                            <span class="icon-[tabler--bell-off] size-8 mb-2 block mx-auto opacity-50"></span>
+                            <p class="text-sm">No notifications yet</p>
+                        </div>
+                        <!-- Notifications List -->
+                        <div x-show="!loading && notifications.length > 0" class="p-2">
+                            <template x-for="notification in notifications" :key="notification.id">
+                                <div @click="goToNotification(notification)"
+                                     class="p-2 hover:bg-base-200 rounded cursor-pointer flex items-start gap-3 mb-1"
+                                     :class="notification.is_read ? '' : 'bg-primary/5'">
+                                    <div class="size-5 mt-0.5 flex-shrink-0">
+                                        <span :class="notification.icon" class="size-5" :style="'color: var(--' + notification.color.replace('text-', '') + ')'"></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm" :class="notification.is_read ? 'font-medium' : 'font-semibold'" x-text="notification.title"></p>
+                                        <p class="text-xs text-base-content/60 truncate" x-text="notification.message"></p>
+                                        <span class="text-xs text-base-content/40" x-text="notification.time"></span>
+                                    </div>
+                                    <span x-show="!notification.is_read" class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
                                 </div>
-                                <span x-show="!notification.is_read" class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
-                            </li>
-                        </template>
-                    </ul>
+                            </template>
+                        </div>
+                    </div>
                     <div class="p-2 border-t border-base-200">
                         <a href="{{ route('notifications.index') }}" class="btn btn-ghost btn-sm w-full">View All</a>
                     </div>
@@ -278,22 +283,34 @@ function notificationDropdown() {
         loaded: false,
 
         async loadNotifications() {
-            if (this.loaded) return;
+            // Skip if already loading
+            if (this.loading) return;
+
             this.loading = true;
 
             try {
                 const response = await fetch('{{ route("notifications.dropdown") }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
-                this.notifications = data.notifications;
-                this.unreadCount = data.unread_count;
+                this.notifications = Array.isArray(data.notifications) ? data.notifications : [];
+                this.unreadCount = data.unread_count || 0;
                 this.loaded = true;
             } catch (error) {
                 console.error('Failed to load notifications:', error);
+                this.notifications = [];
+                this.loaded = true;
             } finally {
                 this.loading = false;
             }
@@ -305,7 +322,7 @@ function notificationDropdown() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     }
                 });
                 this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
@@ -323,7 +340,7 @@ function notificationDropdown() {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
                         }
                     });
                     notification.is_read = true;
@@ -339,18 +356,23 @@ function notificationDropdown() {
             }
         },
 
-        // Periodically check for new notifications
         init() {
             // Check for new notifications every 30 seconds
             setInterval(async () => {
                 try {
                     const response = await fetch('{{ route("notifications.unread-count") }}', {
-                        headers: { 'Accept': 'application/json' }
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
                     });
-                    const data = await response.json();
-                    if (data.count !== this.unreadCount) {
-                        this.unreadCount = data.count;
-                        this.loaded = false; // Force reload on next open
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.count !== this.unreadCount) {
+                            this.unreadCount = data.count;
+                            this.loaded = false; // Force reload on next open
+                        }
                     }
                 } catch (error) {
                     // Silently fail

@@ -7,7 +7,8 @@
       "Bash(composer show:*)",
       "Bash(php artisan migrate:status:*)",
       "Bash(php artisan migrate:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

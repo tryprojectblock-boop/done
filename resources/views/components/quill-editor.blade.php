@@ -217,12 +217,6 @@
     background-color: oklch(var(--p) / 0.25);
 }
 
-/* Emoji button in toolbar */
-.ql-emoji::before {
-    content: '😀';
-    font-size: 16px;
-}
-
 /* Emoji picker styles */
 .emoji-picker {
     position: absolute;
@@ -474,7 +468,7 @@ window.initQuillEditor = function(editorId, placeholder, uploadUrl, csrfToken, i
         };
     };
 
-    // Build toolbar config
+    // Build toolbar config - don't include 'emoji' as a format, we'll add it as a custom button
     const toolbarContainer = [
         [{ 'header': [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike'],
@@ -483,13 +477,8 @@ window.initQuillEditor = function(editorId, placeholder, uploadUrl, csrfToken, i
         ['link', 'image'],
         ['blockquote', 'code-block'],
         [{ 'color': [] }, { 'background': [] }],
+        ['clean']
     ];
-
-    if (enableEmoji) {
-        toolbarContainer.push(['emoji']);
-    }
-
-    toolbarContainer.push(['clean']);
 
     // Build modules config
     const modules = {
@@ -558,12 +547,26 @@ window.initQuillEditor = function(editorId, placeholder, uploadUrl, csrfToken, i
         modules: modules
     });
 
-    // Add emoji picker if enabled
+    // Add emoji picker if enabled - create custom button in toolbar
     if (enableEmoji) {
-        const toolbar = quill.getModule('toolbar');
-        const emojiBtn = editorElement.parentElement.querySelector('.ql-emoji');
+        const toolbarEl = editorElement.parentElement.querySelector('.ql-toolbar');
+        if (toolbarEl) {
+            // Create emoji button
+            const emojiBtn = document.createElement('button');
+            emojiBtn.type = 'button';
+            emojiBtn.className = 'ql-emoji-custom';
+            emojiBtn.innerHTML = '😀';
+            emojiBtn.title = 'Insert emoji';
+            emojiBtn.style.cssText = 'font-size: 16px; padding: 3px 5px; border: none; background: transparent; cursor: pointer;';
 
-        if (emojiBtn) {
+            // Add to toolbar (before clean button)
+            const cleanBtn = toolbarEl.querySelector('.ql-clean');
+            if (cleanBtn && cleanBtn.parentElement) {
+                cleanBtn.parentElement.insertBefore(emojiBtn, cleanBtn);
+            } else {
+                toolbarEl.appendChild(emojiBtn);
+            }
+
             const emojiPicker = createEmojiPicker(quill, editorId);
             editorElement.parentElement.appendChild(emojiPicker);
 

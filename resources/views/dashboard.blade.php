@@ -112,7 +112,12 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-base-content">Good {{ $greeting }}, {{ auth()->user()->first_name }}!</h1>
-                    <p class="text-base-content/60">Here's what's on your plate today</p>
+                    <p class="text-base-content/60">
+                        @if(auth()->user()->company)
+                            <span class="font-medium">{{ auth()->user()->company->name }}</span> &middot;
+                        @endif
+                        Here's what's on your plate today
+                    </p>
                 </div>
                 <div class="flex gap-2">
                     <a href="/tasks/create" class="btn btn-primary btn-sm">
@@ -123,8 +128,8 @@
             </div>
 
             <!-- Stats Overview -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="card bg-base-100 shadow">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <a href="{{ route('tasks.index') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
                     <div class="card-body p-4">
                         <div class="flex items-center gap-3">
                             <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -136,7 +141,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
                 <div class="card bg-base-100 shadow">
                     <div class="card-body p-4">
                         <div class="flex items-center gap-3">
@@ -176,6 +181,19 @@
                         </div>
                     </div>
                 </div>
+                <a href="{{ route('ideas.index') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                    <div class="card-body p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="size-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                                <span class="icon-[tabler--bulb] size-5 text-accent"></span>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold">{{ $stats['ideas_count'] ?? 0 }}</p>
+                                <p class="text-xs text-base-content/60">Ideas</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -205,23 +223,27 @@
                             @else
                                 <div class="space-y-2">
                                     @foreach($tasks as $task)
-                                        <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors">
-                                            <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" {{ $task['completed'] ? 'checked' : '' }}>
+                                        <a href="{{ route('tasks.show', $task['uuid']) }}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors">
+                                            <div class="size-4 rounded border-2 {{ $task['completed'] ? 'bg-primary border-primary' : 'border-base-300' }} flex items-center justify-center">
+                                                @if($task['completed'])
+                                                    <span class="icon-[tabler--check] size-3 text-primary-content"></span>
+                                                @endif
+                                            </div>
                                             <div class="flex-1 min-w-0">
                                                 <p class="font-medium truncate {{ $task['completed'] ? 'line-through text-base-content/50' : '' }}">{{ $task['title'] }}</p>
                                                 <p class="text-xs text-base-content/50">{{ $task['workspace'] ?? 'No workspace' }}</p>
                                             </div>
-                                            @if(isset($task['due_date']))
+                                            @if(isset($task['due_date']) && $task['due_date'])
                                                 <span class="badge badge-sm {{ $task['overdue'] ? 'badge-error' : 'badge-ghost' }}">
                                                     {{ $task['due_date'] }}
                                                 </span>
                                             @endif
-                                            @if(isset($task['priority']))
+                                            @if(isset($task['priority']) && $task['priority'])
                                                 <span class="badge badge-sm badge-{{ $task['priority'] === 'high' ? 'error' : ($task['priority'] === 'medium' ? 'warning' : 'ghost') }}">
                                                     {{ ucfirst($task['priority']) }}
                                                 </span>
                                             @endif
-                                        </div>
+                                        </a>
                                     @endforeach
                                 </div>
                             @endif

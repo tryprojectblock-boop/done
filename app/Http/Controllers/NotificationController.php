@@ -32,20 +32,22 @@ class NotificationController extends Controller
         $notifications = $user->appNotifications()->take(10)->get();
         $unreadCount = $user->unread_notification_count;
 
+        $notificationData = $notifications->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'icon' => $notification->icon,
+                'color' => $notification->color,
+                'is_read' => $notification->isRead(),
+                'time' => $notification->created_at->diffForHumans(),
+                'url' => $this->getNotificationUrl($notification),
+            ];
+        })->values()->toArray();
+
         return response()->json([
-            'notifications' => $notifications->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'title' => $notification->title,
-                    'message' => $notification->message,
-                    'icon' => $notification->icon,
-                    'color' => $notification->color,
-                    'is_read' => $notification->isRead(),
-                    'time' => $notification->created_at->diffForHumans(),
-                    'url' => $this->getNotificationUrl($notification),
-                ];
-            }),
+            'notifications' => $notificationData,
             'unread_count' => $unreadCount,
         ]);
     }

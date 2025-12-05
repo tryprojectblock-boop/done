@@ -18,6 +18,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Modules\Workspace\Providers\WorkspaceServiceProvider::class,
         \App\Modules\Auth\Providers\AuthServiceProvider::class,
         \App\Modules\Task\Providers\TaskServiceProvider::class,
+        \App\Modules\Idea\Providers\IdeaServiceProvider::class,
+        \App\Modules\Discussion\Providers\DiscussionServiceProvider::class,
     ];
 
     /**
