@@ -11,6 +11,7 @@ use App\Http\Controllers\GuestUpgradeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamSignupController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkflowController;
@@ -37,11 +38,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/dashboard/complete-onboarding', [DashboardController::class, 'completeOnboarding'])->name('dashboard.complete-onboarding');
 
-    // Workspace routes placeholder
-    Route::get('/workspace', function () {
-        return redirect('/dashboard');
-    })->name('workspace.index');
-
     // Logout route
     Route::post('/logout', function () {
         auth()->logout();
@@ -59,6 +55,16 @@ Route::middleware(['auth'])->group(function () {
     // Password routes
     Route::get('/profile/password', [PasswordController::class, 'index'])->name('profile.password');
     Route::put('/profile/password', [PasswordController::class, 'update'])->name('profile.password.update');
+
+    // Settings routes
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/settings/company', [SettingsController::class, 'company'])->name('settings.company');
+    Route::put('/settings/company', [SettingsController::class, 'updateCompany'])->name('settings.company.update');
+    Route::delete('/settings/company/logo', [SettingsController::class, 'deleteCompanyLogo'])->name('settings.company.logo.delete');
+    Route::get('/settings/notifications', [SettingsController::class, 'notifications'])->name('settings.notifications');
+    Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications.update');
+    Route::get('/settings/appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
+    Route::put('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
 
     // User management routes (Admin & Owner only)
     Route::middleware(['can.manage.users'])->group(function () {

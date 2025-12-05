@@ -103,7 +103,7 @@ class Company extends BaseModel
             return 0;
         }
 
-        return max(0, now()->diffInDays($this->trial_ends_at, false));
+        return (int) max(0, now()->diffInDays($this->trial_ends_at, false));
     }
 
     public function getLogoUrl(): ?string
