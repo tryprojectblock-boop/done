@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Modules\Discussion\Models\DiscussionComment;
+use App\Modules\Idea\Models\IdeaComment;
+use App\Modules\Task\Models\TaskActivity;
+use App\Modules\Task\Models\TaskComment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -126,5 +130,118 @@ class ProfileController extends Controller
         }
 
         return redirect()->route('profile.index')->with('success', 'Profile photo removed.');
+    }
+
+    /**
+     * Display the user's activity log.
+     */
+    public function activity(Request $request): View
+    {
+        $user = $request->user();
+        $filter = $request->get('filter', 'all');
+
+        // Build a unified activity feed
+        $activities = collect();
+
+        // Task Activities (created, updated, status changes, etc.)
+        $taskActivities = TaskActivity::with(['task.workspace', 'user'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(function ($activity) {
+                return [
+                    'type' => 'task_activity',
+                    'subtype' => $activity->type->value,
+                    'icon' => $activity->type->icon(),
+                    'description' => $activity->getFormattedDescription(),
+                    'task' => $activity->task,
+                    'created_at' => $activity->created_at,
+                    'color' => 'primary',
+                ];
+            });
+
+        // Task Comments
+        $taskComments = TaskComment::with(['task.workspace', 'user'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'type' => 'comment',
+                    'subtype' => 'task_comment',
+                    'icon' => 'tabler--message',
+                    'description' => 'Commented on task: ' . ($comment->task->title ?? 'Unknown'),
+                    'task' => $comment->task,
+                    'content' => $comment->content,
+                    'created_at' => $comment->created_at,
+                    'color' => 'info',
+                ];
+            });
+
+        // Idea Comments
+        $ideaComments = IdeaComment::with(['idea', 'user'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'type' => 'comment',
+                    'subtype' => 'idea_comment',
+                    'icon' => 'tabler--message',
+                    'description' => 'Commented on idea: ' . ($comment->idea->title ?? 'Unknown'),
+                    'idea' => $comment->idea,
+                    'content' => $comment->content,
+                    'created_at' => $comment->created_at,
+                    'color' => 'warning',
+                ];
+            });
+
+        // Discussion Comments
+        $discussionComments = DiscussionComment::with(['discussion', 'user'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'type' => 'comment',
+                    'subtype' => 'discussion_comment',
+                    'icon' => 'tabler--message',
+                    'description' => 'Commented on discussion: ' . ($comment->discussion->title ?? 'Unknown'),
+                    'discussion' => $comment->discussion,
+                    'content' => $comment->content,
+                    'created_at' => $comment->created_at,
+                    'color' => 'success',
+                ];
+            });
+
+        // Merge and filter based on type
+        if ($filter === 'tasks') {
+            $activities = $taskActivities;
+        } elseif ($filter === 'comments') {
+            $activities = $taskComments->merge($ideaComments)->merge($discussionComments);
+        } else {
+            $activities = $taskActivities
+                ->merge($taskComments)
+                ->merge($ideaComments)
+                ->merge($discussionComments);
+        }
+
+        // Sort by date and paginate manually
+        $activities = $activities->sortByDesc('created_at')->values();
+
+        // Group by date
+        $groupedActivities = $activities->groupBy(function ($activity) {
+            return $activity['created_at']->format('Y-m-d');
+        });
+
+        return view('profile.activity', [
+            'user' => $user,
+            'groupedActivities' => $groupedActivities,
+            'filter' => $filter,
+        ]);
     }
 }

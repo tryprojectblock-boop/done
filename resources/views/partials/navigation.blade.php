@@ -102,7 +102,7 @@
                     <li><a class="dropdown-item" href="{{ route('discussions.create') }}"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
                     <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
-                    <li><a class="dropdown-item" href="#"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
+                    <li><a class="dropdown-item" href="/guests"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
                     <li><a class="dropdown-item" href="{{ route('ideas.create') }}"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--clock-plus] size-4 me-2 text-error"></span>Add Time</a></li>
                 </ul>

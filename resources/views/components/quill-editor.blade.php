@@ -29,7 +29,7 @@
              data-upload-url="{{ route('upload.image') }}"
              data-mentions-url="{{ route('mentions.search') }}"
              data-csrf="{{ csrf_token() }}"
-             data-initial-content="{{ e($value) }}"
+             data-initial-content="{{ json_encode($value) }}"
              data-enable-mentions="{{ $mentions ? 'true' : 'false' }}"
              data-enable-emoji="{{ $emoji ? 'true' : 'false' }}"
              style="min-height: {{ $height }};"></div>
@@ -688,22 +688,59 @@ window.initQuillEditor = function(editorId, placeholder, uploadUrl, csrfToken, i
         quill.root.innerHTML = initialContent;
     }
 
+    // Clean Quill HTML output - removes internal markup that shouldn't be persisted
+    function cleanQuillHtml(html) {
+        if (!html || html === '<p><br></p>') return '';
+
+        // Create a temporary element to parse HTML
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        // Remove ql-ui elements (list markers, etc.)
+        temp.querySelectorAll('.ql-ui').forEach(el => el.remove());
+
+        // Remove ql-cursor elements
+        temp.querySelectorAll('.ql-cursor').forEach(el => el.remove());
+
+        // Remove contenteditable attributes from all elements
+        temp.querySelectorAll('[contenteditable]').forEach(el => {
+            el.removeAttribute('contenteditable');
+        });
+
+        // Clean up mention spans - keep only the visible text part
+        temp.querySelectorAll('.mention').forEach(mention => {
+            // Get the inner span with the actual text
+            const innerSpan = mention.querySelector('span');
+            if (innerSpan) {
+                // Keep only the text content in a cleaned mention span
+                const cleanMention = document.createElement('span');
+                cleanMention.className = 'mention';
+                cleanMention.dataset.id = mention.dataset.id;
+                cleanMention.dataset.value = mention.dataset.value;
+                cleanMention.textContent = '@' + mention.dataset.value;
+                mention.replaceWith(cleanMention);
+            }
+        });
+
+        // Remove zero-width characters (﻿) that Quill adds
+        let cleanedHtml = temp.innerHTML.replace(/\uFEFF/g, '');
+
+        return cleanedHtml;
+    }
+
     // Sync content to hidden input
     quill.on('text-change', function() {
-        const content = quill.root.innerHTML;
-        hiddenInput.value = content === '<p><br></p>' ? '' : content;
+        hiddenInput.value = cleanQuillHtml(quill.root.innerHTML);
     });
 
     // Initialize hidden input with current content
-    const currentContent = quill.root.innerHTML;
-    hiddenInput.value = currentContent === '<p><br></p>' ? '' : currentContent;
+    hiddenInput.value = cleanQuillHtml(quill.root.innerHTML);
 
     // Also sync on form submit to ensure latest content
     const form = hiddenInput.closest('form');
     if (form) {
         form.addEventListener('submit', function() {
-            const content = quill.root.innerHTML;
-            hiddenInput.value = content === '<p><br></p>' ? '' : content;
+            hiddenInput.value = cleanQuillHtml(quill.root.innerHTML);
         });
     }
 
@@ -717,7 +754,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const placeholder = el.dataset.placeholder || 'Write something...';
         const uploadUrl = el.dataset.uploadUrl;
         const csrfToken = el.dataset.csrf;
-        const initialContent = el.dataset.initialContent || '';
+        let initialContent = '';
+        try {
+            initialContent = JSON.parse(el.dataset.initialContent || '""');
+        } catch (e) {
+            initialContent = el.dataset.initialContent || '';
+        }
         window.initQuillEditor(id, placeholder, uploadUrl, csrfToken, initialContent);
     });
 });

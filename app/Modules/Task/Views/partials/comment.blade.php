@@ -39,7 +39,7 @@
                              data-upload-url="{{ route('upload.image') }}"
                              data-mentions-url="{{ route('mentions.search') }}"
                              data-csrf="{{ csrf_token() }}"
-                             data-initial-content="{{ e($comment->content) }}"
+                             data-initial-content="{{ json_encode($comment->content) }}"
                              data-enable-mentions="true"
                              data-enable-emoji="true"
                              style="min-height: 80px;"></div>
@@ -145,7 +145,12 @@ function initMiniQuill(editorId) {
     const placeholder = el.dataset.placeholder || 'Write something...';
     const uploadUrl = el.dataset.uploadUrl;
     const csrfToken = el.dataset.csrf;
-    const initialContent = el.dataset.initialContent || '';
+    let initialContent = '';
+    try {
+        initialContent = JSON.parse(el.dataset.initialContent || '""');
+    } catch (e) {
+        initialContent = el.dataset.initialContent || '';
+    }
 
     if (typeof window.initQuillEditor === 'function') {
         window.initQuillEditor(editorId, placeholder, uploadUrl, csrfToken, initialContent);

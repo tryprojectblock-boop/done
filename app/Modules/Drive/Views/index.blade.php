@@ -9,6 +9,33 @@
                 <h1 class="text-2xl font-bold text-base-content">Drive</h1>
                 <p class="text-base-content/60">All files and attachments from your workspace</p>
             </div>
+            <a href="{{ route('drive.create') }}" class="btn btn-primary">
+                <span class="icon-[tabler--upload] size-4"></span>
+                Upload File
+            </a>
+        </div>
+
+        @if(session('success'))
+            <div class="alert alert-success mb-6">
+                <span class="icon-[tabler--check] size-5"></span>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        <!-- Storage Usage -->
+        <div class="card bg-base-100 shadow mb-6">
+            <div class="card-body p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium">Storage Used</span>
+                    <span class="text-sm text-base-content/60">
+                        {{ number_format($storageUsed / 1073741824, 2) }} GB / {{ number_format($storageLimit / 1073741824, 0) }} GB
+                    </span>
+                </div>
+                <progress class="progress {{ $storagePercentage > 80 ? 'progress-error' : ($storagePercentage > 50 ? 'progress-warning' : 'progress-primary') }}" value="{{ $storagePercentage }}" max="100"></progress>
+                <div class="text-xs text-base-content/50 mt-1">
+                    {{ number_format(($storageLimit - $storageUsed) / 1073741824, 2) }} GB remaining
+                </div>
+            </div>
         </div>
 
         <!-- Stats Cards -->
@@ -116,6 +143,7 @@
                     <!-- Source Filter -->
                     <select name="source" class="select select-bordered w-full md:w-40" onchange="this.form.submit()">
                         <option value="">All Sources</option>
+                        <option value="drive" {{ ($filters['source'] ?? '') === 'drive' ? 'selected' : '' }}>Drive Uploads</option>
                         <option value="tasks" {{ ($filters['source'] ?? '') === 'tasks' ? 'selected' : '' }}>Tasks</option>
                         <option value="discussions" {{ ($filters['source'] ?? '') === 'discussions' ? 'selected' : '' }}>Discussions</option>
                     </select>
@@ -153,7 +181,7 @@
             </div>
         </div>
 
-        <!-- Files Grid -->
+        <!-- Files Table -->
         @if($attachments->isEmpty())
             <div class="card bg-base-100 shadow">
                 <div class="card-body text-center py-12">
@@ -176,49 +204,129 @@
                 </div>
             </div>
         @else
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                @foreach($attachments as $file)
-                    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow group">
-                        <figure class="relative aspect-square bg-base-200 overflow-hidden">
-                            @if($file['is_image'] && $file['url'])
-                                <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
-                            @else
-                                <div class="w-full h-full flex items-center justify-center">
-                                    <span class="icon-[{{ $file['icon'] }}] size-16 text-base-content/30"></span>
-                                </div>
-                            @endif
-                            <!-- Overlay on hover -->
-                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                @if($file['url'])
-                                    <a href="{{ $file['url'] }}" target="_blank" class="btn btn-circle btn-sm btn-ghost text-white hover:bg-white/20" title="View">
-                                        <span class="icon-[tabler--eye] size-4"></span>
-                                    </a>
-                                    <a href="{{ $file['url'] }}" download="{{ $file['filename'] }}" class="btn btn-circle btn-sm btn-ghost text-white hover:bg-white/20" title="Download">
-                                        <span class="icon-[tabler--download] size-4"></span>
-                                    </a>
-                                @endif
-                            </div>
-                            <!-- Source Badge -->
-                            <div class="absolute top-2 left-2">
-                                @if(str_contains($file['source'], 'task'))
-                                    <span class="badge badge-sm badge-primary">Task</span>
-                                @else
-                                    <span class="badge badge-sm badge-secondary">Discussion</span>
-                                @endif
-                            </div>
-                        </figure>
-                        <div class="card-body p-3">
-                            <h3 class="text-sm font-medium truncate" title="{{ $file['filename'] }}">{{ $file['filename'] }}</h3>
-                            <div class="flex items-center justify-between text-xs text-base-content/60">
-                                <span>{{ $file['formatted_size'] }}</span>
-                                <span>{{ $file['created_at']->diffForHumans() }}</span>
-                            </div>
-                            <a href="{{ $file['parent_url'] }}" class="text-xs text-primary hover:underline truncate mt-1" title="{{ $file['parent_title'] }}">
-                                {{ Str::limit($file['parent_title'], 25) }}
-                            </a>
-                        </div>
-                    </div>
-                @endforeach
+            <div class="card bg-base-100 shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr class="bg-base-200">
+                                <th class="w-12"></th>
+                                <th>File Name</th>
+                                <th>Source</th>
+                                <th>Related To</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th class="w-24">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($attachments as $file)
+                                <tr class="hover">
+                                    <!-- Thumbnail/Icon -->
+                                    <td>
+                                        <div class="w-10 h-10 rounded-lg overflow-hidden bg-base-200 flex items-center justify-center">
+                                            @if($file['is_image'] && $file['url'])
+                                                <img src="{{ $file['url'] }}" alt="{{ $file['filename'] }}" class="w-full h-full object-cover" loading="lazy" />
+                                            @else
+                                                <span class="icon-[{{ $file['icon'] }}] size-5 text-base-content/50"></span>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- File Name -->
+                                    <td>
+                                        <div class="flex items-center gap-2">
+                                            <div class="font-medium max-w-xs truncate" title="{{ $file['name'] ?? $file['filename'] }}">
+                                                {{ $file['name'] ?? $file['filename'] }}
+                                            </div>
+                                            @if($file['is_shared'] ?? false)
+                                                <span class="badge badge-xs badge-info" title="Shared with you">
+                                                    <span class="icon-[tabler--share] size-3"></span>
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if($file['name'] && $file['name'] !== $file['filename'])
+                                            <div class="text-xs text-base-content/50 truncate">{{ $file['filename'] }}</div>
+                                        @endif
+                                    </td>
+
+                                    <!-- Source Badge -->
+                                    <td>
+                                        @if($file['source'] === 'drive')
+                                            <span class="badge badge-sm badge-accent">Drive</span>
+                                        @elseif(str_contains($file['source'], 'task'))
+                                            <span class="badge badge-sm badge-primary">Task</span>
+                                        @else
+                                            <span class="badge badge-sm badge-secondary">Discussion</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Related To (Parent) -->
+                                    <td>
+                                        <a href="{{ $file['parent_url'] }}" class="link link-hover text-sm max-w-xs truncate block" title="{{ $file['parent_title'] }}">
+                                            {{ Str::limit($file['parent_title'], 30) }}
+                                        </a>
+                                    </td>
+
+                                    <!-- File Type -->
+                                    <td>
+                                        <span class="text-sm text-base-content/60 capitalize">
+                                            {{ $file['file_category'] }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Size -->
+                                    <td>
+                                        <span class="text-sm text-base-content/60">
+                                            {{ $file['formatted_size'] }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Upload Date -->
+                                    <td>
+                                        <span class="text-sm text-base-content/60" title="{{ $file['created_at']->format('M d, Y h:i A') }}">
+                                            {{ $file['created_at']->diffForHumans() }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td>
+                                        <div class="flex items-center gap-1">
+                                            @if($file['url'])
+                                                <a href="{{ $file['url'] }}" target="_blank" class="btn btn-ghost btn-xs btn-square" title="View">
+                                                    <span class="icon-[tabler--eye] size-4"></span>
+                                                </a>
+                                                @if($file['source'] === 'drive' && $file['uuid'])
+                                                    <a href="{{ route('drive.download', $file['uuid']) }}" class="btn btn-ghost btn-xs btn-square" title="Download">
+                                                        <span class="icon-[tabler--download] size-4"></span>
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $file['url'] }}" download="{{ $file['filename'] }}" class="btn btn-ghost btn-xs btn-square" title="Download">
+                                                        <span class="icon-[tabler--download] size-4"></span>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if($file['can_edit'] ?? false)
+                                                <a href="{{ route('drive.edit', $file['uuid']) }}" class="btn btn-ghost btn-xs btn-square" title="Edit">
+                                                    <span class="icon-[tabler--edit] size-4"></span>
+                                                </a>
+                                            @endif
+                                            @if($file['can_delete'] ?? false)
+                                                <form action="{{ route('drive.destroy', $file['uuid']) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this file?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-ghost btn-xs btn-square text-error" title="Delete">
+                                                        <span class="icon-[tabler--trash] size-4"></span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Pagination -->

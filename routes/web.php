@@ -54,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
+    Route::get('/profile/activity', [ProfileController::class, 'activity'])->name('profile.activity');
 
     // Password routes
     Route::get('/profile/password', [PasswordController::class, 'index'])->name('profile.password');

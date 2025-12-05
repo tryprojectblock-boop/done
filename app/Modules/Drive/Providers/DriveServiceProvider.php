@@ -27,6 +27,6 @@ final class DriveServiceProvider extends ModuleServiceProvider
 
     public function getMigrationPaths(): array
     {
-        return [];
+        return [$this->getModulePath('Database/Migrations')];
     }
 }
