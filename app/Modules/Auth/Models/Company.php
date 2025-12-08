@@ -29,6 +29,10 @@ class Company extends BaseModel
         'owner_id',
         'settings',
         'trial_ends_at',
+        'paused_at',
+        'pause_reason',
+        'pause_description',
+        'paused_by',
     ];
 
     protected function casts(): array
@@ -38,7 +42,16 @@ class Company extends BaseModel
             'industry_type' => IndustryType::class,
             'settings' => 'array',
             'trial_ends_at' => 'datetime',
+            'paused_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Check if the company account is paused
+     */
+    public function isPaused(): bool
+    {
+        return $this->paused_at !== null;
     }
 
     protected static function booted(): void

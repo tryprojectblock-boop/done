@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Auth\Http\Controllers\AccountPausedController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,6 +24,9 @@ Route::middleware(['guest'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    // Account paused page (no CheckAccountPaused middleware here)
+    Route::get('/account/paused', [AccountPausedController::class, 'show'])->name('account.paused');
+
     // Logout
     Route::post('/logout', function () {
         auth()->logout();

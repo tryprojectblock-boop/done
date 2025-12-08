@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserCanManageUsers;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
+use App\Modules\Auth\Http\Middleware\CheckAccountPaused;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,8 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Append suspended check middleware to the web middleware group
         $middleware->appendToGroup('web', EnsureUserIsNotSuspended::class);
 
+        // Append paused account check middleware to the web middleware group
+        $middleware->appendToGroup('web', CheckAccountPaused::class);
+
         $middleware->alias([
             'can.manage.users' => EnsureUserCanManageUsers::class,
+            'check.account.paused' => CheckAccountPaused::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

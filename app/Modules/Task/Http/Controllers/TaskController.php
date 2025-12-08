@@ -257,7 +257,7 @@ class TaskController extends Controller
         return back()->with('success', "Task {$task->task_number} closed successfully.");
     }
 
-    public function reopen(Task intervention/image-laravel$task): RedirectResponse
+    public function reopen(Task $task): RedirectResponse
     {
         $user = auth()->user();
 
