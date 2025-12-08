@@ -13,12 +13,7 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            <span class="icon-[tabler--circle-check] size-5"></span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+    @include('admin::partials.alerts')
 
     <!-- Tabs -->
     <div class="card bg-base-100 shadow">

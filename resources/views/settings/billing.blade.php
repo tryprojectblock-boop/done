@@ -17,19 +17,9 @@
             <p class="text-base-content/60">Manage your subscription and billing information</p>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success mb-6">
-                <span class="icon-[tabler--circle-check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-6">
-                <span class="icon-[tabler--alert-circle] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
+        <div class="mb-6">
+            @include('partials.alerts')
+        </div>
 
         <!-- Current Plan Card -->
         <div class="card bg-base-100 shadow mb-6">

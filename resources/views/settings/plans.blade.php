@@ -18,12 +18,9 @@
             <p class="text-base-content/60 mt-2">Select the plan that best fits your needs</p>
         </div>
 
-        @if(session('error'))
-            <div class="alert alert-error mb-6">
-                <span class="icon-[tabler--alert-circle] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
+        <div class="mb-6">
+            @include('partials.alerts')
+        </div>
 
         <!-- Billing Cycle Toggle -->
         <div class="flex justify-center mb-8">

@@ -12,12 +12,7 @@
         <span class="text-base-content font-medium">{{ $company->name }}</span>
     </nav>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            <span class="icon-[tabler--circle-check] size-5"></span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+    @include('admin::partials.alerts')
 
     <!-- Row 1: Three Cards -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

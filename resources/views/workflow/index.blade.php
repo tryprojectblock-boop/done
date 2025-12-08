@@ -25,19 +25,9 @@
         </div>
 
         <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="alert alert-success mb-4">
-                <span class="icon-[tabler--check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-4">
-                <span class="icon-[tabler--x] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
+        <div class="mb-4">
+            @include('partials.alerts')
+        </div>
 
         <!-- Workflows Grid -->
         @if($workflows->isEmpty() && $archivedWorkflows->isEmpty())

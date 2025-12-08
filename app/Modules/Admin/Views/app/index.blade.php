@@ -11,19 +11,7 @@
         <p class="text-base-content/60">Maintenance mode and system reset options</p>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            <span class="icon-[tabler--circle-check] size-5"></span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-error">
-            <span class="icon-[tabler--alert-circle] size-5"></span>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
+    @include('admin::partials.alerts')
 
     <!-- Maintenance Mode Section -->
     <div class="card bg-base-100 shadow">

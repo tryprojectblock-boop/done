@@ -9,13 +9,9 @@
             <p class="text-base-content/60">Manage your personal information and preferences</p>
         </div>
 
-        <!-- Success Message -->
-        @if(session('success'))
-            <div class="alert alert-success mb-6">
-                <span class="icon-[tabler--circle-check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
+        <div class="mb-6">
+            @include('partials.alerts')
+        </div>
 
         <!-- Profile Form Card -->
         <div class="card bg-base-100 shadow">

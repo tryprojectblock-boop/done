@@ -16,17 +16,10 @@
             <p class="text-base-content/60">Update workflow settings</p>
         </div>
 
-        <!-- Error Messages -->
-        @if($errors->any())
-            <div class="alert alert-error mb-4">
-                <span class="icon-[tabler--alert-circle] size-5"></span>
-                <div>
-                    @foreach($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
-                </div>
-            </div>
-        @endif
+        <!-- Messages -->
+        <div class="mb-4">
+            @include('partials.alerts')
+        </div>
 
         <form action="{{ route('workflows.update', $workflow) }}" method="POST" id="workflow-form">
             @csrf
