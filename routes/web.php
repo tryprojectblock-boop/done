@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\MentionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\GuestSignupController;
 use App\Http\Controllers\GuestUpgradeController;
@@ -13,8 +14,10 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamSignupController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\GoogleCalendarController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,6 +31,14 @@ Route::get('/test-flyonui', function () {
 Route::get('/demo-theme', function () {
     return view('demo-theme');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Two-Factor Challenge Routes (During Login)
+|--------------------------------------------------------------------------
+*/
+Route::get('/two-factor/challenge', [TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
+Route::post('/two-factor/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
 
 /*
 |--------------------------------------------------------------------------
@@ -66,11 +77,39 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
     Route::put('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
 
+    // Integrations settings (Admin/Owner only)
+    Route::get('/settings/integrations', [SettingsController::class, 'integrations'])->name('settings.integrations');
+    Route::put('/settings/integrations', [SettingsController::class, 'updateIntegrations'])->name('settings.integrations.update');
+    Route::post('/settings/integrations/toggle-gmail-sync', [SettingsController::class, 'toggleGmailSync'])->name('settings.integrations.toggle-gmail-sync');
+
     // Billing & Subscription routes
     Route::get('/settings/billing', [SettingsController::class, 'billing'])->name('settings.billing');
     Route::get('/settings/billing/plans', [SettingsController::class, 'plans'])->name('settings.billing.plans');
     Route::post('/settings/billing/subscribe/{plan}', [SettingsController::class, 'subscribe'])->name('settings.billing.subscribe');
     Route::post('/settings/billing/apply-coupon', [SettingsController::class, 'applyCoupon'])->name('settings.billing.apply-coupon');
+
+    // Marketplace routes (Admin/Owner only)
+    Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
+    Route::get('/marketplace/two-factor', [MarketplaceController::class, 'twoFactor'])->name('marketplace.two-factor');
+    Route::post('/marketplace/two-factor/enable', [MarketplaceController::class, 'enableTwoFactor'])->name('marketplace.two-factor.enable');
+    Route::post('/marketplace/two-factor/disable', [MarketplaceController::class, 'disableTwoFactor'])->name('marketplace.two-factor.disable');
+    Route::get('/marketplace/gmail-sync', [MarketplaceController::class, 'gmailSync'])->name('marketplace.gmail-sync');
+    Route::post('/marketplace/gmail-sync/enable', [MarketplaceController::class, 'enableGmailSync'])->name('marketplace.gmail-sync.enable');
+    Route::post('/marketplace/gmail-sync/disable', [MarketplaceController::class, 'disableGmailSync'])->name('marketplace.gmail-sync.disable');
+
+    // Google Calendar OAuth routes
+    Route::get('/auth/google/connect', [GoogleCalendarController::class, 'connect'])->name('google.connect');
+    Route::get('/auth/google/callback', [GoogleCalendarController::class, 'callback'])->name('google.callback');
+    Route::post('/auth/google/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.disconnect');
+    Route::post('/auth/google/sync', [GoogleCalendarController::class, 'sync'])->name('google.sync');
+    Route::get('/auth/google/status', [GoogleCalendarController::class, 'status'])->name('google.status');
+
+    // Two-Factor Authentication routes (for users)
+    Route::get('/two-factor/setup', [TwoFactorController::class, 'setup'])->name('two-factor.setup');
+    Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirmSetup'])->name('two-factor.confirm');
+    Route::get('/two-factor/settings', [TwoFactorController::class, 'settings'])->name('two-factor.settings');
+    Route::post('/two-factor/regenerate', [TwoFactorController::class, 'regenerateRecoveryCodes'])->name('two-factor.regenerate');
+    Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
 
     // User management routes (Admin & Owner only)
     Route::middleware(['can.manage.users'])->group(function () {

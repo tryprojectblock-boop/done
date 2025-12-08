@@ -212,6 +212,15 @@ class User extends Authenticatable
         'email_verified_at',
         'last_login_at',
         'last_login_ip',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'google_id',
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
+        'google_calendar_id',
+        'google_connected_at',
     ];
 
     /**
@@ -222,6 +231,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'google_access_token',
+        'google_refresh_token',
     ];
 
     /**
@@ -247,6 +260,9 @@ class User extends Authenticatable
             'invitation_expires_at' => 'datetime',
             'is_guest' => 'boolean',
             'settings' => 'array',
+            'two_factor_confirmed_at' => 'datetime',
+            'google_token_expires_at' => 'datetime',
+            'google_connected_at' => 'datetime',
         ];
     }
 
@@ -613,5 +629,161 @@ class User extends Authenticatable
     public function getUnreadNotificationCountAttribute(): int
     {
         return $this->unreadNotifications()->count();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Check if user has 2FA enabled and confirmed.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !empty($this->two_factor_secret) && !empty($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Check if user has started 2FA setup but not confirmed.
+     */
+    public function hasTwoFactorPending(): bool
+    {
+        return !empty($this->two_factor_secret) && empty($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Check if user's company requires 2FA.
+     */
+    public function requiresTwoFactor(): bool
+    {
+        if (!$this->company) {
+            return false;
+        }
+
+        $settings = $this->company->settings ?? [];
+        return $settings['two_factor_enabled'] ?? false;
+    }
+
+    /**
+     * Check if user needs to set up 2FA (company requires it but user hasn't set it up).
+     */
+    public function needsTwoFactorSetup(): bool
+    {
+        return $this->requiresTwoFactor() && !$this->hasTwoFactorEnabled();
+    }
+
+    /**
+     * Get decrypted recovery codes.
+     */
+    public function getRecoveryCodes(): array
+    {
+        if (empty($this->two_factor_recovery_codes)) {
+            return [];
+        }
+
+        return json_decode(decrypt($this->two_factor_recovery_codes), true) ?? [];
+    }
+
+    /**
+     * Set encrypted recovery codes.
+     */
+    public function setRecoveryCodes(array $codes): void
+    {
+        $this->two_factor_recovery_codes = encrypt(json_encode($codes));
+        $this->save();
+    }
+
+    /**
+     * Use a recovery code.
+     */
+    public function useRecoveryCode(string $code): bool
+    {
+        $codes = $this->getRecoveryCodes();
+        $key = array_search($code, $codes);
+
+        if ($key !== false) {
+            unset($codes[$key]);
+            $this->setRecoveryCodes(array_values($codes));
+            return true;
+        }
+
+        return false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Calendar Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Check if user has connected their Google account.
+     */
+    public function hasGoogleConnected(): bool
+    {
+        return !empty($this->google_access_token) && !empty($this->google_refresh_token);
+    }
+
+    /**
+     * Check if user's Google token is expired.
+     */
+    public function isGoogleTokenExpired(): bool
+    {
+        if (!$this->google_token_expires_at) {
+            return true;
+        }
+
+        return $this->google_token_expires_at->isPast();
+    }
+
+    /**
+     * Check if Google Calendar sync is available for this user.
+     * Returns true if company has it enabled AND user has connected their account.
+     */
+    public function canSyncGoogleCalendar(): bool
+    {
+        if (!$this->company) {
+            return false;
+        }
+
+        $settings = $this->company->settings ?? [];
+        $companyEnabled = $settings['gmail_sync_enabled'] ?? false;
+
+        return $companyEnabled && $this->hasGoogleConnected();
+    }
+
+    /**
+     * Check if company has Google Calendar sync enabled.
+     */
+    public function companyHasGoogleSyncEnabled(): bool
+    {
+        if (!$this->company) {
+            return false;
+        }
+
+        $settings = $this->company->settings ?? [];
+
+        // Check if both configured and enabled
+        $isConfigured = !empty($settings['google_client_id']) && !empty($settings['google_client_secret']);
+        $isEnabled = $settings['gmail_sync_enabled'] ?? false;
+
+        return $isConfigured && $isEnabled;
+    }
+
+    /**
+     * Disconnect Google account.
+     */
+    public function disconnectGoogle(): void
+    {
+        $this->update([
+            'google_id' => null,
+            'google_access_token' => null,
+            'google_refresh_token' => null,
+            'google_token_expires_at' => null,
+            'google_calendar_id' => null,
+            'google_connected_at' => null,
+        ]);
     }
 }

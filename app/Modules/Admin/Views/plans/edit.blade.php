@@ -43,16 +43,11 @@
                         <label class="label">
                             <span class="label-text font-medium">Plan Type</span>
                         </label>
-                        <select name="type" id="plan-type" class="select select-bordered @error('type') select-error @enderror" required>
-                            @foreach($planTypes as $type)
-                                <option value="{{ $type->value }}" {{ old('type', $plan->type->value) === $type->value ? 'selected' : '' }}>
-                                    {{ $type->label() }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('type')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
-                        @enderror
+                        <input type="hidden" name="type" value="{{ $plan->type->value }}" />
+                        <input type="text" id="plan-type" value="{{ $plan->type->label() }}" class="input input-bordered bg-base-200" readonly disabled />
+                        <label class="label">
+                            <span class="label-text-alt text-base-content/60">Plan type cannot be changed after creation</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -115,7 +110,7 @@
                         <label class="label">
                             <span class="label-text font-medium">1 Month ($)</span>
                         </label>
-                        <input type="number" name="price_1_month" value="{{ old('price_1_month', $plan->price_1_month) }}" class="input input-bordered price-input @error('price_1_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_1_month" value="{{ old('price_1_month', $plan->price_1_month ?? 0) }}" class="input input-bordered price-input @error('price_1_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_1_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -125,7 +120,7 @@
                         <label class="label">
                             <span class="label-text font-medium">3 Month ($)</span>
                         </label>
-                        <input type="number" name="price_3_month" value="{{ old('price_3_month', $plan->price_3_month) }}" class="input input-bordered price-input @error('price_3_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_3_month" value="{{ old('price_3_month', $plan->price_3_month ?? 0) }}" class="input input-bordered price-input @error('price_3_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_3_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -135,7 +130,7 @@
                         <label class="label">
                             <span class="label-text font-medium">6 Month ($)</span>
                         </label>
-                        <input type="number" name="price_6_month" value="{{ old('price_6_month', $plan->price_6_month) }}" class="input input-bordered price-input @error('price_6_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_6_month" value="{{ old('price_6_month', $plan->price_6_month ?? 0) }}" class="input input-bordered price-input @error('price_6_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_6_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -145,7 +140,7 @@
                         <label class="label">
                             <span class="label-text font-medium">12 Month ($)</span>
                         </label>
-                        <input type="number" name="price_12_month" value="{{ old('price_12_month', $plan->price_12_month) }}" class="input input-bordered price-input @error('price_12_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_12_month" value="{{ old('price_12_month', $plan->price_12_month ?? 0) }}" class="input input-bordered price-input @error('price_12_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_12_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -155,7 +150,7 @@
                         <label class="label">
                             <span class="label-text font-medium">3 Year ($)</span>
                         </label>
-                        <input type="number" name="price_3_year" value="{{ old('price_3_year', $plan->price_3_year) }}" class="input input-bordered price-input @error('price_3_year') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_3_year" value="{{ old('price_3_year', $plan->price_3_year ?? 0) }}" class="input input-bordered price-input @error('price_3_year') input-error @enderror" min="0" step="0.01" />
                         @error('price_3_year')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -165,7 +160,7 @@
                         <label class="label">
                             <span class="label-text font-medium">5 Years ($)</span>
                         </label>
-                        <input type="number" name="price_5_year" value="{{ old('price_5_year', $plan->price_5_year) }}" class="input input-bordered price-input @error('price_5_year') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_5_year" value="{{ old('price_5_year', $plan->price_5_year ?? 0) }}" class="input input-bordered price-input @error('price_5_year') input-error @enderror" min="0" step="0.01" />
                         @error('price_5_year')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -217,41 +212,23 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const planTypeSelect = document.getElementById('plan-type');
+    const planType = '{{ $plan->type->value }}';
     const pricingInputs = document.getElementById('pricing-inputs');
     const freePlanNotice = document.getElementById('free-plan-notice');
     const priceFields = document.querySelectorAll('.price-input');
+    const isFree = planType === 'free';
 
-    function handlePlanTypeChange() {
-        const isFree = planTypeSelect.value === 'free';
+    if (isFree) {
+        // Show notice and make inputs readonly
+        freePlanNotice.classList.remove('hidden');
+        pricingInputs.classList.add('opacity-50');
 
-        if (isFree) {
-            // Show notice and disable inputs
-            freePlanNotice.classList.remove('hidden');
-            pricingInputs.classList.add('opacity-50', 'pointer-events-none');
-
-            // Set all prices to 0 and disable
-            priceFields.forEach(input => {
-                input.value = 0;
-                input.disabled = true;
-            });
-        } else {
-            // Hide notice and enable inputs
-            freePlanNotice.classList.add('hidden');
-            pricingInputs.classList.remove('opacity-50', 'pointer-events-none');
-
-            // Enable all price fields
-            priceFields.forEach(input => {
-                input.disabled = false;
-            });
-        }
+        // Make all price fields readonly
+        priceFields.forEach(input => {
+            input.readOnly = true;
+            input.classList.add('bg-base-200');
+        });
     }
-
-    // Initial check
-    handlePlanTypeChange();
-
-    // Listen for changes
-    planTypeSelect.addEventListener('change', handlePlanTypeChange);
 });
 </script>
 @endpush

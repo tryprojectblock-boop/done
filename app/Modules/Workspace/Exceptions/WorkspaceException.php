@@ -67,4 +67,19 @@ final class WorkspaceException extends Exception
     {
         return new self('This workspace has been suspended. Please contact support.');
     }
+
+    public static function workspaceLimitReached(): self
+    {
+        return new self('You have reached the maximum number of workspaces allowed by your plan. Please upgrade to create more workspaces.');
+    }
+
+    public static function teamMemberLimitReached(): self
+    {
+        return new self('You have reached the maximum number of team members allowed by your plan. Please upgrade to invite more members.');
+    }
+
+    public static function storageLimitReached(): self
+    {
+        return new self('You have reached the storage limit for your plan. Please upgrade to upload more files.');
+    }
 }

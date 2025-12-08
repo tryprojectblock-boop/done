@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
 use App\Models\User;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -13,6 +14,10 @@ use Illuminate\View\View;
 
 class UsersController extends Controller
 {
+    public function __construct(
+        private readonly PlanLimitService $planLimitService
+    ) {}
+
     /**
      * Display a listing of users.
      */
@@ -181,6 +186,27 @@ class UsersController extends Controller
             'members.*.first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
             'members.*.email.distinct' => 'Duplicate email addresses are not allowed.',
         ]);
+
+        // Check team member limit before inviting
+        $company = $currentUser->company;
+        if ($company) {
+            $membersToInvite = count($validated['members']);
+            $currentCount = $this->planLimitService->getTeamMemberCount($company);
+            $limits = $this->planLimitService->getLimits($company);
+            $limit = $limits['team_members'];
+
+            // If not unlimited (0 = unlimited)
+            if ($limit > 0 && ($currentCount + $membersToInvite) > $limit) {
+                $remaining = max(0, $limit - $currentCount);
+                $planName = $company->plan?->name ?? 'Free';
+
+                return response()->json([
+                    'error' => "Your {$planName} plan allows up to {$limit} team members. You currently have {$currentCount} members and are trying to invite {$membersToInvite}. You can only invite {$remaining} more member(s). Please upgrade your plan to invite more team members.",
+                    'limit_reached' => true,
+                    'upgrade_url' => route('settings.billing.plans'),
+                ], 403);
+            }
+        }
 
         $invitedCount = 0;
         $errors = [];

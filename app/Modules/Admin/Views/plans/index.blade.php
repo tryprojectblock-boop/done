@@ -70,6 +70,9 @@
                                     <td>
                                         <div class="flex items-center gap-2">
                                             <span class="font-medium">{{ $plan->name }}</span>
+                                            @if($plan->isTrial())
+                                                <span class="badge badge-warning badge-xs">Default Trial</span>
+                                            @endif
                                             @if($plan->is_popular)
                                                 <span class="badge badge-primary badge-xs">Popular</span>
                                             @endif
@@ -110,23 +113,25 @@
                                     </td>
                                     <td>
                                         <div class="flex items-center gap-1">
-                                            <a href="{{ route('backoffice.plans.edit', $plan) }}" class="btn btn-ghost btn-xs">
+                                            <a href="{{ route('backoffice.plans.edit', $plan) }}" class="btn btn-ghost btn-xs" title="Edit">
                                                 <span class="icon-[tabler--edit] size-4"></span>
                                             </a>
-                                            <form action="{{ route('backoffice.plans.toggle-status', $plan) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-ghost btn-xs" title="{{ $plan->is_active ? 'Deactivate' : 'Activate' }}">
-                                                    <span class="icon-[tabler--{{ $plan->is_active ? 'eye-off' : 'eye' }}] size-4"></span>
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('backoffice.plans.destroy', $plan) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this plan?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-ghost btn-xs text-error">
-                                                    <span class="icon-[tabler--trash] size-4"></span>
-                                                </button>
-                                            </form>
+                                            @if(!$plan->isTrial())
+                                                <form action="{{ route('backoffice.plans.toggle-status', $plan) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-ghost btn-xs" title="{{ $plan->is_active ? 'Deactivate' : 'Activate' }}">
+                                                        <span class="icon-[tabler--{{ $plan->is_active ? 'eye-off' : 'eye' }}] size-4"></span>
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('backoffice.plans.destroy', $plan) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this plan?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-ghost btn-xs text-error" title="Delete">
+                                                        <span class="icon-[tabler--trash] size-4"></span>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

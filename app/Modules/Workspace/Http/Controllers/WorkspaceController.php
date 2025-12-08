@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\GuestInvitationMail;
 use App\Models\User;
 use App\Models\Workflow;
+use App\Services\PlanLimitService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -15,6 +16,7 @@ use App\Modules\Workspace\Contracts\WorkspaceServiceInterface;
 use App\Modules\Workspace\DTOs\CreateWorkspaceDTO;
 use App\Modules\Workspace\Enums\WorkspaceRole;
 use App\Modules\Workspace\Enums\WorkspaceType;
+use App\Modules\Workspace\Exceptions\WorkspaceException;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +25,8 @@ use Illuminate\View\View;
 class WorkspaceController extends Controller
 {
     public function __construct(
-        private WorkspaceServiceInterface $workspaceService
+        private WorkspaceServiceInterface $workspaceService,
+        private PlanLimitService $planLimitService,
     ) {}
 
     /**
@@ -54,6 +57,16 @@ class WorkspaceController extends Controller
         if ($user->role === User::ROLE_GUEST && !$user->company_id) {
             return redirect()->route('workspace.index')
                 ->with('upgrade_required', 'Please upgrade your account to create workspaces.');
+        }
+
+        // Check workspace limit
+        $company = $user->company;
+        if ($company && !$this->planLimitService->canCreateWorkspace($company)) {
+            $limits = $this->planLimitService->getLimits($company);
+            $planName = $company->plan?->name ?? 'Free';
+
+            return redirect()->route('workspace.index')
+                ->with('error', "You have reached the workspace limit ({$limits['workspaces']}) for your {$planName} plan. Please upgrade to create more workspaces.");
         }
 
         // Get team members for invitation (excluding current user)
@@ -125,7 +138,12 @@ class WorkspaceController extends Controller
             ],
         );
 
-        $workspace = $this->workspaceService->create($dto);
+        try {
+            $workspace = $this->workspaceService->create($dto);
+        } catch (WorkspaceException $e) {
+            return redirect()->route('workspace.index')
+                ->with('error', $e->getMessage());
+        }
 
         // Add invited members
         if (!empty($validated['members'])) {

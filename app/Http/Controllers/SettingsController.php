@@ -313,6 +313,100 @@ class SettingsController extends Controller
     }
 
     /**
+     * Display integrations settings (admin/owner only).
+     */
+    public function integrations(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access integration settings.');
+        }
+
+        $company = $user->company;
+        $settings = $company->settings ?? [];
+
+        $integrationSettings = [
+            'google_client_id' => $settings['google_client_id'] ?? '',
+            'google_client_secret' => $settings['google_client_secret'] ?? '',
+            'google_redirect_uri' => $settings['google_redirect_uri'] ?? url('/auth/google/callback'),
+            'gmail_sync_enabled' => $settings['gmail_sync_enabled'] ?? false,
+        ];
+
+        return view('settings.integrations', [
+            'user' => $user,
+            'company' => $company,
+            'integrationSettings' => $integrationSettings,
+        ]);
+    }
+
+    /**
+     * Update integrations settings.
+     */
+    public function updateIntegrations(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to update integration settings.');
+        }
+
+        $validated = $request->validate([
+            'google_client_id' => 'nullable|string|max:255',
+            'google_client_secret' => 'nullable|string|max:255',
+            'google_redirect_uri' => 'nullable|url|max:255',
+        ]);
+
+        $company = $user->company;
+        $settings = $company->settings ?? [];
+
+        $settings['google_client_id'] = $validated['google_client_id'] ?? '';
+        $settings['google_client_secret'] = $validated['google_client_secret'] ?? '';
+        $settings['google_redirect_uri'] = $validated['google_redirect_uri'] ?? url('/auth/google/callback');
+
+        // Auto-enable Gmail sync if credentials are provided
+        if (!empty($validated['google_client_id']) && !empty($validated['google_client_secret'])) {
+            $settings['gmail_sync_enabled'] = $settings['gmail_sync_enabled'] ?? true;
+        }
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('settings.integrations')
+            ->with('success', 'Integration settings updated successfully.');
+    }
+
+    /**
+     * Toggle Gmail Calendar Sync.
+     */
+    public function toggleGmailSync(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to change integration settings.');
+        }
+
+        $company = $user->company;
+        $settings = $company->settings ?? [];
+
+        // Check if Google API is configured
+        if (empty($settings['google_client_id']) || empty($settings['google_client_secret'])) {
+            return redirect()->route('settings.integrations')
+                ->with('error', 'Please configure Google API credentials first.');
+        }
+
+        $settings['gmail_sync_enabled'] = !($settings['gmail_sync_enabled'] ?? false);
+        $settings['gmail_sync_toggled_at'] = now()->toISOString();
+        $settings['gmail_sync_toggled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        $status = $settings['gmail_sync_enabled'] ? 'enabled' : 'disabled';
+        return redirect()->route('settings.integrations')
+            ->with('success', "Gmail Calendar Sync has been {$status}.");
+    }
+
+    /**
      * Apply a coupon code.
      */
     public function applyCoupon(Request $request): RedirectResponse

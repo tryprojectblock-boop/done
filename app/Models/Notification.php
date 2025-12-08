@@ -39,6 +39,10 @@ class Notification extends Model
     public const TYPE_TASK_ASSIGNED = 'task_assigned';
     public const TYPE_TASK_COMMENT = 'task_comment';
     public const TYPE_TASK_STATUS = 'task_status';
+    public const TYPE_CHANNEL_MEMBER_ADDED = 'channel_member_added';
+    public const TYPE_CHANNEL_REPLY_MENTION = 'channel_reply_mention';
+    public const TYPE_CHANNEL_JOIN_REQUEST = 'channel_join_request';
+    public const TYPE_CHANNEL_JOIN_REJECTED = 'channel_join_rejected';
 
     public function user(): BelongsTo
     {
@@ -89,6 +93,10 @@ class Notification extends Model
             self::TYPE_TASK_ASSIGNED => 'icon-[tabler--user-plus]',
             self::TYPE_TASK_COMMENT => 'icon-[tabler--message]',
             self::TYPE_TASK_STATUS => 'icon-[tabler--check]',
+            self::TYPE_CHANNEL_MEMBER_ADDED => 'icon-[tabler--users-plus]',
+            self::TYPE_CHANNEL_REPLY_MENTION => 'icon-[tabler--at]',
+            self::TYPE_CHANNEL_JOIN_REQUEST, 'channel_join_request' => 'icon-[tabler--user-question]',
+            self::TYPE_CHANNEL_JOIN_REJECTED, 'channel_join_rejected' => 'icon-[tabler--user-x]',
             default => 'icon-[tabler--bell]',
         };
     }
@@ -100,6 +108,10 @@ class Notification extends Model
             self::TYPE_TASK_ASSIGNED => 'text-success',
             self::TYPE_TASK_COMMENT => 'text-info',
             self::TYPE_TASK_STATUS => 'text-warning',
+            self::TYPE_CHANNEL_MEMBER_ADDED => 'text-success',
+            self::TYPE_CHANNEL_REPLY_MENTION => 'text-primary',
+            self::TYPE_CHANNEL_JOIN_REQUEST, 'channel_join_request' => 'text-info',
+            self::TYPE_CHANNEL_JOIN_REJECTED, 'channel_join_rejected' => 'text-error',
             default => 'text-base-content',
         };
     }

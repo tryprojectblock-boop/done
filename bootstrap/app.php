@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckRegistrationEnabled;
+use App\Http\Middleware\EnsureTwoFactorAuthenticated;
 use App\Http\Middleware\EnsureUserCanManageUsers;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
 use App\Modules\Auth\Http\Middleware\CheckAccountPaused;
@@ -25,10 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Append paused account check middleware to the web middleware group
         $middleware->appendToGroup('web', CheckAccountPaused::class);
 
+        // Append 2FA check middleware to the web middleware group
+        $middleware->appendToGroup('web', EnsureTwoFactorAuthenticated::class);
+
         $middleware->alias([
             'can.manage.users' => EnsureUserCanManageUsers::class,
             'check.account.paused' => CheckAccountPaused::class,
             'registration.enabled' => CheckRegistrationEnabled::class,
+            'two-factor' => EnsureTwoFactorAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

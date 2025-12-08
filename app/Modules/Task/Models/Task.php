@@ -44,6 +44,9 @@ class Task extends Model
         'estimated_time',
         'actual_time',
         'position',
+        'google_event_id',
+        'google_synced_at',
+        'google_sync_source',
     ];
 
     protected function casts(): array
@@ -58,6 +61,7 @@ class Task extends Model
             'estimated_time' => 'integer',
             'actual_time' => 'integer',
             'position' => 'integer',
+            'google_synced_at' => 'datetime',
         ];
     }
 
@@ -91,6 +95,30 @@ class Task extends Model
             }
             if (empty($task->task_number)) {
                 $task->task_number = static::generateTaskNumber($task->workspace_id);
+            }
+        });
+
+        // Sync to Google Calendar when task is saved with a due date
+        static::saved(function (Task $task) {
+            // Only trigger if due_date exists and task is not closed
+            if ($task->due_date && !$task->closed_at) {
+                // Dispatch sync job (non-blocking)
+                dispatch(function () use ($task) {
+                    $googleService = app(\App\Services\GoogleCalendarService::class);
+
+                    // Get sync user (assignee or creator)
+                    $syncUser = null;
+                    if ($task->assignee_id) {
+                        $syncUser = \App\Models\User::find($task->assignee_id);
+                    }
+                    if (!$syncUser?->canSyncGoogleCalendar() && $task->created_by) {
+                        $syncUser = \App\Models\User::find($task->created_by);
+                    }
+
+                    if ($syncUser?->canSyncGoogleCalendar()) {
+                        $googleService->syncTaskToGoogle($task->fresh(), $syncUser);
+                    }
+                })->afterResponse();
             }
         });
     }

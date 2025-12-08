@@ -15,6 +15,18 @@
             </a>
         </div>
 
+        <!-- Tabs: Discussion | Team Channel -->
+        <div class="tabs tabs-bordered mb-6">
+            <a href="{{ route('discussions.index') }}" class="tab tab-lg tab-bordered tab-active gap-2">
+                <span class="icon-[tabler--message-circle] size-5"></span>
+                Discussion
+            </a>
+            <a href="{{ route('channels.index') }}" class="tab tab-lg tab-bordered gap-2">
+                <span class="icon-[tabler--hash] size-5"></span>
+                Team Channel
+            </a>
+        </div>
+
         <!-- Success/Error Messages -->
         @if(session('success'))
             <div class="alert alert-success mb-4">

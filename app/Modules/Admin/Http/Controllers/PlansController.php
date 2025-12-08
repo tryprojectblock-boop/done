@@ -42,18 +42,20 @@ class PlansController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $isFree = $request->input('type') === PlanType::FREE->value;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => ['required', Rule::enum(PlanType::class)],
             'workspace_limit' => 'required|integer|min:0',
             'team_member_limit' => 'required|integer|min:0',
             'storage_limit_gb' => 'required|integer|min:0',
-            'price_1_month' => 'required|numeric|min:0',
-            'price_3_month' => 'required|numeric|min:0',
-            'price_6_month' => 'required|numeric|min:0',
-            'price_12_month' => 'required|numeric|min:0',
-            'price_3_year' => 'required|numeric|min:0',
-            'price_5_year' => 'required|numeric|min:0',
+            'price_1_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_3_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_6_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_12_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_3_year' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_5_year' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'is_active' => 'boolean',
             'is_popular' => 'boolean',
             'sort_order' => 'nullable|integer',
@@ -61,6 +63,16 @@ class PlansController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_popular'] = $request->boolean('is_popular');
+
+        // Set all prices to 0 for free plans
+        if ($isFree) {
+            $validated['price_1_month'] = 0;
+            $validated['price_3_month'] = 0;
+            $validated['price_6_month'] = 0;
+            $validated['price_12_month'] = 0;
+            $validated['price_3_year'] = 0;
+            $validated['price_5_year'] = 0;
+        }
 
         Plan::create($validated);
 
@@ -82,18 +94,20 @@ class PlansController extends Controller
      */
     public function update(Request $request, Plan $plan): RedirectResponse
     {
+        $isFree = $request->input('type') === PlanType::FREE->value;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => ['required', Rule::enum(PlanType::class)],
             'workspace_limit' => 'required|integer|min:0',
             'team_member_limit' => 'required|integer|min:0',
             'storage_limit_gb' => 'required|integer|min:0',
-            'price_1_month' => 'required|numeric|min:0',
-            'price_3_month' => 'required|numeric|min:0',
-            'price_6_month' => 'required|numeric|min:0',
-            'price_12_month' => 'required|numeric|min:0',
-            'price_3_year' => 'required|numeric|min:0',
-            'price_5_year' => 'required|numeric|min:0',
+            'price_1_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_3_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_6_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_12_month' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_3_year' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'price_5_year' => $isFree ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'is_active' => 'boolean',
             'is_popular' => 'boolean',
             'sort_order' => 'nullable|integer',
@@ -101,6 +115,16 @@ class PlansController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_popular'] = $request->boolean('is_popular');
+
+        // Set all prices to 0 for free plans
+        if ($isFree) {
+            $validated['price_1_month'] = 0;
+            $validated['price_3_month'] = 0;
+            $validated['price_6_month'] = 0;
+            $validated['price_12_month'] = 0;
+            $validated['price_3_year'] = 0;
+            $validated['price_5_year'] = 0;
+        }
 
         $plan->update($validated);
 
@@ -113,6 +137,11 @@ class PlansController extends Controller
      */
     public function destroy(Plan $plan): RedirectResponse
     {
+        if ($plan->isTrial()) {
+            return redirect()->route('backoffice.plans.index', ['tab' => 'plans'])
+                ->with('error', 'The trial plan cannot be deleted.');
+        }
+
         $plan->delete();
 
         return redirect()->route('backoffice.plans.index', ['tab' => 'plans'])
@@ -124,6 +153,10 @@ class PlansController extends Controller
      */
     public function toggleStatus(Plan $plan): RedirectResponse
     {
+        if ($plan->isTrial()) {
+            return back()->with('error', 'The trial plan status cannot be changed.');
+        }
+
         $plan->update(['is_active' => !$plan->is_active]);
 
         return back()->with('success', 'Plan status updated successfully.');

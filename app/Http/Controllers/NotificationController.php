@@ -121,6 +121,10 @@ class NotificationController extends Controller
             Notification::TYPE_TASK_COMMENT,
             Notification::TYPE_TASK_ASSIGNED,
             Notification::TYPE_TASK_STATUS => $data['task_url'] ?? null,
+            Notification::TYPE_CHANNEL_MEMBER_ADDED => $data['channel_url'] ?? null,
+            Notification::TYPE_CHANNEL_REPLY_MENTION => $data['thread_url'] ?? null,
+            Notification::TYPE_CHANNEL_JOIN_REQUEST, 'channel_join_request' => $data['channel_url'] ?? null,
+            Notification::TYPE_CHANNEL_JOIN_REJECTED, 'channel_join_rejected' => null,
             default => null,
         };
     }

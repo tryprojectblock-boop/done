@@ -8,6 +8,9 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Modules\Discussion\Models\Discussion;
 use App\Modules\Discussion\Models\DiscussionComment;
+use App\Modules\Discussion\Models\TeamChannel;
+use App\Modules\Discussion\Models\TeamChannelThread;
+use App\Modules\Discussion\Models\TeamChannelReply;
 use App\Modules\Idea\Models\Idea;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskComment;
@@ -207,6 +210,94 @@ class NotificationService
                 $discussionComment = $comment instanceof DiscussionComment ? $comment : null;
                 $notifications[] = $this->createDiscussionMentionNotification($user, $author, $entity, $discussionComment);
             }
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Create a notification when a user is added to a team channel.
+     */
+    public function createChannelMemberAddedNotification(
+        User $member,
+        User $inviter,
+        TeamChannel $channel
+    ): Notification {
+        return Notification::create([
+            'user_id' => $member->id,
+            'type' => Notification::TYPE_CHANNEL_MEMBER_ADDED,
+            'title' => "Added to channel",
+            'message' => "{$inviter->name} added you to channel: {$channel->name}",
+            'notifiable_type' => TeamChannel::class,
+            'notifiable_id' => $channel->id,
+            'data' => [
+                'inviter_id' => $inviter->id,
+                'inviter_name' => $inviter->name,
+                'inviter_avatar' => $inviter->avatar_url,
+                'channel_id' => $channel->id,
+                'channel_uuid' => $channel->uuid,
+                'channel_name' => $channel->name,
+                'channel_tag' => $channel->tag,
+                'channel_url' => route('channels.show', $channel->uuid),
+            ],
+        ]);
+    }
+
+    /**
+     * Create a mention notification for a Team Channel reply.
+     */
+    public function createChannelReplyMentionNotification(
+        User $mentionedUser,
+        User $mentioner,
+        TeamChannelThread $thread,
+        TeamChannelReply $reply
+    ): Notification {
+        return Notification::create([
+            'user_id' => $mentionedUser->id,
+            'type' => Notification::TYPE_CHANNEL_REPLY_MENTION,
+            'title' => "{$mentioner->name} mentioned you",
+            'message' => "You were mentioned in a reply on: {$thread->title}",
+            'notifiable_type' => TeamChannelReply::class,
+            'notifiable_id' => $reply->id,
+            'data' => [
+                'mentioner_id' => $mentioner->id,
+                'mentioner_name' => $mentioner->name,
+                'mentioner_avatar' => $mentioner->avatar_url,
+                'thread_id' => $thread->id,
+                'thread_uuid' => $thread->uuid,
+                'thread_title' => $thread->title,
+                'channel_id' => $thread->channel_id,
+                'channel_uuid' => $thread->channel->uuid,
+                'channel_name' => $thread->channel->name,
+                'thread_url' => route('channels.threads.show', [$thread->channel->uuid, $thread->uuid]),
+                'reply_id' => $reply->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Create notifications for all mentioned users in Team Channel reply content.
+     */
+    public function notifyMentionedUsersInChannelReply(
+        string $content,
+        User $author,
+        TeamChannelThread $thread,
+        TeamChannelReply $reply
+    ): array {
+        $mentionedUserIds = $this->parseMentionsFromContent($content);
+        $notifications = [];
+
+        // Don't notify the author if they mention themselves
+        $mentionedUserIds = array_filter($mentionedUserIds, fn($id) => $id !== $author->id);
+
+        if (empty($mentionedUserIds)) {
+            return [];
+        }
+
+        $users = User::whereIn('id', $mentionedUserIds)->get();
+
+        foreach ($users as $user) {
+            $notifications[] = $this->createChannelReplyMentionNotification($user, $author, $thread, $reply);
         }
 
         return $notifications;

@@ -14,6 +14,7 @@ use App\Modules\Auth\Events\RegistrationCompleted;
 use App\Modules\Auth\Events\UserRegistered;
 use App\Modules\Auth\Exceptions\RegistrationException;
 use App\Modules\Auth\Mail\ActivationCodeMail;
+use App\Modules\Admin\Models\Plan;
 use App\Modules\Auth\Models\Company;
 use App\Modules\Auth\Models\PendingRegistration;
 use Database\Seeders\WorkflowTemplateSeeder;
@@ -164,13 +165,15 @@ final class RegistrationService implements RegistrationServiceInterface
                 'last_login_at' => now(),
             ]);
 
-            // Create company
+            // Create company with default trial plan
+            $trialPlan = Plan::getTrialPlan();
             $company = Company::create([
                 'name' => $registration->company_name,
                 'size' => $registration->company_size,
                 'industry_type' => $registration->industry_type,
                 'website_url' => $registration->getFullWebsiteUrl(),
                 'owner_id' => $user->id,
+                'plan_id' => $trialPlan?->id,
             ]);
 
             // Update user with company

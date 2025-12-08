@@ -17,6 +17,7 @@ use App\Modules\Workspace\Events\WorkspaceCreated;
 use App\Modules\Workspace\Exceptions\WorkspaceException;
 use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceInvitation;
+use App\Services\PlanLimitService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -28,10 +29,20 @@ final class WorkspaceService implements WorkspaceServiceInterface
         private readonly FileUploadInterface $fileUpload,
         private readonly CreateWorkspaceAction $createWorkspaceAction,
         private readonly InviteMemberAction $inviteMemberAction,
+        private readonly PlanLimitService $planLimitService,
     ) {}
 
     public function create(CreateWorkspaceDTO $dto): Workspace
     {
+        // Check workspace limit before creating
+        $owner = User::find($dto->ownerId);
+
+        if ($owner && $owner->company) {
+            if (!$this->planLimitService->canCreateWorkspace($owner->company)) {
+                throw WorkspaceException::workspaceLimitReached();
+            }
+        }
+
         return $this->createWorkspaceAction->execute($dto);
     }
 

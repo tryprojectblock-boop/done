@@ -4,6 +4,12 @@
     $isGuestOnly = $user->role === \App\Models\User::ROLE_GUEST && !$user->company_id;
     // Check if guest has any workspace access
     $hasGuestWorkspaces = $isGuestOnly && $user->guestWorkspaces()->exists();
+    // Plan limits info (passed by PlanLimitsComposer)
+    $hasReachedLimit = $planLimits['has_reached_limit'] ?? false;
+    $reachedLimits = $planLimits['reached_limits'] ?? [];
+    $canCreateWorkspace = $planLimits['can_create_workspace'] ?? true;
+    $canAddTeamMember = $planLimits['can_add_team_member'] ?? true;
+    $planName = $planLimits['plan_name'] ?? 'Free';
 @endphp
 
 <nav class="navbar bg-base-100 shadow-sm fixed top-0 left-0 right-0 z-[100] px-4 min-h-16">
@@ -77,7 +83,15 @@
                         <li><a class="dropdown-item" href="/time"><span class="icon-[tabler--clock] size-4 me-2"></span>Time Management</a></li>
                         <li><a class="dropdown-item" href="/ideas"><span class="icon-[tabler--bulb] size-4 me-2"></span>Ideas</a></li>
                         @if($user->isAdminOrHigher())
-                        <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
+                        <li>
+                            <a class="dropdown-item {{ !$canAddTeamMember ? 'text-warning' : '' }}" href="/users">
+                                <span class="icon-[tabler--user-circle] size-4 me-2"></span>
+                                Users
+                                @if(!$canAddTeamMember)
+                                    <span class="badge badge-warning badge-xs ml-auto">Limit</span>
+                                @endif
+                            </a>
+                        </li>
                         @endif
                         <li><a class="dropdown-item" href="/workflows"><span class="icon-[tabler--git-branch] size-4 me-2"></span>Workflows</a></li>
                         <li><a class="dropdown-item" href="{{ route('drive.index') }}"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
@@ -90,6 +104,14 @@
 
     <div class="flex-none gap-2 flex items-center">
         @if(!$isGuestOnly)
+            <!-- Upgrade Button (shown when any limit is reached) -->
+            @if($hasReachedLimit)
+                <a href="{{ route('settings.billing.plans') }}" class="btn btn-warning btn-sm gap-1 animate-pulse">
+                    <span class="icon-[tabler--arrow-up-circle] size-4"></span>
+                    <span class="hidden sm:inline">Upgrade</span>
+                </a>
+            @endif
+
             <!-- Add Button (only for team members) -->
             <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
                 <button id="add-dropdown" type="button" class="dropdown-toggle btn btn-primary btn-sm gap-1" aria-haspopup="menu" aria-expanded="false" aria-label="Add menu">
@@ -97,14 +119,33 @@
                     <span class="hidden sm:inline">Add</span>
                     <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 transition-transform"></span>
                 </button>
-                <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-52" role="menu" aria-orientation="vertical" aria-labelledby="add-dropdown">
+                <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-60" role="menu" aria-orientation="vertical" aria-labelledby="add-dropdown">
                     <li><a class="dropdown-item" href="{{ route('tasks.create') }}"><span class="icon-[tabler--checkbox] size-4 me-2 text-primary"></span>Add Task</a></li>
                     <li><a class="dropdown-item" href="{{ route('discussions.create') }}"><span class="icon-[tabler--message-plus] size-4 me-2 text-success"></span>Add Discussion</a></li>
-                    <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
+                    @if($canCreateWorkspace)
+                        <li><a class="dropdown-item" href="{{ route('workspace.create') }}"><span class="icon-[tabler--briefcase] size-4 me-2 text-info"></span>Add Workspace</a></li>
+                    @else
+                        <li>
+                            <a href="{{ route('settings.billing.plans') }}" class="dropdown-item text-warning">
+                                <span class="icon-[tabler--briefcase] size-4 me-2"></span>
+                                <span class="flex-1">Add Workspace</span>
+                                <span class="badge badge-warning badge-xs">Limit</span>
+                            </a>
+                        </li>
+                    @endif
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
                     <li><a class="dropdown-item" href="/guests"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
                     <li><a class="dropdown-item" href="{{ route('ideas.create') }}"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--clock-plus] size-4 me-2 text-error"></span>Add Time</a></li>
+                    @if($hasReachedLimit)
+                        <li><hr class="border-base-content/10 my-2"></li>
+                        <li>
+                            <a href="{{ route('settings.billing.plans') }}" class="dropdown-item bg-warning/10 text-warning hover:bg-warning/20">
+                                <span class="icon-[tabler--arrow-up-circle] size-4 me-2"></span>
+                                Upgrade Plan
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </div>
 
@@ -265,7 +306,24 @@
                     <li><a class="dropdown-item" href="/ideas"><span class="icon-[tabler--bulb] size-4 me-2"></span>Ideas</a></li>
                     <li><a class="dropdown-item" href="{{ route('drive.index') }}"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
                     @if($user->isAdminOrHigher())
-                    <li><a class="dropdown-item" href="/users"><span class="icon-[tabler--user-circle] size-4 me-2"></span>Users</a></li>
+                    <li>
+                        <a class="dropdown-item {{ !$canAddTeamMember ? 'text-warning' : '' }}" href="/users">
+                            <span class="icon-[tabler--user-circle] size-4 me-2"></span>
+                            Users
+                            @if(!$canAddTeamMember)
+                                <span class="badge badge-warning badge-xs ml-auto">Limit</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
+                    @if($hasReachedLimit)
+                    <li><hr class="border-base-content/10 my-2"></li>
+                    <li>
+                        <a href="{{ route('settings.billing.plans') }}" class="dropdown-item bg-warning/10 text-warning hover:bg-warning/20">
+                            <span class="icon-[tabler--arrow-up-circle] size-4 me-2"></span>
+                            Upgrade Plan
+                        </a>
+                    </li>
                     @endif
                 @endif
             </ul>

@@ -114,7 +114,7 @@
                         <label class="label">
                             <span class="label-text font-medium">1 Month ($)</span>
                         </label>
-                        <input type="number" name="price_1_month" value="{{ old('price_1_month', 0) }}" class="input input-bordered price-input @error('price_1_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_1_month" value="{{ old('price_1_month', 0) }}" class="input input-bordered price-input @error('price_1_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_1_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -124,7 +124,7 @@
                         <label class="label">
                             <span class="label-text font-medium">3 Month ($)</span>
                         </label>
-                        <input type="number" name="price_3_month" value="{{ old('price_3_month', 0) }}" class="input input-bordered price-input @error('price_3_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_3_month" value="{{ old('price_3_month', 0) }}" class="input input-bordered price-input @error('price_3_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_3_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -134,7 +134,7 @@
                         <label class="label">
                             <span class="label-text font-medium">6 Month ($)</span>
                         </label>
-                        <input type="number" name="price_6_month" value="{{ old('price_6_month', 0) }}" class="input input-bordered price-input @error('price_6_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_6_month" value="{{ old('price_6_month', 0) }}" class="input input-bordered price-input @error('price_6_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_6_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -144,7 +144,7 @@
                         <label class="label">
                             <span class="label-text font-medium">12 Month ($)</span>
                         </label>
-                        <input type="number" name="price_12_month" value="{{ old('price_12_month', 0) }}" class="input input-bordered price-input @error('price_12_month') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_12_month" value="{{ old('price_12_month', 0) }}" class="input input-bordered price-input @error('price_12_month') input-error @enderror" min="0" step="0.01" />
                         @error('price_12_month')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -154,7 +154,7 @@
                         <label class="label">
                             <span class="label-text font-medium">3 Year ($)</span>
                         </label>
-                        <input type="number" name="price_3_year" value="{{ old('price_3_year', 0) }}" class="input input-bordered price-input @error('price_3_year') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_3_year" value="{{ old('price_3_year', 0) }}" class="input input-bordered price-input @error('price_3_year') input-error @enderror" min="0" step="0.01" />
                         @error('price_3_year')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -164,7 +164,7 @@
                         <label class="label">
                             <span class="label-text font-medium">5 Years ($)</span>
                         </label>
-                        <input type="number" name="price_5_year" value="{{ old('price_5_year', 0) }}" class="input input-bordered price-input @error('price_5_year') input-error @enderror" min="0" step="0.01" required />
+                        <input type="number" name="price_5_year" value="{{ old('price_5_year', 0) }}" class="input input-bordered price-input @error('price_5_year') input-error @enderror" min="0" step="0.01" />
                         @error('price_5_year')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -225,23 +225,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const isFree = planTypeSelect.value === 'free';
 
         if (isFree) {
-            // Show notice and disable inputs
+            // Show notice and make inputs readonly
             freePlanNotice.classList.remove('hidden');
-            pricingInputs.classList.add('opacity-50', 'pointer-events-none');
+            pricingInputs.classList.add('opacity-50');
 
-            // Set all prices to 0 and disable
+            // Set all prices to 0 and make readonly
             priceFields.forEach(input => {
                 input.value = 0;
-                input.disabled = true;
+                input.readOnly = true;
+                input.classList.add('bg-base-200');
             });
         } else {
             // Hide notice and enable inputs
             freePlanNotice.classList.add('hidden');
-            pricingInputs.classList.remove('opacity-50', 'pointer-events-none');
+            pricingInputs.classList.remove('opacity-50');
 
             // Enable all price fields
             priceFields.forEach(input => {
-                input.disabled = false;
+                input.readOnly = false;
+                input.classList.remove('bg-base-200');
             });
         }
     }

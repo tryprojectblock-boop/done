@@ -49,10 +49,15 @@
                                         <span class="w-2 h-2 bg-primary rounded-full"></span>
                                     @endif
                                     @php
-                                        $url = $notification->data['task_url'] ?? null;
+                                        $url = $notification->data['task_url']
+                                            ?? $notification->data['channel_url']
+                                            ?? $notification->data['thread_url']
+                                            ?? $notification->data['discussion_url']
+                                            ?? $notification->data['idea_url']
+                                            ?? null;
                                     @endphp
                                     @if($url)
-                                        <a href="{{ $url }}" class="btn btn-ghost btn-xs">
+                                        <a href="{{ $url }}" class="btn btn-ghost btn-xs" title="View">
                                             <span class="icon-[tabler--external-link] size-4"></span>
                                         </a>
                                     @endif

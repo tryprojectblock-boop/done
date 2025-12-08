@@ -212,4 +212,58 @@ class Company extends BaseModel
         $priceField = 'price_' . str_replace('_', '_', $this->billing_cycle);
         return (float) ($this->plan->{$priceField} ?? 0);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Plan Limit Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the workspace limit for this company's plan
+     */
+    public function getWorkspaceLimit(): int
+    {
+        return $this->plan?->workspace_limit ?? 1;
+    }
+
+    /**
+     * Get the team member limit for this company's plan
+     */
+    public function getTeamMemberLimit(): int
+    {
+        return $this->plan?->team_member_limit ?? 5;
+    }
+
+    /**
+     * Get the storage limit in GB for this company's plan
+     */
+    public function getStorageLimitGb(): int
+    {
+        return $this->plan?->storage_limit_gb ?? 5;
+    }
+
+    /**
+     * Check if the company has unlimited workspaces
+     */
+    public function hasUnlimitedWorkspaces(): bool
+    {
+        return $this->plan && $this->plan->workspace_limit === 0;
+    }
+
+    /**
+     * Check if the company has unlimited team members
+     */
+    public function hasUnlimitedTeamMembers(): bool
+    {
+        return $this->plan && $this->plan->team_member_limit === 0;
+    }
+
+    /**
+     * Check if the company has unlimited storage
+     */
+    public function hasUnlimitedStorage(): bool
+    {
+        return $this->plan && $this->plan->storage_limit_gb === 0;
+    }
 }

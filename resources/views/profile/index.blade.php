@@ -178,6 +178,91 @@
                 </form>
             </div>
         </div>
+
+        <!-- Google Calendar Integration Card -->
+        @if($user->companyHasGoogleSyncEnabled())
+        <div class="card bg-base-100 shadow mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-lg mb-4">
+                    <span class="icon-[tabler--brand-google] size-5 text-error"></span>
+                    Google Calendar Integration
+                </h2>
+
+                @if($user->hasGoogleConnected())
+                    <!-- Connected State -->
+                    <div class="alert alert-success mb-4">
+                        <span class="icon-[tabler--check] size-5"></span>
+                        <div>
+                            <h3 class="font-bold">Google Calendar Connected</h3>
+                            <p class="text-sm">Your tasks with due dates will sync with Google Calendar.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-base-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-medium text-base-content">Connection Status</span>
+                                <p class="text-sm text-base-content/60">
+                                    Connected {{ $user->google_connected_at?->diffForHumans() }}
+                                </p>
+                            </div>
+                            <span class="badge badge-success gap-1">
+                                <span class="icon-[tabler--check] size-3"></span>
+                                Active
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="syncGoogleCalendar()" id="sync-btn">
+                            <span class="icon-[tabler--refresh] size-4"></span>
+                            Sync Now
+                        </button>
+                        <form action="{{ route('google.disconnect') }}" method="POST" onsubmit="return confirm('Are you sure you want to disconnect Google Calendar? Your synced events will remain but no new sync will occur.')">
+                            @csrf
+                            <button type="submit" class="btn btn-ghost btn-sm text-error">
+                                <span class="icon-[tabler--unlink] size-4"></span>
+                                Disconnect
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="sync-result" class="mt-4 hidden"></div>
+                @else
+                    <!-- Not Connected State -->
+                    <div class="alert alert-info mb-4">
+                        <span class="icon-[tabler--info-circle] size-5"></span>
+                        <div>
+                            <h3 class="font-bold">Connect Google Calendar</h3>
+                            <p class="text-sm">Connect your Google account to sync tasks with Google Calendar. Tasks with due dates will appear in your calendar.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-4">
+                        <div class="flex items-start gap-3">
+                            <span class="icon-[tabler--check] size-5 text-success flex-shrink-0 mt-0.5"></span>
+                            <div>
+                                <span class="font-medium text-base-content">Two-way sync</span>
+                                <p class="text-sm text-base-content/60">Tasks sync to Google Calendar, events sync back to Project Block</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="icon-[tabler--check] size-5 text-success flex-shrink-0 mt-0.5"></span>
+                            <div>
+                                <span class="font-medium text-base-content">Automatic updates</span>
+                                <p class="text-sm text-base-content/60">Changes are synced automatically in real-time</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('google.connect') }}" class="btn btn-primary">
+                        <span class="icon-[tabler--brand-google] size-5"></span>
+                        Connect Google Calendar
+                    </a>
+                @endif
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 
@@ -205,6 +290,56 @@ function previewAvatar(input) {
             }
         };
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function syncGoogleCalendar() {
+    const btn = document.getElementById('sync-btn');
+    const resultDiv = document.getElementById('sync-result');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Syncing...';
+    resultDiv.classList.add('hidden');
+
+    try {
+        const response = await fetch('{{ route("google.sync") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        resultDiv.classList.remove('hidden');
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <span class="icon-[tabler--check] size-5"></span>
+                    <span>${data.message}</span>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-error">
+                    <span class="icon-[tabler--alert-circle] size-5"></span>
+                    <span>${data.message || 'Sync failed. Please try again.'}</span>
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = `
+            <div class="alert alert-error">
+                <span class="icon-[tabler--alert-circle] size-5"></span>
+                <span>An error occurred while syncing. Please try again.</span>
+            </div>
+        `;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="icon-[tabler--refresh] size-4"></span> Sync Now';
     }
 }
 </script>

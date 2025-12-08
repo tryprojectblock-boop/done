@@ -25,6 +25,20 @@
                     </a>
                 </div>
 
+                @if(auth()->user()->canSyncGoogleCalendar())
+                <!-- Sync with Google Button -->
+                <button type="button" onclick="syncGoogleCalendar()" class="btn btn-ghost btn-sm" id="googleSyncBtn">
+                    <span class="icon-[tabler--brand-google] size-4"></span>
+                    <span class="hidden sm:inline">Sync Google</span>
+                </button>
+                @elseif(auth()->user()->companyHasGoogleSyncEnabled() && !auth()->user()->hasGoogleConnected())
+                <!-- Connect Google Button -->
+                <a href="{{ route('google.connect') }}" class="btn btn-ghost btn-sm">
+                    <span class="icon-[tabler--brand-google] size-4"></span>
+                    <span class="hidden sm:inline">Connect Google</span>
+                </a>
+                @endif
+
                 <!-- Add Task Button -->
                 <a href="{{ route('tasks.create') }}" class="btn btn-primary btn-sm">
                     <span class="icon-[tabler--plus] size-4"></span>
@@ -179,5 +193,64 @@
 
 <!-- Task Detail Drawer -->
 @include('calendar::partials.task-drawer')
+
+@push('scripts')
+<script>
+async function syncGoogleCalendar() {
+    const btn = document.getElementById('googleSyncBtn');
+    const originalContent = btn.innerHTML;
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span><span class="hidden sm:inline">Syncing...</span>';
+
+    try {
+        const response = await fetch('{{ route("google.sync") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Show success toast
+            showToast(data.message, 'success');
+            // Reload page to show new events
+            if (data.data.synced_from_google > 0 || data.data.synced_to_google > 0) {
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } else {
+            showToast(data.message || 'Sync failed', 'error');
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        showToast('Failed to sync with Google Calendar', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'error' : 'info'} fixed bottom-4 right-4 w-auto max-w-md z-50 shadow-lg`;
+    toast.innerHTML = `
+        <span class="icon-[tabler--${type === 'success' ? 'check' : type === 'error' ? 'alert-circle' : 'info-circle'}] size-5"></span>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+
+    // Remove after 4 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 4000);
+}
+</script>
+@endpush
 
 @endsection

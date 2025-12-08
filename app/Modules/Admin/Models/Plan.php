@@ -27,6 +27,7 @@ class Plan extends Model
         'price_5_year',
         'is_active',
         'is_popular',
+        'is_default',
         'features',
         'sort_order',
     ];
@@ -46,6 +47,7 @@ class Plan extends Model
             'price_5_year' => 'decimal:2',
             'is_active' => 'boolean',
             'is_popular' => 'boolean',
+            'is_default' => 'boolean',
             'features' => 'array',
             'sort_order' => 'integer',
         ];
@@ -59,6 +61,16 @@ class Plan extends Model
     public function isPaid(): bool
     {
         return $this->type === PlanType::PAID;
+    }
+
+    public function isTrial(): bool
+    {
+        return $this->is_default === true;
+    }
+
+    public static function getTrialPlan(): ?self
+    {
+        return self::where('is_default', true)->first();
     }
 
     public function scopeActive($query)

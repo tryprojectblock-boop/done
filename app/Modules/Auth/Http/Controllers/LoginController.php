@@ -78,6 +78,22 @@ class LoginController extends Controller
             ], 403);
         }
 
+        // Check if user has 2FA enabled
+        if ($user->hasTwoFactorEnabled()) {
+            // Store user ID and remember preference in session for 2FA challenge
+            $request->session()->put('login.id', $user->id);
+            $request->session()->put('login.remember', $request->boolean('remember'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Two-factor authentication required.',
+                'data' => [
+                    'requires_2fa' => true,
+                    'redirect_url' => '/two-factor/challenge',
+                ],
+            ]);
+        }
+
         // Log the user in
         Auth::login($user, $request->boolean('remember'));
 
