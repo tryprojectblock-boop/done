@@ -66,6 +66,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
     Route::put('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
 
+    // Billing & Subscription routes
+    Route::get('/settings/billing', [SettingsController::class, 'billing'])->name('settings.billing');
+    Route::get('/settings/billing/plans', [SettingsController::class, 'plans'])->name('settings.billing.plans');
+    Route::post('/settings/billing/subscribe/{plan}', [SettingsController::class, 'subscribe'])->name('settings.billing.subscribe');
+    Route::post('/settings/billing/apply-coupon', [SettingsController::class, 'applyCoupon'])->name('settings.billing.apply-coupon');
+
     // User management routes (Admin & Owner only)
     Route::middleware(['can.manage.users'])->group(function () {
         Route::get('/users', [UsersController::class, 'index'])->name('users.index');

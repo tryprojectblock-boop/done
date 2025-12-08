@@ -62,6 +62,11 @@
                 </a>
 
                 @if(auth()->guard('admin')->user()->canManageSettings())
+                <a href="{{ route('backoffice.app.index') }}"
+                   class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ request()->routeIs('backoffice.app.*') ? 'border-primary text-primary' : 'border-transparent text-base-content/70 hover:text-base-content hover:border-base-300' }}">
+                    <span class="icon-[tabler--apps] size-4 inline-block mr-1.5 align-middle"></span>
+                    App
+                </a>
                 <a href="{{ route('backoffice.settings.app') }}"
                    class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ request()->routeIs('backoffice.settings.app*') ? 'border-primary text-primary' : 'border-transparent text-base-content/70 hover:text-base-content hover:border-base-300' }}">
                     <span class="icon-[tabler--adjustments] size-4 inline-block mr-1.5 align-middle"></span>
@@ -104,6 +109,9 @@
             </div>
         </div>
     </footer>
+
+    <!-- Reusable Confirmation Modal -->
+    @include('admin::partials.confirm-modal')
 
     @stack('scripts')
 </body>

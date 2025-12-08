@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Modules\Admin\Models\Coupon;
+use App\Modules\Admin\Models\Plan;
 use App\Modules\Auth\Enums\CompanySize;
 use App\Modules\Auth\Enums\IndustryType;
+use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -211,5 +214,153 @@ class SettingsController extends Controller
         $user->update(['settings' => $settings]);
 
         return redirect()->route('settings.appearance')->with('success', 'Appearance settings updated successfully.');
+    }
+
+    /**
+     * Display billing settings.
+     */
+    public function billing(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access billing settings.');
+        }
+
+        $company = $user->company;
+        $company->load('plan');
+
+        // Calculate usage
+        $usage = [
+            'workspaces' => Workspace::whereIn('owner_id', $company->users->pluck('id'))->count(),
+            'team_members' => $company->users->count(),
+            'storage_gb' => 0, // TODO: Calculate actual storage usage
+        ];
+
+        return view('settings.billing', [
+            'user' => $user,
+            'company' => $company,
+            'usage' => $usage,
+        ]);
+    }
+
+    /**
+     * Display available plans for selection.
+     */
+    public function plans(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access billing settings.');
+        }
+
+        $company = $user->company;
+        $plans = Plan::active()->ordered()->get();
+        $billingCycle = $request->get('cycle', '1_month');
+
+        return view('settings.plans', [
+            'user' => $user,
+            'company' => $company,
+            'plans' => $plans,
+            'billingCycle' => $billingCycle,
+        ]);
+    }
+
+    /**
+     * Subscribe to a plan.
+     */
+    public function subscribe(Request $request, Plan $plan): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to change subscription.');
+        }
+
+        $validated = $request->validate([
+            'billing_cycle' => 'required|in:1_month,3_month,6_month,12_month,3_year,5_year',
+        ]);
+
+        $company = $user->company;
+        $billingCycle = $validated['billing_cycle'];
+
+        // Calculate subscription end date based on billing cycle
+        $duration = match($billingCycle) {
+            '1_month' => 1,
+            '3_month' => 3,
+            '6_month' => 6,
+            '12_month' => 12,
+            '3_year' => 36,
+            '5_year' => 60,
+        };
+
+        $subscriptionEndsAt = $plan->isFree() ? null : now()->addMonths($duration);
+
+        $company->update([
+            'plan_id' => $plan->id,
+            'billing_cycle' => $plan->isFree() ? null : $billingCycle,
+            'subscription_starts_at' => now(),
+            'subscription_ends_at' => $subscriptionEndsAt,
+            'trial_ends_at' => null, // End trial when subscribing
+        ]);
+
+        $message = $plan->isFree()
+            ? 'Switched to Free plan successfully.'
+            : "Subscribed to {$plan->name} plan successfully.";
+
+        return redirect()->route('settings.billing')->with('success', $message);
+    }
+
+    /**
+     * Apply a coupon code.
+     */
+    public function applyCoupon(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to apply coupons.');
+        }
+
+        $validated = $request->validate([
+            'coupon_code' => 'required|string|max:50',
+        ]);
+
+        $coupon = Coupon::where('code', strtoupper($validated['coupon_code']))
+            ->where('is_active', true)
+            ->first();
+
+        if (!$coupon) {
+            return back()->withErrors(['coupon_code' => 'Invalid or expired coupon code.']);
+        }
+
+        // Check if coupon is within valid date range
+        if ($coupon->start_date && $coupon->start_date->isFuture()) {
+            return back()->withErrors(['coupon_code' => 'This coupon is not yet active.']);
+        }
+
+        if ($coupon->end_date && $coupon->end_date->isPast()) {
+            return back()->withErrors(['coupon_code' => 'This coupon has expired.']);
+        }
+
+        // Check usage limit
+        if ($coupon->usage_limit && $coupon->usage_count >= $coupon->usage_limit) {
+            return back()->withErrors(['coupon_code' => 'This coupon has reached its usage limit.']);
+        }
+
+        $company = $user->company;
+
+        // Apply coupon
+        $company->update([
+            'applied_coupon_code' => $coupon->code,
+            'discount_percent' => $coupon->discount_percent,
+        ]);
+
+        // Increment coupon usage
+        $coupon->increment('usage_count');
+
+        return redirect()->route('settings.billing')
+            ->with('success', "Coupon applied! You now have {$coupon->discount_percent}% off.");
     }
 }

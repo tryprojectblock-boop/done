@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckMaintenanceMode;
+use App\Http\Middleware\CheckRegistrationEnabled;
 use App\Http\Middleware\EnsureUserCanManageUsers;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
 use App\Modules\Auth\Http\Middleware\CheckAccountPaused;
@@ -14,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Check maintenance mode first (before other middleware)
+        $middleware->prependToGroup('web', CheckMaintenanceMode::class);
+
         // Append suspended check middleware to the web middleware group
         $middleware->appendToGroup('web', EnsureUserIsNotSuspended::class);
 
@@ -23,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'can.manage.users' => EnsureUserCanManageUsers::class,
             'check.account.paused' => CheckAccountPaused::class,
+            'registration.enabled' => CheckRegistrationEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

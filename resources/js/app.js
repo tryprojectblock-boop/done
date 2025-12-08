@@ -21,3 +21,23 @@ if (loginApp) {
     const app = createApp(LoginForm);
     app.mount('#login-app');
 }
+
+// Auto-dismiss alerts after timeout
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert[data-auto-dismiss]');
+
+    alerts.forEach(alert => {
+        const timeout = parseInt(alert.dataset.autoDismiss) || 5000;
+
+        setTimeout(() => {
+            // Add fade-out animation
+            alert.style.transition = 'opacity 0.3s ease-out';
+            alert.style.opacity = '0';
+
+            // Remove element after animation
+            setTimeout(() => {
+                alert.remove();
+            }, 300);
+        }, timeout);
+    });
+});

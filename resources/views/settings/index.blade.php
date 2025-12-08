@@ -107,6 +107,22 @@
                     </div>
                 </div>
             </a>
+
+            <!-- Billing & Subscription (Admin/Owner only) -->
+            <a href="{{ route('settings.billing') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                <div class="card-body">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <span class="icon-[tabler--credit-card] size-6 text-accent"></span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-base-content">Billing & Plans</h3>
+                            <p class="text-sm text-base-content/60">Manage subscription and billing</p>
+                        </div>
+                        <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
+                    </div>
+                </div>
+            </a>
             @endif
         </div>
 

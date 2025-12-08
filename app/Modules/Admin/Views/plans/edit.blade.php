@@ -179,29 +179,19 @@
             <div class="card-body">
                 <h2 class="card-title text-lg mb-4">Options</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="is_active" value="1" class="toggle toggle-primary" {{ old('is_active', $plan->is_active) ? 'checked' : '' }} />
-                            <div>
-                                <span class="label-text font-medium">Active</span>
-                                <p class="text-xs text-base-content/60">Plan is available for selection</p>
-                            </div>
-                        </label>
-                    </div>
+                <div class="flex flex-wrap gap-6 mb-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="is_active" value="1" class="checkbox checkbox-primary" {{ old('is_active', $plan->is_active) ? 'checked' : '' }} />
+                        <span class="label-text font-medium">Active</span>
+                    </label>
 
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="is_popular" value="1" class="toggle toggle-primary" {{ old('is_popular', $plan->is_popular) ? 'checked' : '' }} />
-                            <div>
-                                <span class="label-text font-medium">Popular</span>
-                                <p class="text-xs text-base-content/60">Mark as popular/recommended plan</p>
-                            </div>
-                        </label>
-                    </div>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="is_popular" value="1" class="checkbox checkbox-primary" {{ old('is_popular', $plan->is_popular) ? 'checked' : '' }} />
+                        <span class="label-text font-medium">Popular</span>
+                    </label>
                 </div>
 
-                <div class="form-control mt-4">
+                <div class="form-control">
                     <label class="label">
                         <span class="label-text font-medium">Sort Order</span>
                     </label>

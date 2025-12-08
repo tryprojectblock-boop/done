@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['guest'])->group(function () {
-    // Registration page (Vue SPA)
+    // Registration page (Vue SPA) - protected by registration enabled check
     Route::get('/register', function () {
         return view('auth::register');
-    })->name('register');
+    })->name('register')->middleware('registration.enabled');
 
     // Login page
     Route::get('/login', function () {

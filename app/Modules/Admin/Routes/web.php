@@ -10,6 +10,7 @@ use App\Modules\Admin\Http\Controllers\CouponsController;
 use App\Modules\Admin\Http\Controllers\InvoicesController;
 use App\Modules\Admin\Http\Controllers\AdminUsersController;
 use App\Modules\Admin\Http\Controllers\AppSettingsController;
+use App\Modules\Admin\Http\Controllers\AppController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +87,14 @@ Route::prefix('backoffice')->name('backoffice.')->group(function () {
 
         // Invoices & Payments (read-only from Stripe)
         Route::get('/invoices', [InvoicesController::class, 'index'])->name('invoices.index');
+
+        // App (Maintenance Mode & Factory Reset)
+        Route::prefix('app')->name('app.')->group(function () {
+            Route::get('/', [AppController::class, 'index'])->name('index');
+            Route::post('/maintenance/enable', [AppController::class, 'enableMaintenanceMode'])->name('maintenance.enable');
+            Route::post('/maintenance/disable', [AppController::class, 'disableMaintenanceMode'])->name('maintenance.disable');
+            Route::post('/factory-reset', [AppController::class, 'factoryReset'])->name('factory-reset');
+        });
 
         // Settings
         Route::prefix('settings')->name('settings.')->group(function () {

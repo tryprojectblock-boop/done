@@ -50,58 +50,59 @@ class AdminUsersController extends Controller
             ->with('success', 'Admin user created successfully.');
     }
 
-    public function edit(AdminUser $adminUser): View
+    public function edit(AdminUser $admin): View
     {
         $roles = AdminRole::cases();
+        $adminUser = $admin;
 
         return view('admin::settings.admin-users.edit', compact('adminUser', 'roles'));
     }
 
-    public function update(Request $request, AdminUser $adminUser): RedirectResponse
+    public function update(Request $request, AdminUser $admin): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:admin_users,email,' . $adminUser->id,
+            'email' => 'required|email|unique:admin_users,email,' . $admin->id,
             'role' => 'required|in:administrator,member',
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 
-        $adminUser->update([
+        $admin->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
         ]);
 
         if (!empty($validated['password'])) {
-            $adminUser->update(['password' => Hash::make($validated['password'])]);
+            $admin->update(['password' => Hash::make($validated['password'])]);
         }
 
         return redirect()->route('backoffice.settings.admins.index')
             ->with('success', 'Admin user updated successfully.');
     }
 
-    public function toggleStatus(AdminUser $adminUser): RedirectResponse
+    public function toggleStatus(AdminUser $admin): RedirectResponse
     {
         // Prevent deactivating self
-        if ($adminUser->id === auth()->guard('admin')->id()) {
+        if ($admin->id === auth()->guard('admin')->id()) {
             return back()->with('error', 'You cannot deactivate your own account.');
         }
 
-        $adminUser->update(['is_active' => !$adminUser->is_active]);
+        $admin->update(['is_active' => !$admin->is_active]);
 
-        $status = $adminUser->is_active ? 'activated' : 'deactivated';
+        $status = $admin->is_active ? 'activated' : 'deactivated';
 
         return back()->with('success', "Admin user {$status} successfully.");
     }
 
-    public function destroy(AdminUser $adminUser): RedirectResponse
+    public function destroy(AdminUser $admin): RedirectResponse
     {
         // Prevent deleting self
-        if ($adminUser->id === auth()->guard('admin')->id()) {
+        if ($admin->id === auth()->guard('admin')->id()) {
             return back()->with('error', 'You cannot delete your own account.');
         }
 
-        $adminUser->delete();
+        $admin->delete();
 
         return redirect()->route('backoffice.settings.admins.index')
             ->with('success', 'Admin user deleted successfully.');

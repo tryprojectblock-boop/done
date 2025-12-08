@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Models;
 
 use App\Models\User;
+use App\Modules\Admin\Models\Plan;
 use App\Modules\Auth\Enums\CompanySize;
 use App\Modules\Auth\Enums\IndustryType;
 use App\Modules\Core\Support\BaseModel;
@@ -27,6 +28,12 @@ class Company extends BaseModel
         'website_url',
         'logo_path',
         'owner_id',
+        'plan_id',
+        'billing_cycle',
+        'subscription_starts_at',
+        'subscription_ends_at',
+        'applied_coupon_code',
+        'discount_percent',
         'settings',
         'trial_ends_at',
         'paused_at',
@@ -42,7 +49,10 @@ class Company extends BaseModel
             'industry_type' => IndustryType::class,
             'settings' => 'array',
             'trial_ends_at' => 'datetime',
+            'subscription_starts_at' => 'datetime',
+            'subscription_ends_at' => 'datetime',
             'paused_at' => 'datetime',
+            'discount_percent' => 'decimal:2',
         ];
     }
 
@@ -99,6 +109,11 @@ class Company extends BaseModel
         return $this->hasMany(User::class);
     }
 
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Methods
@@ -126,5 +141,75 @@ class Company extends BaseModel
         }
 
         return file_upload()->getUrl($this->logo_path);
+    }
+
+    /**
+     * Check if the company has an active subscription
+     */
+    public function hasActiveSubscription(): bool
+    {
+        if (!$this->plan_id) {
+            return false;
+        }
+
+        // If no end date, subscription is active (lifetime or free plan)
+        if (!$this->subscription_ends_at) {
+            return true;
+        }
+
+        return $this->subscription_ends_at->isFuture();
+    }
+
+    /**
+     * Check if the subscription is expired
+     */
+    public function isSubscriptionExpired(): bool
+    {
+        if (!$this->subscription_ends_at) {
+            return false;
+        }
+
+        return $this->subscription_ends_at->isPast();
+    }
+
+    /**
+     * Get subscription days remaining
+     */
+    public function subscriptionDaysRemaining(): int
+    {
+        if (!$this->subscription_ends_at) {
+            return 0;
+        }
+
+        return (int) max(0, now()->diffInDays($this->subscription_ends_at, false));
+    }
+
+    /**
+     * Get the billing cycle label
+     */
+    public function getBillingCycleLabel(): string
+    {
+        return match($this->billing_cycle) {
+            '1_month' => 'Monthly',
+            '3_month' => 'Quarterly',
+            '6_month' => 'Semi-Annual',
+            '12_month' => 'Annual',
+            '3_year' => '3 Years',
+            '5_year' => '5 Years',
+            default => 'N/A',
+        };
+    }
+
+    /**
+     * Get the current plan price based on billing cycle
+     */
+    public function getCurrentPlanPrice(): float
+    {
+        if (!$this->plan) {
+            return 0;
+        }
+
+        $priceField = 'price_' . str_replace('_', '_', $this->billing_cycle);
+        return (float) ($this->plan->{$priceField} ?? 0);
     }
 }

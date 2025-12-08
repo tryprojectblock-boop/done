@@ -82,40 +82,36 @@
                                 </td>
                                 <td>
                                     @if(auth('admin')->user()->isAdministrator())
-                                        <div class="dropdown dropdown-end">
-                                            <label tabindex="0" class="btn btn-ghost btn-sm btn-square">
-                                                <span class="icon-[tabler--dots-vertical] size-4"></span>
-                                            </label>
-                                            <ul tabindex="0" class="dropdown-menu dropdown-menu-sm">
-                                                <li>
-                                                    <a href="{{ route('backoffice.settings.admins.edit', $admin) }}">
-                                                        <span class="icon-[tabler--edit] size-4"></span>
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                                @if($admin->id !== auth('admin')->id())
-                                                    <li>
-                                                        <form action="{{ route('backoffice.settings.admins.toggle-status', $admin) }}" method="POST">
-                                                            @csrf
-                                                            @method('PATCH')
-                                                            <button type="submit" class="text-warning">
-                                                                <span class="icon-[tabler--{{ $admin->is_active ? 'ban' : 'check' }}] size-4"></span>
-                                                                {{ $admin->is_active ? 'Deactivate' : 'Activate' }}
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <form action="{{ route('backoffice.settings.admins.destroy', $admin) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this admin?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="text-error">
-                                                                <span class="icon-[tabler--trash] size-4"></span>
-                                                                Delete
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                @endif
-                                            </ul>
+                                        <div class="flex items-center gap-1">
+                                            <a href="{{ route('backoffice.settings.admins.edit', $admin) }}" class="btn btn-ghost btn-xs" title="Edit">
+                                                <span class="icon-[tabler--edit] size-4"></span>
+                                            </a>
+                                            @if($admin->id !== auth('admin')->id())
+                                                <button type="button"
+                                                    class="btn btn-ghost btn-xs"
+                                                    title="{{ $admin->is_active ? 'Deactivate' : 'Activate' }}"
+                                                    data-confirm-modal
+                                                    data-confirm-action="{{ route('backoffice.settings.admins.toggle-status', $admin) }}"
+                                                    data-confirm-method="PATCH"
+                                                    data-confirm-title="{{ $admin->is_active ? 'Deactivate Admin' : 'Activate Admin' }}"
+                                                    data-confirm-message="{{ $admin->is_active ? 'Are you sure you want to deactivate ' . $admin->name . '? They will no longer be able to access the admin panel.' : 'Are you sure you want to activate ' . $admin->name . '? They will be able to access the admin panel.' }}"
+                                                    data-confirm-button="{{ $admin->is_active ? 'Deactivate' : 'Activate' }}"
+                                                    data-confirm-type="{{ $admin->is_active ? 'warning' : 'success' }}">
+                                                    <span class="icon-[tabler--{{ $admin->is_active ? 'eye-off' : 'eye' }}] size-4"></span>
+                                                </button>
+                                                <button type="button"
+                                                    class="btn btn-ghost btn-xs text-error"
+                                                    title="Delete"
+                                                    data-confirm-modal
+                                                    data-confirm-action="{{ route('backoffice.settings.admins.destroy', $admin) }}"
+                                                    data-confirm-method="DELETE"
+                                                    data-confirm-title="Delete Admin User"
+                                                    data-confirm-message="Are you sure you want to delete {{ $admin->name }}? This action cannot be undone."
+                                                    data-confirm-button="Delete"
+                                                    data-confirm-type="danger">
+                                                    <span class="icon-[tabler--trash] size-4"></span>
+                                                </button>
+                                            @endif
                                         </div>
                                     @endif
                                 </td>

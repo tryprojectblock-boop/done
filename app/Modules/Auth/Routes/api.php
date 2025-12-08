@@ -33,8 +33,8 @@ Route::prefix('v1/auth')->name('api.auth.')->middleware('web')->group(function (
         ->middleware('auth')
         ->name('user');
 
-    // Registration flow
-    Route::prefix('registration')->name('registration.')->group(function () {
+    // Registration flow - protected by registration enabled check
+    Route::prefix('registration')->name('registration.')->middleware('registration.enabled')->group(function () {
         // Step 1: Email registration
         Route::post('/email', [RegistrationController::class, 'registerEmail'])
             ->name('email');

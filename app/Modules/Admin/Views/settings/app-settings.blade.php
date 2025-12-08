@@ -11,12 +11,7 @@
         <p class="text-base-content/60">Configure application-wide settings</p>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            <span class="icon-[tabler--circle-check] size-5"></span>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
+    @include('admin::partials.alerts')
 
     <form action="{{ route('backoffice.settings.app.update') }}" method="POST">
         @csrf
@@ -94,24 +89,12 @@
                     Feature Toggles
                 </h2>
 
-                <div class="form-control mb-4">
-                    <label class="label cursor-pointer justify-start gap-4">
-                        <input type="checkbox" name="registration_enabled" value="1" class="toggle toggle-primary" {{ $settings['registration_enabled'] ? 'checked' : '' }} />
-                        <div>
-                            <span class="label-text font-medium">Registration Enabled</span>
-                            <p class="text-xs text-base-content/60">Allow new users to sign up</p>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="form-control">
-                    <label class="label cursor-pointer justify-start gap-4">
-                        <input type="checkbox" name="maintenance_mode" value="1" class="toggle toggle-warning" {{ $settings['maintenance_mode'] ? 'checked' : '' }} />
-                        <div>
-                            <span class="label-text font-medium">Maintenance Mode</span>
-                            <p class="text-xs text-base-content/60">Show maintenance page to users (admin still accessible)</p>
-                        </div>
-                    </label>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-medium text-base-content">Registration Enabled</span>
+                        <p class="text-sm text-base-content/60">Allow new users to sign up</p>
+                    </div>
+                    <input type="checkbox" name="registration_enabled" value="1" class="toggle toggle-primary" {{ $settings['registration_enabled'] ? 'checked' : '' }} />
                 </div>
             </div>
         </div>
