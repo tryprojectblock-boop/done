@@ -15,7 +15,7 @@
 
 <div class="form-control">
     @if($label)
-        <label class="label">
+        <label class="label" for="{{ $pickerId }}-display">
             <span class="label-text font-medium">{{ $label }} @if($required)<span class="text-error">*</span>@endif</span>
         </label>
     @endif

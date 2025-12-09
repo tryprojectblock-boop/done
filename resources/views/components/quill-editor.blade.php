@@ -16,7 +16,7 @@
 
 <div class="form-control quill-editor-wrapper">
     @if($label)
-        <label class="label">
+        <label class="label" for="{{ $editorId }}">
             <span class="label-text font-medium">{{ $label }} @if($required)<span class="text-error">*</span>@endif</span>
         </label>
     @endif

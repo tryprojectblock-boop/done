@@ -44,10 +44,10 @@
 
                     <!-- File Name -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="drive-edit-name">
                             <span class="label-text font-medium">Display Name <span class="text-error">*</span></span>
                         </label>
-                        <input type="text" name="name" value="{{ old('name', $attachment->name) }}" class="input input-bordered" placeholder="Enter a name for this file" required />
+                        <input type="text" name="name" id="drive-edit-name" value="{{ old('name', $attachment->name) }}" class="input input-bordered" placeholder="Enter a name for this file" required />
                         @error('name')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -55,10 +55,10 @@
 
                     <!-- Description -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="drive-edit-description">
                             <span class="label-text font-medium">Description</span>
                         </label>
-                        <textarea name="description" class="textarea textarea-bordered" rows="3" placeholder="Add a description for this file (optional)">{{ old('description', $attachment->description) }}</textarea>
+                        <textarea name="description" id="drive-edit-description" class="textarea textarea-bordered" rows="3" placeholder="Add a description for this file (optional)">{{ old('description', $attachment->description) }}</textarea>
                         @error('description')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -66,7 +66,7 @@
 
                     <!-- Tags -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="tag-input">
                             <span class="label-text font-medium">Tags</span>
                         </label>
                         <div id="tags-container" class="flex flex-wrap gap-2 mb-2">
@@ -103,9 +103,9 @@
 
                     <!-- Share With Team Members -->
                     <div class="form-control mb-6">
-                        <label class="label">
+                        <span class="label">
                             <span class="label-text font-medium">Share with Team Members</span>
-                        </label>
+                        </span>
                         <p class="text-sm text-base-content/60 mb-3">Selected team members will be able to view this file in their Drive.</p>
 
                         @php

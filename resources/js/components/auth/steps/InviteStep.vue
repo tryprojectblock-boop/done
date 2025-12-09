@@ -111,7 +111,7 @@ const validEmailCount = computed(() => {
 });
 
 function isValidEmail(email) {
-    if (!email) return false;
+    if (!email || email.length > 254) return false; // RFC 5321 max email length
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }

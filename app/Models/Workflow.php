@@ -13,6 +13,12 @@ class Workflow extends Model
     use HasFactory;
 
     /**
+     * Text color constants for status badges.
+     */
+    private const TEXT_WHITE = '#ffffff';
+    private const TEXT_BLACK = '#000000';
+
+    /**
      * Built-in workflow template names.
      */
     public const BUILTIN_WORKFLOWS = [
@@ -24,25 +30,25 @@ class Workflow extends Model
      * Extended color palette for statuses.
      */
     public const COLORS = [
-        'slate' => ['label' => 'Slate', 'bg' => '#64748b', 'text' => '#ffffff'],
-        'gray' => ['label' => 'Gray', 'bg' => '#6b7280', 'text' => '#ffffff'],
-        'red' => ['label' => 'Red', 'bg' => '#ef4444', 'text' => '#ffffff'],
-        'orange' => ['label' => 'Orange', 'bg' => '#f97316', 'text' => '#ffffff'],
-        'amber' => ['label' => 'Amber', 'bg' => '#f59e0b', 'text' => '#000000'],
-        'yellow' => ['label' => 'Yellow', 'bg' => '#eab308', 'text' => '#000000'],
-        'lime' => ['label' => 'Lime', 'bg' => '#84cc16', 'text' => '#000000'],
-        'green' => ['label' => 'Green', 'bg' => '#22c55e', 'text' => '#ffffff'],
-        'emerald' => ['label' => 'Emerald', 'bg' => '#10b981', 'text' => '#ffffff'],
-        'teal' => ['label' => 'Teal', 'bg' => '#14b8a6', 'text' => '#ffffff'],
-        'cyan' => ['label' => 'Cyan', 'bg' => '#06b6d4', 'text' => '#000000'],
-        'sky' => ['label' => 'Sky', 'bg' => '#0ea5e9', 'text' => '#ffffff'],
-        'blue' => ['label' => 'Blue', 'bg' => '#3b82f6', 'text' => '#ffffff'],
-        'indigo' => ['label' => 'Indigo', 'bg' => '#6366f1', 'text' => '#ffffff'],
-        'violet' => ['label' => 'Violet', 'bg' => '#8b5cf6', 'text' => '#ffffff'],
-        'purple' => ['label' => 'Purple', 'bg' => '#a855f7', 'text' => '#ffffff'],
-        'fuchsia' => ['label' => 'Fuchsia', 'bg' => '#d946ef', 'text' => '#ffffff'],
-        'pink' => ['label' => 'Pink', 'bg' => '#ec4899', 'text' => '#ffffff'],
-        'rose' => ['label' => 'Rose', 'bg' => '#f43f5e', 'text' => '#ffffff'],
+        'slate' => ['label' => 'Slate', 'bg' => '#64748b', 'text' => self::TEXT_WHITE],
+        'gray' => ['label' => 'Gray', 'bg' => '#6b7280', 'text' => self::TEXT_WHITE],
+        'red' => ['label' => 'Red', 'bg' => '#ef4444', 'text' => self::TEXT_WHITE],
+        'orange' => ['label' => 'Orange', 'bg' => '#f97316', 'text' => self::TEXT_WHITE],
+        'amber' => ['label' => 'Amber', 'bg' => '#f59e0b', 'text' => self::TEXT_BLACK],
+        'yellow' => ['label' => 'Yellow', 'bg' => '#eab308', 'text' => self::TEXT_BLACK],
+        'lime' => ['label' => 'Lime', 'bg' => '#84cc16', 'text' => self::TEXT_BLACK],
+        'green' => ['label' => 'Green', 'bg' => '#22c55e', 'text' => self::TEXT_WHITE],
+        'emerald' => ['label' => 'Emerald', 'bg' => '#10b981', 'text' => self::TEXT_WHITE],
+        'teal' => ['label' => 'Teal', 'bg' => '#14b8a6', 'text' => self::TEXT_WHITE],
+        'cyan' => ['label' => 'Cyan', 'bg' => '#06b6d4', 'text' => self::TEXT_BLACK],
+        'sky' => ['label' => 'Sky', 'bg' => '#0ea5e9', 'text' => self::TEXT_WHITE],
+        'blue' => ['label' => 'Blue', 'bg' => '#3b82f6', 'text' => self::TEXT_WHITE],
+        'indigo' => ['label' => 'Indigo', 'bg' => '#6366f1', 'text' => self::TEXT_WHITE],
+        'violet' => ['label' => 'Violet', 'bg' => '#8b5cf6', 'text' => self::TEXT_WHITE],
+        'purple' => ['label' => 'Purple', 'bg' => '#a855f7', 'text' => self::TEXT_WHITE],
+        'fuchsia' => ['label' => 'Fuchsia', 'bg' => '#d946ef', 'text' => self::TEXT_WHITE],
+        'pink' => ['label' => 'Pink', 'bg' => '#ec4899', 'text' => self::TEXT_WHITE],
+        'rose' => ['label' => 'Rose', 'bg' => '#f43f5e', 'text' => self::TEXT_WHITE],
     ];
 
     protected $fillable = [

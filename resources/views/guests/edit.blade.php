@@ -22,10 +22,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- First Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-first-name">
                                 <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="first_name" value="{{ $guest->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="first_name" id="edit-guest-first-name" value="{{ $guest->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
                             </label>
@@ -33,10 +33,10 @@
 
                         <!-- Last Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-last-name">
                                 <span class="label-text font-medium">Last Name <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="text" name="last_name" value="{{ $guest->last_name }}" placeholder="Doe" class="input input-bordered" pattern="[A-Za-z\s\-']*" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="last_name" id="edit-guest-last-name" value="{{ $guest->last_name }}" placeholder="Doe" class="input input-bordered" pattern="[A-Za-z\s\-']*" title="Only letters, spaces, hyphens and apostrophes allowed">
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
                             </label>
@@ -45,19 +45,19 @@
 
                     <!-- Email -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-guest-email">
                             <span class="label-text font-medium">Email Address <span class="text-error">*</span></span>
                         </label>
-                        <input type="email" name="email" value="{{ $guest->email }}" placeholder="john@example.com" class="input input-bordered" required>
+                        <input type="email" name="email" id="edit-guest-email" value="{{ $guest->email }}" placeholder="john@example.com" class="input input-bordered" required>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Type -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-type">
                                 <span class="label-text font-medium">Type <span class="text-error">*</span></span>
                             </label>
-                            <select name="type" class="select select-bordered" required>
+                            <select name="type" id="edit-guest-type" class="select select-bordered" required>
                                 @foreach($types as $key => $type)
                                     <option value="{{ $key }}" {{ $guest->type === $key ? 'selected' : '' }}>{{ $type['label'] }}</option>
                                 @endforeach
@@ -66,10 +66,10 @@
 
                         <!-- Status -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-status">
                                 <span class="label-text font-medium">Status <span class="text-error">*</span></span>
                             </label>
-                            <select name="status" class="select select-bordered" required>
+                            <select name="status" id="edit-guest-status" class="select select-bordered" required>
                                 @foreach($statuses as $key => $status)
                                     <option value="{{ $key }}" {{ $guest->status === $key ? 'selected' : '' }}>{{ $status['label'] }}</option>
                                 @endforeach
@@ -79,10 +79,10 @@
 
                     <!-- Client Portal Access -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-guest-portal-access">
                             <span class="label-text font-medium">Client Portal Access <span class="text-error">*</span></span>
                         </label>
-                        <select name="client_portal_access" class="select select-bordered" required>
+                        <select name="client_portal_access" id="edit-guest-portal-access" class="select select-bordered" required>
                             <option value="0" {{ !$guest->client_portal_access ? 'selected' : '' }}>No</option>
                             <option value="1" {{ $guest->client_portal_access ? 'selected' : '' }}>Yes</option>
                         </select>
@@ -90,7 +90,7 @@
 
                     <!-- Tags -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="tag-input">
                             <span class="label-text font-medium">Tags <span class="text-base-content/50 font-normal">(Optional)</span></span>
                         </label>
                         <div id="tags-container" class="flex flex-wrap gap-2 p-3 border border-base-300 rounded-lg min-h-[3rem] focus-within:border-primary">
@@ -107,35 +107,35 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Phone -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-phone">
                                 <span class="label-text font-medium">Phone</span>
                             </label>
-                            <input type="tel" name="phone" value="{{ $guest->phone }}" placeholder="+1 (555) 123-4567" class="input input-bordered">
+                            <input type="tel" name="phone" id="edit-guest-phone" value="{{ $guest->phone }}" placeholder="+1 (555) 123-4567" class="input input-bordered">
                         </div>
 
                         <!-- Company Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-guest-company">
                                 <span class="label-text font-medium">Company Name</span>
                             </label>
-                            <input type="text" name="company_name" value="{{ $guest->company_name }}" placeholder="Acme Inc." class="input input-bordered">
+                            <input type="text" name="company_name" id="edit-guest-company" value="{{ $guest->company_name }}" placeholder="Acme Inc." class="input input-bordered">
                         </div>
                     </div>
 
                     <!-- Position -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-guest-position">
                             <span class="label-text font-medium">Position / Title</span>
                         </label>
-                        <input type="text" name="position" value="{{ $guest->position }}" placeholder="CEO, Designer, etc." class="input input-bordered">
+                        <input type="text" name="position" id="edit-guest-position" value="{{ $guest->position }}" placeholder="CEO, Designer, etc." class="input input-bordered">
                     </div>
 
                     <!-- Notes -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-guest-notes">
                             <span class="label-text font-medium">Notes</span>
                         </label>
-                        <textarea name="notes" rows="3" placeholder="Any additional notes about this guest..." class="textarea textarea-bordered">{{ $guest->notes }}</textarea>
+                        <textarea name="notes" id="edit-guest-notes" rows="3" placeholder="Any additional notes about this guest..." class="textarea textarea-bordered">{{ $guest->notes }}</textarea>
                     </div>
                 </div>
 

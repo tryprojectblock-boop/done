@@ -318,7 +318,7 @@
 
             <!-- Invite from Team -->
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="invite-user-select">
                     <span class="label-text font-medium">Select Team Member</span>
                 </label>
                 <select name="user_id" id="invite-user-select" class="select select-bordered">
@@ -341,21 +341,21 @@
 
             <!-- Invite by Email -->
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="invite-email">
                     <span class="label-text font-medium">Invite by Email</span>
                 </label>
                 <input type="email" name="email" id="invite-email" class="input input-bordered" placeholder="Enter email address...">
-                <label class="label">
+                <span class="label">
                     <span class="label-text-alt text-base-content/60">They'll receive an invitation email</span>
-                </label>
+                </span>
             </div>
 
             <!-- Role Selection -->
             <div class="form-control mb-6">
-                <label class="label">
+                <label class="label" for="invite-role">
                     <span class="label-text font-medium">Role <span class="text-error">*</span></span>
                 </label>
-                <select name="role" class="select select-bordered" required>
+                <select name="role" id="invite-role" class="select select-bordered" required>
                     <option value="">Select a role...</option>
                     <option value="admin">Admin</option>
                     <option value="member">Member</option>

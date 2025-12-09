@@ -53,10 +53,10 @@
 
                     <!-- Channel Name -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-channel-name">
                             <span class="label-text font-medium">Channel Name <span class="text-error">*</span></span>
                         </label>
-                        <input type="text" name="name" value="{{ old('name', $channel->name) }}" placeholder="e.g., Marketing" class="input input-bordered @error('name') input-error @enderror" required maxlength="100" />
+                        <input type="text" name="name" id="edit-channel-name" value="{{ old('name', $channel->name) }}" placeholder="e.g., Marketing" class="input input-bordered @error('name') input-error @enderror" required maxlength="100" />
                         @error('name')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -64,12 +64,12 @@
 
                     <!-- Channel Tag -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-channel-tag">
                             <span class="label-text font-medium">Channel Tag <span class="text-error">*</span> <span class="text-base-content/50 font-normal">Unique identifier</span></span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50 font-medium">#</span>
-                            <input type="text" name="tag" value="{{ old('tag', ltrim($channel->tag, '#')) }}" placeholder="admin resources" class="input input-bordered pl-8 w-full @error('tag') input-error @enderror" required maxlength="50" />
+                            <input type="text" name="tag" id="edit-channel-tag" value="{{ old('tag', ltrim($channel->tag, '#')) }}" placeholder="admin resources" class="input input-bordered pl-8 w-full @error('tag') input-error @enderror" required maxlength="50" />
                         </div>
                         @error('tag')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
@@ -78,10 +78,10 @@
 
                     <!-- Short Description -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="edit-channel-description">
                             <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">Optional</span></span>
                         </label>
-                        <textarea name="description" placeholder="Describe what this channel is about..." class="textarea textarea-bordered h-24 @error('description') textarea-error @enderror" maxlength="500">{{ old('description', $channel->description) }}</textarea>
+                        <textarea name="description" id="edit-channel-description" placeholder="Describe what this channel is about..." class="textarea textarea-bordered h-24 @error('description') textarea-error @enderror" maxlength="500">{{ old('description', $channel->description) }}</textarea>
                         @error('description')
                             <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
                         @enderror
@@ -89,9 +89,9 @@
 
                     <!-- Channel Color -->
                     <div class="form-control">
-                        <label class="label">
+                        <span class="label">
                             <span class="label-text font-medium">Channel Color</span>
-                        </label>
+                        </span>
                         <div class="flex flex-wrap gap-2">
                             <label class="cursor-pointer" title="Blue">
                                 <input type="radio" name="color" value="primary" class="hidden peer" {{ old('color', $channel->color) === 'primary' ? 'checked' : '' }} />
@@ -142,9 +142,9 @@
 
                     <!-- Channel Status -->
                     <div class="form-control">
-                        <label class="label">
+                        <span class="label">
                             <span class="label-text font-medium">Channel Status</span>
-                        </label>
+                        </span>
                         <div class="flex flex-wrap gap-3">
                             <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-base-300 hover:border-success transition-colors has-[:checked]:border-success has-[:checked]:bg-success/10">
                                 <input type="radio" name="status" value="active" class="radio radio-success radio-sm" {{ old('status', $channel->status) === 'active' ? 'checked' : '' }} />
@@ -172,9 +172,9 @@
 
                     <!-- Manage Members Link -->
                     <div class="form-control">
-                        <label class="label">
+                        <span class="label">
                             <span class="label-text font-medium">Team Members</span>
-                        </label>
+                        </span>
                         <div class="border border-base-300 rounded-lg p-4">
                             <div class="flex items-center justify-between mb-3">
                                 <p class="text-sm text-base-content/60">{{ $channel->members->count() }} {{ Str::plural('member', $channel->members->count()) }} in this channel</p>

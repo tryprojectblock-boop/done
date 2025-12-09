@@ -36,11 +36,12 @@
                         @csrf
 
                         <div class="form-control mb-4">
-                            <label class="label">
+                            <label class="label" for="two-factor-code">
                                 <span class="label-text font-medium">Verification Code</span>
                             </label>
                             <input type="text"
                                    name="code"
+                                   id="two-factor-code"
                                    class="input input-bordered text-center text-2xl tracking-widest font-mono"
                                    placeholder="000000"
                                    autocomplete="one-time-code"
@@ -77,11 +78,12 @@
                         <form action="{{ route('two-factor.verify') }}" method="POST">
                             @csrf
                             <div class="form-control mb-4">
-                                <label class="label">
+                                <label class="label" for="recovery-code">
                                     <span class="label-text font-medium">Recovery Code</span>
                                 </label>
                                 <input type="text"
                                        name="code"
+                                       id="recovery-code"
                                        class="input input-bordered font-mono"
                                        placeholder="Enter recovery code"
                                        required />

@@ -99,25 +99,25 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- First Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="user-first-name">
                                 <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="first_name" value="{{ $user->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="first_name" id="user-first-name" value="{{ $user->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
                         </div>
 
                         <!-- Last Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="user-last-name">
                                 <span class="label-text font-medium">Last Name <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="last_name" value="{{ $user->last_name }}" placeholder="Doe" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="last_name" id="user-last-name" value="{{ $user->last_name }}" placeholder="Doe" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <!-- Role -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="user-role">
                                 <span class="label-text font-medium">Role <span class="text-error">*</span></span>
                             </label>
                             @if($isCompanyOwner)
@@ -127,7 +127,7 @@
                                     <span class="text-xs text-base-content/50 ml-2">(Company owner role cannot be changed)</span>
                                 </div>
                             @else
-                                <select name="role" class="select select-bordered" required>
+                                <select name="role" id="user-role" class="select select-bordered" required>
                                     @foreach($roles as $key => $role)
                                         <option value="{{ $key }}" {{ $user->role === $key ? 'selected' : '' }}>{{ $role['label'] }}</option>
                                     @endforeach
@@ -144,7 +144,7 @@
 
                         <!-- Status -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="user-status">
                                 <span class="label-text font-medium">Status</span>
                             </label>
                             @if($isCompanyOwner)
@@ -159,7 +159,7 @@
                                     <span class="text-xs text-base-content/50 ml-2">(Pending acceptance)</span>
                                 </div>
                             @else
-                                <select name="status" class="select select-bordered">
+                                <select name="status" id="user-status" class="select select-bordered">
                                     @foreach($statuses as $key => $label)
                                         <option value="{{ $key }}" {{ $user->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach

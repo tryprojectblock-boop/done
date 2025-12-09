@@ -17,12 +17,33 @@ class FileUploadController extends Controller
 
     public function upload(Request $request): JsonResponse
     {
+        $maxUploadSize = (int) config('filesystems.max_upload_size', 10240);
+        $maxUploadSizeBytes = $maxUploadSize * 1024;
+
+        // Pre-check: Reject if Content-Length header exceeds limit (defense in depth)
+        $contentLength = $request->header('Content-Length');
+        if ($contentLength !== null && (int) $contentLength > $maxUploadSizeBytes) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File size exceeds the maximum allowed size.',
+            ], 413);
+        }
+
         $request->validate([
-            'file' => ['required', 'file', 'max:' . config('filesystems.max_upload_size', 10240)],
+            'file' => ['required', 'file', 'max:' . $maxUploadSize],
             'context' => ['nullable', 'string', 'max:50'],
         ]);
 
         $file = $request->file('file');
+
+        // Post-check: Verify actual file size (defense in depth)
+        if ($file->getSize() > $maxUploadSizeBytes) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File size exceeds the maximum allowed size.',
+            ], 413);
+        }
+
         $context = $request->input('context', 'general');
 
         $directory = $this->getDirectoryForContext($context);

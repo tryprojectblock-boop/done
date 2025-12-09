@@ -44,19 +44,19 @@
                     <div class="space-y-4">
                         <!-- Idea Title -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="idea-title">
                                 <span class="label-text font-medium">Idea Title <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="title" value="{{ old('title') }}"
+                            <input type="text" name="title" id="idea-title" value="{{ old('title') }}"
                                    class="input input-bordered w-full" placeholder="Enter a clear, concise title for your idea" required>
                         </div>
 
                         <!-- Short Description -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="idea-short-description">
                                 <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <textarea name="short_description" class="textarea textarea-bordered h-20" maxlength="500" placeholder="Brief summary of your idea (max 500 characters)">{{ old('short_description') }}</textarea>
+                            <textarea name="short_description" id="idea-short-description" class="textarea textarea-bordered h-20" maxlength="500" placeholder="Brief summary of your idea (max 500 characters)">{{ old('short_description') }}</textarea>
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">This will be shown in the ideas list</span>
                             </label>
@@ -86,10 +86,10 @@
                     <div class="space-y-4">
                         <!-- Workspace (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="idea-workspace">
                                 <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <select name="workspace_id" class="select select-bordered w-full">
+                            <select name="workspace_id" id="idea-workspace" class="select select-bordered w-full">
                                 <option value="">No Workspace (General Idea)</option>
                                 @foreach($workspaces as $workspace)
                                     <option value="{{ $workspace->id }}" {{ old('workspace_id') == $workspace->id ? 'selected' : '' }}>
@@ -101,10 +101,10 @@
 
                         <!-- Priority -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="idea-priority">
                                 <span class="label-text font-medium">Priority</span>
                             </label>
-                            <select name="priority" class="select select-bordered w-full">
+                            <select name="priority" id="idea-priority" class="select select-bordered w-full">
                                 @foreach($priorities as $value => $label)
                                     <option value="{{ $value }}" {{ old('priority', 'medium') === $value ? 'selected' : '' }}>
                                         {{ $label }}
@@ -115,7 +115,7 @@
 
                         <!-- Invite Members (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="member-search">
                                 <span class="label-text font-medium">Invite Members <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <div class="relative">
@@ -152,7 +152,7 @@
 
                         <!-- Invite Guests (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-search">
                                 <span class="label-text font-medium">Invite Guests <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <div class="relative">

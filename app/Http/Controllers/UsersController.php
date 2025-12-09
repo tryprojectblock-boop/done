@@ -14,6 +14,8 @@ use Illuminate\View\View;
 
 class UsersController extends Controller
 {
+    private const USER_NOT_FOUND = self::USER_NOT_FOUND;
+
     public function __construct(
         private readonly PlanLimitService $planLimitService
     ) {}
@@ -91,7 +93,7 @@ class UsersController extends Controller
     {
         // Ensure user belongs to same company
         if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['error' => 'User not found'], 404);
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
         }
 
         return response()->json([
@@ -273,7 +275,7 @@ class UsersController extends Controller
     {
         // Ensure user belongs to same company
         if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['error' => 'User not found'], 404);
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
         }
 
         // Check permissions
@@ -322,7 +324,7 @@ class UsersController extends Controller
 
         // Ensure user belongs to same company
         if ($user->company_id !== $currentUser->company_id) {
-            return response()->json(['error' => 'User not found'], 404);
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
         }
 
         // Cannot delete yourself
@@ -356,7 +358,7 @@ class UsersController extends Controller
     {
         // Ensure user belongs to same company
         if ($user->company_id !== $request->user()->company_id) {
-            return response()->json(['error' => 'User not found'], 404);
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
         }
 
         if ($user->status !== User::STATUS_INVITED) {

@@ -81,12 +81,13 @@
                         </div>
 
                         <div class="form-control mb-4">
-                            <label class="label">
+                            <label class="label" for="google-client-id">
                                 <span class="label-text font-medium">Client ID</span>
                             </label>
                             <input
                                 type="text"
                                 name="google_client_id"
+                                id="google-client-id"
                                 value="{{ $integrationSettings['google_client_id'] }}"
                                 class="input input-bordered font-mono text-sm"
                                 placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
@@ -99,12 +100,13 @@
                         </div>
 
                         <div class="form-control mb-4">
-                            <label class="label">
+                            <label class="label" for="google-client-secret">
                                 <span class="label-text font-medium">Client Secret</span>
                             </label>
                             <input
                                 type="password"
                                 name="google_client_secret"
+                                id="google-client-secret"
                                 value="{{ $integrationSettings['google_client_secret'] }}"
                                 class="input input-bordered font-mono text-sm"
                                 placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -120,12 +122,13 @@
                         </div>
 
                         <div class="form-control mb-4">
-                            <label class="label">
+                            <label class="label" for="google-redirect-uri">
                                 <span class="label-text font-medium">Redirect URI</span>
                             </label>
                             <input
                                 type="url"
                                 name="google_redirect_uri"
+                                id="google-redirect-uri"
                                 value="{{ $integrationSettings['google_redirect_uri'] }}"
                                 class="input input-bordered font-mono text-sm"
                                 placeholder="{{ url('/auth/google/callback') }}"

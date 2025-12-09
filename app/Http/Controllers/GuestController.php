@@ -17,6 +17,8 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class GuestController extends Controller
 {
+    private const GUEST_NOT_FOUND = 'Guest not found';
+
     /**
      * Guest types (for categorization in UI).
      */
@@ -221,7 +223,7 @@ class GuestController extends Controller
     {
         // Ensure this is a guest user
         if (!$guest->is_guest) {
-            return response()->json(['error' => 'Guest not found'], 404);
+            return response()->json(['error' => self::GUEST_NOT_FOUND], 404);
         }
 
         $guest->load('guestWorkspaces');
@@ -291,7 +293,7 @@ class GuestController extends Controller
     {
         // Ensure this is a guest user
         if (!$guest->is_guest) {
-            return response()->json(['error' => 'Guest not found'], 404);
+            return response()->json(['error' => self::GUEST_NOT_FOUND], 404);
         }
 
         $validated = $request->validate([
@@ -358,7 +360,7 @@ class GuestController extends Controller
     {
         // Ensure this is a guest user
         if (!$guest->is_guest) {
-            return response()->json(['error' => 'Guest not found'], 404);
+            return response()->json(['error' => self::GUEST_NOT_FOUND], 404);
         }
 
         // If this user only has guest role (not a member of any company), delete them
@@ -387,7 +389,7 @@ class GuestController extends Controller
     {
         // Ensure this is a guest user
         if (!$guest->is_guest) {
-            return response()->json(['error' => 'Guest not found'], 404);
+            return response()->json(['error' => self::GUEST_NOT_FOUND], 404);
         }
 
         // Check if guest is in invited status

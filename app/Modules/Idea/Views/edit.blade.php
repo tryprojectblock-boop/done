@@ -47,19 +47,19 @@
                     <div class="space-y-4">
                         <!-- Idea Title -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-idea-title">
                                 <span class="label-text font-medium">Idea Title <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="title" value="{{ old('title', $idea->title) }}"
+                            <input type="text" name="title" id="edit-idea-title" value="{{ old('title', $idea->title) }}"
                                    class="input input-bordered w-full" placeholder="Enter a clear, concise title for your idea" required>
                         </div>
 
                         <!-- Workspace (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-idea-workspace">
                                 <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <select name="workspace_id" class="select select-bordered w-full">
+                            <select name="workspace_id" id="edit-idea-workspace" class="select select-bordered w-full">
                                 <option value="">No Workspace (General Idea)</option>
                                 @foreach($workspaces as $workspace)
                                     <option value="{{ $workspace->id }}" {{ old('workspace_id', $idea->workspace_id) == $workspace->id ? 'selected' : '' }}>
@@ -71,10 +71,10 @@
 
                         <!-- Short Description -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-idea-short-description">
                                 <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <textarea name="short_description" class="textarea textarea-bordered h-20" maxlength="500" placeholder="Brief summary of your idea (max 500 characters)">{{ old('short_description', $idea->short_description) }}</textarea>
+                            <textarea name="short_description" id="edit-idea-short-description" class="textarea textarea-bordered h-20" maxlength="500" placeholder="Brief summary of your idea (max 500 characters)">{{ old('short_description', $idea->short_description) }}</textarea>
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">This will be shown in the ideas list</span>
                             </label>
@@ -104,10 +104,10 @@
                     <div class="space-y-4">
                         <!-- Priority -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="edit-idea-priority">
                                 <span class="label-text font-medium">Priority</span>
                             </label>
-                            <select name="priority" class="select select-bordered w-full">
+                            <select name="priority" id="edit-idea-priority" class="select select-bordered w-full">
                                 @foreach($priorities as $value => $label)
                                     <option value="{{ $value }}" {{ old('priority', $idea->priority->value) === $value ? 'selected' : '' }}>
                                         {{ $label }}
@@ -118,7 +118,7 @@
 
                         <!-- Invite Members (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="member-search">
                                 <span class="label-text font-medium">Members <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <div class="relative">

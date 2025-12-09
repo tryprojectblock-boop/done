@@ -21,10 +21,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- First Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-first-name">
                                 <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="first_name" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="first_name" id="guest-first-name" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
                             </label>
@@ -32,10 +32,10 @@
 
                         <!-- Last Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-last-name">
                                 <span class="label-text font-medium">Last Name <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="text" name="last_name" placeholder="Doe" class="input input-bordered" pattern="[A-Za-z\s\-']*" title="Only letters, spaces, hyphens and apostrophes allowed">
+                            <input type="text" name="last_name" id="guest-last-name" placeholder="Doe" class="input input-bordered" pattern="[A-Za-z\s\-']*" title="Only letters, spaces, hyphens and apostrophes allowed">
                             <label class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
                             </label>
@@ -44,18 +44,18 @@
 
                     <!-- Email -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="guest-email">
                             <span class="label-text font-medium">Email Address <span class="text-error">*</span></span>
                         </label>
-                        <input type="email" name="email" placeholder="john@example.com" class="input input-bordered" required>
+                        <input type="email" name="email" id="guest-email" placeholder="john@example.com" class="input input-bordered" required>
                     </div>
 
                     <!-- Type -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="guest-type">
                             <span class="label-text font-medium">Type <span class="text-error">*</span></span>
                         </label>
-                        <select name="type" class="select select-bordered" required>
+                        <select name="type" id="guest-type" class="select select-bordered" required>
                             <option value="" disabled selected>Select type</option>
                             @foreach($types as $key => $type)
                                 <option value="{{ $key }}">{{ $type['label'] }}</option>
@@ -65,10 +65,10 @@
 
                     <!-- Client Portal Access -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="guest-portal-access">
                             <span class="label-text font-medium">Client Portal Access <span class="text-error">*</span></span>
                         </label>
-                        <select name="client_portal_access" class="select select-bordered" required>
+                        <select name="client_portal_access" id="guest-portal-access" class="select select-bordered" required>
                             <option value="" disabled selected>Select option</option>
                             <option value="0">No</option>
                             <option value="1">Yes</option>
@@ -77,7 +77,7 @@
 
                     <!-- Tags -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="tag-input">
                             <span class="label-text font-medium">Tags <span class="text-base-content/50 font-normal">(Optional)</span></span>
                         </label>
                         <div id="tags-container" class="flex flex-wrap gap-2 p-3 border border-base-300 rounded-lg min-h-[3rem] focus-within:border-primary">
@@ -94,35 +94,35 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Phone -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-phone">
                                 <span class="label-text font-medium">Phone</span>
                             </label>
-                            <input type="tel" name="phone" placeholder="+1 (555) 123-4567" class="input input-bordered">
+                            <input type="tel" name="phone" id="guest-phone" placeholder="+1 (555) 123-4567" class="input input-bordered">
                         </div>
 
                         <!-- Company Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-company">
                                 <span class="label-text font-medium">Company Name</span>
                             </label>
-                            <input type="text" name="company_name" placeholder="Acme Inc." class="input input-bordered">
+                            <input type="text" name="company_name" id="guest-company" placeholder="Acme Inc." class="input input-bordered">
                         </div>
                     </div>
 
                     <!-- Position -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="guest-position">
                             <span class="label-text font-medium">Position / Title</span>
                         </label>
-                        <input type="text" name="position" placeholder="CEO, Designer, etc." class="input input-bordered">
+                        <input type="text" name="position" id="guest-position" placeholder="CEO, Designer, etc." class="input input-bordered">
                     </div>
 
                     <!-- Notes -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="guest-notes">
                             <span class="label-text font-medium">Notes</span>
                         </label>
-                        <textarea name="notes" rows="3" placeholder="Any additional notes about this guest..." class="textarea textarea-bordered"></textarea>
+                        <textarea name="notes" id="guest-notes" rows="3" placeholder="Any additional notes about this guest..." class="textarea textarea-bordered"></textarea>
                     </div>
                 </div>
 

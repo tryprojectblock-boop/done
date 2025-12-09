@@ -106,7 +106,7 @@
 
                     <!-- Workspace Name -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="workspace-name">
                             <span class="label-text font-medium">Workspace Name <span class="text-error">*</span></span>
                         </label>
                         <input type="text" name="name" id="workspace-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Marketing Team, Product Launch 2024" value="{{ old('name') }}" required maxlength="100">
@@ -119,7 +119,7 @@
 
                     <!-- Workflow Selection -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="workflow-select">
                             <span class="label-text font-medium">Workflow <span class="text-error">*</span></span>
                         </label>
                         <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required>
@@ -143,25 +143,25 @@
 
                     <!-- Description -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="workspace-description">
                             <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                         </label>
-                        <textarea name="description" class="textarea textarea-bordered" placeholder="Briefly describe what this workspace is for..." rows="3" maxlength="500">{{ old('description') }}</textarea>
+                        <textarea name="description" id="workspace-description" class="textarea textarea-bordered" placeholder="Briefly describe what this workspace is for..." rows="3" maxlength="500">{{ old('description') }}</textarea>
                     </div>
 
                     <!-- Date Range -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="workspace-start-date">
                                 <span class="label-text font-medium">Start Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="date" name="start_date" class="input input-bordered" value="{{ old('start_date') }}">
+                            <input type="date" name="start_date" id="workspace-start-date" class="input input-bordered" value="{{ old('start_date') }}">
                         </div>
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="workspace-end-date">
                                 <span class="label-text font-medium">End Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="date" name="end_date" class="input input-bordered" value="{{ old('end_date') }}">
+                            <input type="date" name="end_date" id="workspace-end-date" class="input input-bordered" value="{{ old('end_date') }}">
                         </div>
                     </div>
                 </div>

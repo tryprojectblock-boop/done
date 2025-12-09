@@ -35,7 +35,7 @@
 
                     <!-- Workflow Name -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label" for="workflow-name">
                             <span class="label-text font-medium">Workflow Name <span class="text-error">*</span></span>
                         </label>
                         <input type="text" name="name" id="workflow-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Basic Task Workflow" value="{{ old('name', $workflow->name) }}" required maxlength="100">
@@ -48,10 +48,10 @@
 
                     <!-- Description -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="workflow-edit-description">
                             <span class="label-text font-medium">Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                         </label>
-                        <textarea name="description" class="textarea textarea-bordered" placeholder="Make it short and sweet…" rows="2" maxlength="500">{{ old('description', $workflow->description) }}</textarea>
+                        <textarea name="description" id="workflow-edit-description" class="textarea textarea-bordered" placeholder="Make it short and sweet…" rows="2" maxlength="500">{{ old('description', $workflow->description) }}</textarea>
                     </div>
                 </div>
             </div>
