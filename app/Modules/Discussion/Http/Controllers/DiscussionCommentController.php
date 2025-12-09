@@ -17,6 +17,8 @@ class DiscussionCommentController extends Controller
         private readonly DiscussionServiceInterface $discussionService
     ) {}
 
+    private const MAX_ATTACHMENT_SIZE_KB = 10240; // 10MB
+
     public function store(Request $request, Discussion $discussion): RedirectResponse
     {
         $user = $request->user();
@@ -25,12 +27,28 @@ class DiscussionCommentController extends Controller
             return back()->with('error', 'You do not have permission to comment on this discussion.');
         }
 
+        // Pre-check Content-Length header (defense in depth)
+        $contentLength = $request->header('Content-Length');
+        $maxContentLength = self::MAX_ATTACHMENT_SIZE_KB * 1024 * 10; // Allow for multiple attachments
+        if ($contentLength !== null && (int) $contentLength > $maxContentLength) {
+            return back()->with('error', 'Request size exceeds the maximum allowed size.');
+        }
+
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
             'parent_id' => ['nullable', 'exists:discussion_comments,id'],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'max:10240'],
+            'attachments.*' => ['file', 'max:' . self::MAX_ATTACHMENT_SIZE_KB],
         ]);
+
+        // Post-check: Verify actual file sizes (defense in depth)
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if ($file->getSize() > self::MAX_ATTACHMENT_SIZE_KB * 1024) {
+                    return back()->with('error', 'One or more attachments exceed the maximum allowed size of 10MB.');
+                }
+            }
+        }
 
         $attachments = $request->hasFile('attachments') ? $request->file('attachments') : [];
 

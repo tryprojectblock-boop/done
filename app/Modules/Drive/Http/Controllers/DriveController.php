@@ -23,6 +23,8 @@ class DriveController extends Controller
 {
     // 10GB storage limit in bytes
     private const STORAGE_LIMIT = 10 * 1024 * 1024 * 1024;
+    // 500MB max file size in KB
+    private const MAX_FILE_SIZE_KB = 512000;
 
     public function index(Request $request): View
     {
@@ -206,8 +208,17 @@ class DriveController extends Controller
         $user = $request->user();
         $companyId = $user->company_id;
 
+        // Pre-check Content-Length header (defense in depth)
+        $contentLength = $request->header('Content-Length');
+        $maxContentLengthBytes = self::MAX_FILE_SIZE_KB * 1024;
+        if ($contentLength !== null && (int) $contentLength > $maxContentLengthBytes) {
+            return back()
+                ->withInput()
+                ->with('error', 'File size exceeds the maximum allowed size of 500MB.');
+        }
+
         $request->validate([
-            'file' => ['required', 'file', 'max:512000'], // 500MB max per file
+            'file' => ['required', 'file', 'max:' . self::MAX_FILE_SIZE_KB], // 500MB max per file
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'tags' => ['nullable', 'array'],
@@ -219,6 +230,13 @@ class DriveController extends Controller
         // Check storage limit
         $file = $request->file('file');
         $fileSize = $file->getSize();
+
+        // Post-check: Verify actual file size (defense in depth)
+        if ($fileSize > $maxContentLengthBytes) {
+            return back()
+                ->withInput()
+                ->with('error', 'File size exceeds the maximum allowed size of 500MB.');
+        }
         $storageUsed = $this->getCompanyStorageUsed($companyId);
 
         if (($storageUsed + $fileSize) > self::STORAGE_LIMIT) {

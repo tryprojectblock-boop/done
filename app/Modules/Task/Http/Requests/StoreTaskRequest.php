@@ -6,11 +6,14 @@ namespace App\Modules\Task\Http\Requests;
 
 use App\Modules\Task\Enums\TaskPriority;
 use App\Modules\Task\Enums\TaskType;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreTaskRequest extends FormRequest
 {
+    private const MAX_FILE_SIZE_KB = 10240; // 10MB
+
     public function authorize(): bool
     {
         return true;
@@ -40,7 +43,7 @@ class StoreTaskRequest extends FormRequest
             'watcher_ids' => ['nullable', 'array'],
             'watcher_ids.*' => ['exists:users,id'],
             'files' => ['nullable', 'array'],
-            'files.*' => ['file', 'max:10240'], // 10MB max per file
+            'files.*' => ['file', 'max:' . self::MAX_FILE_SIZE_KB], // 10MB max per file
             'action' => ['nullable', 'string', 'in:create,create_and_add_more,create_and_copy'],
         ];
     }
@@ -52,6 +55,29 @@ class StoreTaskRequest extends FormRequest
             'workspace_id.exists' => 'The selected workspace is invalid.',
             'title.required' => 'Please enter a task title.',
             'title.max' => 'The task title cannot exceed 255 characters.',
+            'files.*.max' => 'Each file must be less than 10MB.',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            // Pre-check Content-Length header (defense in depth)
+            $contentLength = $this->header('Content-Length');
+            $maxContentLength = self::MAX_FILE_SIZE_KB * 1024 * 10; // Allow for multiple files
+            if ($contentLength !== null && (int) $contentLength > $maxContentLength) {
+                $validator->errors()->add('files', 'Request size exceeds the maximum allowed size.');
+            }
+
+            // Post-check: Verify actual file sizes (defense in depth)
+            if ($this->hasFile('files')) {
+                foreach ($this->file('files') as $file) {
+                    if ($file->getSize() > self::MAX_FILE_SIZE_KB * 1024) {
+                        $validator->errors()->add('files', 'One or more files exceed the maximum allowed size of 10MB.');
+                        break;
+                    }
+                }
+            }
+        });
     }
 }

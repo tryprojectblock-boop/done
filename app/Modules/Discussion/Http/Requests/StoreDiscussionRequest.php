@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Discussion\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDiscussionRequest extends FormRequest
 {
+    private const MAX_ATTACHMENT_SIZE_KB = 10240; // 10MB
+
     public function authorize(): bool
     {
         return true;
@@ -26,7 +29,7 @@ class StoreDiscussionRequest extends FormRequest
             'guest_ids' => ['nullable', 'array'],
             'guest_ids.*' => ['integer', 'exists:users,id'],
             'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'max:10240'], // 10MB max per file
+            'attachments.*' => ['file', 'max:' . self::MAX_ATTACHMENT_SIZE_KB], // 10MB max per file
         ];
     }
 
@@ -44,5 +47,27 @@ class StoreDiscussionRequest extends FormRequest
         $this->merge([
             'is_public' => $this->boolean('is_public'),
         ]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            // Pre-check Content-Length header (defense in depth)
+            $contentLength = $this->header('Content-Length');
+            $maxContentLength = self::MAX_ATTACHMENT_SIZE_KB * 1024 * 10; // Allow for multiple attachments
+            if ($contentLength !== null && (int) $contentLength > $maxContentLength) {
+                $validator->errors()->add('attachments', 'Request size exceeds the maximum allowed size.');
+            }
+
+            // Post-check: Verify actual file sizes (defense in depth)
+            if ($this->hasFile('attachments')) {
+                foreach ($this->file('attachments') as $file) {
+                    if ($file->getSize() > self::MAX_ATTACHMENT_SIZE_KB * 1024) {
+                        $validator->errors()->add('attachments', 'One or more attachments exceed the maximum allowed size of 10MB.');
+                        break;
+                    }
+                }
+            }
+        });
     }
 }
