@@ -19,7 +19,7 @@
             @csrf
 
             <div class="form-control mb-6">
-                <label class="label">
+                <label class="label" for="email">
                     <span class="label-text font-medium">Email Address</span>
                 </label>
                 <div class="relative">
@@ -29,6 +29,7 @@
                     <input
                         type="email"
                         name="email"
+                        id="email"
                         value="{{ old('email') }}"
                         class="input input-bordered w-full pl-10"
                         placeholder="admin@example.com"

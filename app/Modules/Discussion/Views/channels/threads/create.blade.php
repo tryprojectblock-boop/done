@@ -51,12 +51,12 @@
 
                     <!-- Thread Title -->
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="thread-title">
                             <span class="label-text font-medium">Title <span class="text-error">*</span></span>
                         </label>
-                        <input type="text" name="title" value="{{ old('title') }}" placeholder="What do you want to discuss?" class="input input-bordered w-full text-lg @error('title') input-error @enderror" required maxlength="255" autofocus />
+                        <input type="text" name="title" id="thread-title" value="{{ old('title') }}" placeholder="What do you want to discuss?" class="input input-bordered w-full text-lg @error('title') input-error @enderror" required maxlength="255" autofocus />
                         @error('title')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 

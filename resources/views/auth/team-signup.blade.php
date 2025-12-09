@@ -57,13 +57,13 @@
                     <!-- Name Fields -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label class="label"><span class="label-text">First Name <span class="text-error">*</span></span></label>
+                            <label class="label" for="first_name"><span class="label-text">First Name <span class="text-error">*</span></span></label>
                             <input type="text" name="first_name" id="first_name" value="{{ $user->first_name }}"
                                    class="input input-bordered w-full" required
                                    pattern="[A-Za-z\s\-']+" title="Only letters allowed" />
                         </div>
                         <div>
-                            <label class="label"><span class="label-text">Last Name <span class="text-error">*</span></span></label>
+                            <label class="label" for="last_name"><span class="label-text">Last Name <span class="text-error">*</span></span></label>
                             <input type="text" name="last_name" id="last_name" value="{{ $user->last_name }}"
                                    class="input input-bordered w-full" required
                                    pattern="[A-Za-z\s\-']+" title="Only letters allowed" />
@@ -72,19 +72,19 @@
 
                     <!-- Email (Read Only) -->
                     <div class="mb-4">
-                        <label class="label"><span class="label-text">Email Address</span></label>
-                        <input type="email" value="{{ $user->email }}" class="input input-bordered w-full bg-base-200" readonly disabled />
+                        <label class="label" for="email"><span class="label-text">Email Address</span></label>
+                        <input type="email" id="email" value="{{ $user->email }}" class="input input-bordered w-full bg-base-200" readonly disabled />
                     </div>
 
                     <!-- Role (Read Only) -->
                     <div class="mb-4">
-                        <label class="label"><span class="label-text">Role</span></label>
-                        <input type="text" value="{{ $user->role_label }}" class="input input-bordered w-full bg-base-200" readonly disabled />
+                        <label class="label" for="role"><span class="label-text">Role</span></label>
+                        <input type="text" id="role" value="{{ $user->role_label }}" class="input input-bordered w-full bg-base-200" readonly disabled />
                     </div>
 
                     <!-- Password -->
                     <div class="mb-4">
-                        <label class="label"><span class="label-text">Password <span class="text-error">*</span></span></label>
+                        <label class="label" for="password"><span class="label-text">Password <span class="text-error">*</span></span></label>
                         <div class="relative">
                             <input type="password" name="password" id="password"
                                    class="input input-bordered w-full pr-10" required minlength="8"
@@ -97,7 +97,7 @@
 
                     <!-- Confirm Password -->
                     <div class="mb-4">
-                        <label class="label"><span class="label-text">Confirm Password <span class="text-error">*</span></span></label>
+                        <label class="label" for="password_confirmation"><span class="label-text">Confirm Password <span class="text-error">*</span></span></label>
                         <div class="relative">
                             <input type="password" name="password_confirmation" id="password_confirmation"
                                    class="input input-bordered w-full pr-10" required minlength="8" />
@@ -109,15 +109,17 @@
 
                     <!-- About Yourself -->
                     <div class="mb-4">
-                        <label class="label"><span class="label-text">About Yourself</span></label>
+                        <label class="label" for="description"><span class="label-text">About Yourself</span></label>
                         <textarea name="description" id="description" class="textarea textarea-bordered w-full h-24"
                                   placeholder="Tell us a bit about yourself..." maxlength="500"></textarea>
-                        <p class="text-xs text-base-content/50 mt-1">Optional - Max 500 characters</p>
+                        <div class="label">
+                            <span class="label-text-alt text-base-content/50">Optional - Max 500 characters</span>
+                        </div>
                     </div>
 
                     <!-- Timezone -->
                     <div class="mb-6">
-                        <label class="label"><span class="label-text">Timezone <span class="text-error">*</span></span></label>
+                        <label class="label" for="timezone"><span class="label-text">Timezone <span class="text-error">*</span></span></label>
                         <select name="timezone" id="timezone" class="select select-bordered w-full" required>
                             <option value="">Select your timezone</option>
                             @foreach($timezones as $tz)

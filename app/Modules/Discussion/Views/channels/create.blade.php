@@ -55,7 +55,7 @@
                         </label>
                         <input type="text" name="name" id="channel-name" value="{{ old('name') }}" placeholder="e.g., Marketing" class="input input-bordered @error('name') input-error @enderror" required maxlength="100" />
                         @error('name')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
@@ -69,7 +69,7 @@
                             <input type="text" name="tag" id="channel-tag" value="{{ old('tag') }}" placeholder="admin resources" class="input input-bordered pl-8 w-full @error('tag') input-error @enderror" required maxlength="50" />
                         </div>
                         @error('tag')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
@@ -80,15 +80,15 @@
                         </label>
                         <textarea name="description" id="channel-description" placeholder="Describe what this channel is about..." class="textarea textarea-bordered h-24 @error('description') textarea-error @enderror" maxlength="500">{{ old('description') }}</textarea>
                         @error('description')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
                     <!-- Channel Color -->
                     <div class="form-control">
-                        <span class="label">
+                        <div class="label">
                             <span class="label-text font-medium">Channel Color</span>
-                        </span>
+                        </div>
                         <div class="flex flex-wrap gap-2">
                             <label class="cursor-pointer" title="Blue">
                                 <input type="radio" name="color" value="primary" class="hidden peer" {{ old('color', 'primary') === 'primary' ? 'checked' : '' }} />
@@ -139,9 +139,9 @@
 
                     <!-- Channel Status -->
                     <div class="form-control">
-                        <span class="label">
+                        <div class="label">
                             <span class="label-text font-medium">Channel Status</span>
-                        </span>
+                        </div>
                         <div class="flex flex-wrap gap-3">
                             <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-base-300 hover:border-success transition-colors has-[:checked]:border-success has-[:checked]:bg-success/10">
                                 <input type="radio" name="status" value="active" class="radio radio-success radio-sm" {{ old('status', 'active') === 'active' ? 'checked' : '' }} />

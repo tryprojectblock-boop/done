@@ -519,10 +519,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <form action="{{ route('backoffice.clients.pause', $company) }}" method="POST">
             @csrf
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="pause-reason">
                     <span class="label-text font-medium">Pause Reason <span class="text-error">*</span></span>
                 </label>
-                <select name="pause_reason" class="select select-bordered w-full" required>
+                <select name="pause_reason" id="pause-reason" class="select select-bordered w-full" required>
                     <option value="">Select a reason...</option>
                     <option value="Payment overdue">Payment overdue</option>
                     <option value="Subscription expired">Subscription expired</option>
@@ -534,11 +534,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="pause-description">
                     <span class="label-text font-medium">Additional Details</span>
                     <span class="label-text-alt">Optional</span>
                 </label>
-                <textarea name="pause_description" class="textarea textarea-bordered w-full h-24" placeholder="Enter any additional details about this pause..."></textarea>
+                <textarea name="pause_description" id="pause-description" class="textarea textarea-bordered w-full h-24" placeholder="Enter any additional details about this pause..."></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-6">
                 <button type="button" class="btn btn-ghost" id="pause-modal-cancel">Cancel</button>
@@ -592,22 +592,22 @@ document.addEventListener('DOMContentLoaded', function() {
         <form action="{{ route('backoffice.clients.send-email', $company) }}" method="POST">
             @csrf
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="email-to">
                     <span class="label-text">To</span>
                 </label>
-                <input type="text" value="{{ $company->owner?->email ?? 'N/A' }}" class="input input-bordered" disabled />
+                <input type="text" id="email-to" value="{{ $company->owner?->email ?? 'N/A' }}" class="input input-bordered" disabled />
             </div>
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="email-subject">
                     <span class="label-text">Subject</span>
                 </label>
-                <input type="text" name="subject" class="input input-bordered" required />
+                <input type="text" name="subject" id="email-subject" class="input input-bordered" required />
             </div>
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="email-message">
                     <span class="label-text">Message</span>
                 </label>
-                <textarea name="message" class="textarea textarea-bordered h-32" required></textarea>
+                <textarea name="message" id="email-message" class="textarea textarea-bordered h-32" required></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-6">
                 <button type="button" class="btn btn-ghost" data-modal-close="send-email-modal">Cancel</button>
@@ -688,10 +688,10 @@ document.addEventListener('DOMContentLoaded', function() {
             @csrf
             @method('DELETE')
             <div class="form-control mb-4">
-                <label class="label">
+                <label class="label" for="delete-confirmation">
                     <span class="label-text font-medium">Type <span class="text-error font-bold">{{ $company->name }}</span> to confirm</span>
                 </label>
-                <input type="text" name="confirmation" class="input input-bordered" placeholder="Enter company name" required pattern="{{ preg_quote($company->name, '/') }}" />
+                <input type="text" name="confirmation" id="delete-confirmation" class="input input-bordered" placeholder="Enter company name" required pattern="{{ preg_quote($company->name, '/') }}" />
             </div>
             <div class="flex justify-end gap-2">
                 <button type="button" class="btn btn-ghost" data-modal-close="delete-account-modal">Cancel</button>

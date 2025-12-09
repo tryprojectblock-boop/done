@@ -46,10 +46,10 @@
                     <div class="space-y-4">
                         <!-- Discussion Title -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="discussion-title">
                                 <span class="label-text font-medium">Discussion Title <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="title" value="{{ old('title', $discussion->title) }}"
+                            <input type="text" name="title" id="discussion-title" value="{{ old('title', $discussion->title) }}"
                                    class="input input-bordered w-full" placeholder="Enter a clear title for your discussion" required>
                         </div>
 
@@ -66,9 +66,9 @@
                         <!-- Existing Attachments -->
                         @if($discussion->attachments->isNotEmpty())
                             <div class="form-control">
-                                <label class="label">
+                                <div class="label">
                                     <span class="label-text font-medium">Current Attachments</span>
-                                </label>
+                                </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     @foreach($discussion->attachments as $attachment)
                                         <div class="flex items-center gap-3 p-3 rounded-lg border border-base-300">
@@ -85,10 +85,10 @@
 
                         <!-- New File Attachments -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="discussion-attachments">
                                 <span class="label-text font-medium">Add More Attachments <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="file" name="attachments[]" multiple
+                            <input type="file" name="attachments[]" id="discussion-attachments" multiple
                                    class="file-input file-input-bordered w-full"
                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
                         </div>
@@ -107,10 +107,10 @@
                     <div class="space-y-4">
                         <!-- Discussion Type -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="discussion-type">
                                 <span class="label-text font-medium">Discussion Type</span>
                             </label>
-                            <select name="type" class="select select-bordered w-full">
+                            <select name="type" id="discussion-type" class="select select-bordered w-full">
                                 <option value="">Select a type</option>
                                 @foreach($types as $value => $label)
                                     <option value="{{ $value }}" {{ old('type', $discussion->type?->value) === $value ? 'selected' : '' }}>
@@ -122,10 +122,10 @@
 
                         <!-- Workspace -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="discussion-workspace">
                                 <span class="label-text font-medium">Workspace</span>
                             </label>
-                            <select name="workspace_id" class="select select-bordered w-full">
+                            <select name="workspace_id" id="discussion-workspace" class="select select-bordered w-full">
                                 <option value="">No Workspace (General)</option>
                                 @foreach($workspaces as $workspace)
                                     <option value="{{ $workspace->id }}" {{ old('workspace_id', $discussion->workspace_id) == $workspace->id ? 'selected' : '' }}>
@@ -161,7 +161,7 @@
                     <div class="space-y-4">
                         <!-- Invite Team Members -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="member-search">
                                 <span class="label-text font-medium">Team Members</span>
                             </label>
                             <div class="relative">
@@ -192,7 +192,7 @@
 
                         <!-- Invite Guests -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="guest-search">
                                 <span class="label-text font-medium">Guests</span>
                             </label>
                             <div class="relative">

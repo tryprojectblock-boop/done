@@ -139,9 +139,9 @@
                         <!-- Parent Task (for subtasks) -->
                         @if($parentTask)
                             <div class="form-control">
-                                <span class="label">
+                                <div class="label">
                                     <span class="label-text font-medium">Parent Task</span>
-                                </span>
+                                </div>
                                 <input type="hidden" name="parent_task_id" value="{{ $parentTask->id }}">
                                 <div class="input input-bordered flex items-center gap-2 bg-base-200">
                                     <span class="icon-[tabler--subtask] size-4"></span>
@@ -228,9 +228,9 @@
                                 <input type="text" id="tag-input" placeholder="Type and press Enter to add tags..." class="flex-1 min-w-[150px] outline-none bg-transparent text-sm">
                             </div>
                             <input type="hidden" name="tags" id="tags-hidden">
-                            <span class="label">
+                            <div class="label">
                                 <span class="label-text-alt text-base-content/50">Press Enter or comma to add a tag</span>
-                            </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -281,9 +281,9 @@
 
                         <!-- Notification Settings -->
                         <div class="form-control">
-                            <span class="label">
+                            <div class="label">
                                 <span class="label-text font-medium">When I post this, notify...</span>
-                            </span>
+                            </div>
 
                             <!-- Notification Options -->
                             <div class="space-y-3 p-4 border border-base-300 rounded-lg">

@@ -181,9 +181,9 @@
                 <form action="{{ route('settings.billing.apply-coupon') }}" method="POST" class="flex gap-3">
                     @csrf
                     <div class="form-control flex-1">
-                        <input type="text" name="coupon_code" placeholder="Enter coupon code" class="input input-bordered @error('coupon_code') input-error @enderror" value="{{ old('coupon_code') }}" />
+                        <input type="text" name="coupon_code" id="coupon_code" placeholder="Enter coupon code" class="input input-bordered @error('coupon_code') input-error @enderror" value="{{ old('coupon_code') }}" />
                         @error('coupon_code')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
                     <button type="submit" class="btn btn-outline">

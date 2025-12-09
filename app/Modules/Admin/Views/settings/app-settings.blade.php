@@ -26,17 +26,17 @@
                 </h2>
 
                 <div class="form-control mb-4">
-                    <label class="label">
+                    <label class="label" for="app-name">
                         <span class="label-text font-medium">Application Name</span>
                     </label>
-                    <input type="text" name="app_name" value="{{ $settings['app_name'] }}" class="input input-bordered" required />
+                    <input type="text" name="app_name" id="app-name" value="{{ $settings['app_name'] }}" class="input input-bordered" required />
                 </div>
 
                 <div class="form-control mb-4">
-                    <label class="label">
+                    <label class="label" for="support-email">
                         <span class="label-text font-medium">Support Email</span>
                     </label>
-                    <input type="email" name="support_email" value="{{ $settings['support_email'] }}" class="input input-bordered" required />
+                    <input type="email" name="support_email" id="support-email" value="{{ $settings['support_email'] }}" class="input input-bordered" required />
                 </div>
             </div>
         </div>
@@ -51,31 +51,31 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="default-trial-days">
                             <span class="label-text font-medium">Default Trial Days</span>
                         </label>
-                        <input type="number" name="default_trial_days" value="{{ $settings['default_trial_days'] }}" class="input input-bordered" min="0" max="365" />
+                        <input type="number" name="default_trial_days" id="default-trial-days" value="{{ $settings['default_trial_days'] }}" class="input input-bordered" min="0" max="365" />
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="max-workspaces-per-company">
                             <span class="label-text font-medium">Max Workspaces per Company</span>
                         </label>
-                        <input type="number" name="max_workspaces_per_company" value="{{ $settings['max_workspaces_per_company'] }}" class="input input-bordered" min="1" max="100" />
+                        <input type="number" name="max_workspaces_per_company" id="max-workspaces-per-company" value="{{ $settings['max_workspaces_per_company'] }}" class="input input-bordered" min="1" max="100" />
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="max-users-per-company">
                             <span class="label-text font-medium">Max Users per Company</span>
                         </label>
-                        <input type="number" name="max_users_per_company" value="{{ $settings['max_users_per_company'] }}" class="input input-bordered" min="1" max="1000" />
+                        <input type="number" name="max_users_per_company" id="max-users-per-company" value="{{ $settings['max_users_per_company'] }}" class="input input-bordered" min="1" max="1000" />
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="max-storage-per-company-gb">
                             <span class="label-text font-medium">Max Storage per Company (GB)</span>
                         </label>
-                        <input type="number" name="max_storage_per_company_gb" value="{{ $settings['max_storage_per_company_gb'] }}" class="input input-bordered" min="1" max="100" />
+                        <input type="number" name="max_storage_per_company_gb" id="max-storage-per-company-gb" value="{{ $settings['max_storage_per_company_gb'] }}" class="input input-bordered" min="1" max="100" />
                     </div>
                 </div>
             </div>
