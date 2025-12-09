@@ -4,7 +4,8 @@
       "Bash(php /Applications/MAMP/htdocs/NewDone/artisan tinker:*)",
       "WebFetch(domain:twist.com)",
       "Bash(php:*)",
-      "Bash(php /Applications/MAMP/htdocs/NewDone/artisan route:list:*)"
+      "Bash(php /Applications/MAMP/htdocs/NewDone/artisan route:list:*)",
+      "WebFetch(domain:flyonui.com)"
     ],
     "deny": [],
     "ask": []

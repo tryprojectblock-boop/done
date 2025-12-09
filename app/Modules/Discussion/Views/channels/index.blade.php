@@ -18,14 +18,17 @@
         </div>
 
         <!-- Tabs: Discussion | Team Channel -->
-        <div class="tabs tabs-bordered mb-6">
-            <a href="{{ route('discussions.index') }}" class="tab tab-lg tab-bordered gap-2">
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6">
+            <a href="{{ route('discussions.index') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-base-content/60 hover:text-primary hover:bg-primary/10">
                 <span class="icon-[tabler--message-circle] size-5"></span>
-                Discussion
+                <span>Discussion</span>
             </a>
-            <a href="{{ route('channels.index') }}" class="tab tab-lg tab-bordered tab-active gap-2">
+            <a href="{{ route('channels.index') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 bg-primary text-primary-content shadow-sm">
                 <span class="icon-[tabler--hash] size-5"></span>
-                Team Channel
+                <span>Team Channel</span>
+                @if(isset($channels) && $channels->count() > 0)
+                    <span class="badge badge-sm bg-primary-content/20 text-primary-content border-0">{{ $channels->count() }}</span>
+                @endif
             </a>
         </div>
 

@@ -14,7 +14,7 @@ use Illuminate\View\View;
 
 class UsersController extends Controller
 {
-    private const USER_NOT_FOUND = self::USER_NOT_FOUND;
+    private const USER_NOT_FOUND = 'User not found.';
 
     public function __construct(
         private readonly PlanLimitService $planLimitService
