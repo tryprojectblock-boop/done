@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Auth\Http\Controllers\ForgotPasswordController;
 use App\Modules\Auth\Http\Controllers\LoginController;
 use App\Modules\Auth\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,12 @@ Route::prefix('v1/auth')->name('api.auth.')->middleware('web')->group(function (
     // Login (guest only)
     Route::post('/login', [LoginController::class, 'login'])
         ->name('login');
+
+    // Password Reset (guest only)
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])
+        ->name('forgot-password');
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])
+        ->name('reset-password');
 
     // Logout (authenticated)
     Route::post('/logout', [LoginController::class, 'logout'])

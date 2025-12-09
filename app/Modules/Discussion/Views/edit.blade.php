@@ -83,14 +83,36 @@
                             </div>
                         @endif
 
-                        <!-- New File Attachments -->
+                        <!-- New File Attachments - Drag & Drop -->
                         <div class="form-control">
-                            <label class="label" for="discussion-attachments">
+                            <label class="label">
                                 <span class="label-text font-medium">Add More Attachments <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="file" name="attachments[]" id="discussion-attachments" multiple
-                                   class="file-input file-input-bordered w-full"
-                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                            <div id="attachment-dropzone" class="border-2 border-dashed border-base-300 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 hover:border-primary hover:bg-primary/5">
+                                <input type="file" name="attachments[]" id="discussion-attachments" multiple
+                                       class="hidden"
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <span class="icon-[tabler--cloud-upload] size-8 text-primary"></span>
+                                    </div>
+                                    <div>
+                                        <p class="text-base font-medium text-base-content">Drag & drop files here</p>
+                                        <p class="text-sm text-base-content/60">or <span class="text-primary font-medium">browse</span> to choose files</p>
+                                    </div>
+                                    <div class="flex flex-wrap justify-center gap-2 mt-2">
+                                        <span class="badge badge-ghost badge-sm">PDF</span>
+                                        <span class="badge badge-ghost badge-sm">DOC</span>
+                                        <span class="badge badge-ghost badge-sm">XLS</span>
+                                        <span class="badge badge-ghost badge-sm">PPT</span>
+                                        <span class="badge badge-ghost badge-sm">Images</span>
+                                        <span class="badge badge-ghost badge-sm">ZIP</span>
+                                    </div>
+                                    <p class="text-xs text-base-content/50">Max 10MB per file</p>
+                                </div>
+                            </div>
+                            <!-- File Preview List -->
+                            <div id="attachment-preview" class="mt-3 space-y-2 hidden"></div>
                         </div>
                     </div>
                 </div>
@@ -135,17 +157,6 @@
                             </select>
                         </div>
 
-                        <!-- Public Announcement -->
-                        <div class="form-control">
-                            <label class="label cursor-pointer justify-start gap-3">
-                                <input type="checkbox" name="is_public" value="1" class="checkbox checkbox-primary"
-                                       {{ old('is_public', $discussion->is_public) ? 'checked' : '' }}>
-                                <div>
-                                    <span class="label-text font-medium">Public Announcement</span>
-                                    <p class="text-xs text-base-content/50">All team members in your organization can see this discussion</p>
-                                </div>
-                            </label>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -170,6 +181,11 @@
                                     <input type="text" id="member-search" class="flex-1 min-w-32 bg-transparent border-0 outline-none text-sm" placeholder="Search and select members..." autocomplete="off">
                                 </div>
                                 <div id="member-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <!-- Select All Option -->
+                                    <label id="select-all-option" class="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-300 sticky top-0 bg-base-100 z-10">
+                                        <input type="checkbox" id="select-all-members" class="checkbox checkbox-primary checkbox-sm">
+                                        <span class="font-medium text-sm">Select All</span>
+                                    </label>
                                     @foreach($members as $member)
                                         <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $member->id }}" data-name="{{ $member->name }}" data-search="{{ strtolower($member->name) }}">
                                             <div class="avatar">
@@ -274,6 +290,124 @@ document.addEventListener('DOMContentLoaded', function() {
     const preselectedMembers = @json($preselectedMembersData);
     const preselectedGuests = @json($preselectedGuestsData);
 
+    // ==================== DRAG & DROP ATTACHMENTS ====================
+    const dropzone = document.getElementById('attachment-dropzone');
+    const fileInput = document.getElementById('discussion-attachments');
+    const previewContainer = document.getElementById('attachment-preview');
+    let selectedFiles = new DataTransfer();
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'pdf': 'icon-[tabler--file-type-pdf]',
+            'doc': 'icon-[tabler--file-type-doc]',
+            'docx': 'icon-[tabler--file-type-docx]',
+            'xls': 'icon-[tabler--file-type-xls]',
+            'xlsx': 'icon-[tabler--file-type-xls]',
+            'ppt': 'icon-[tabler--file-type-ppt]',
+            'pptx': 'icon-[tabler--file-type-ppt]',
+            'zip': 'icon-[tabler--file-type-zip]',
+            'rar': 'icon-[tabler--file-type-zip]',
+            'jpg': 'icon-[tabler--photo]',
+            'jpeg': 'icon-[tabler--photo]',
+            'png': 'icon-[tabler--photo]',
+            'gif': 'icon-[tabler--photo]'
+        };
+        return icons[ext] || 'icon-[tabler--file]';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function updatePreviews() {
+        if (selectedFiles.files.length === 0) {
+            previewContainer.classList.add('hidden');
+            previewContainer.innerHTML = '';
+            return;
+        }
+
+        previewContainer.classList.remove('hidden');
+        previewContainer.innerHTML = '';
+
+        Array.from(selectedFiles.files).forEach((file, index) => {
+            const isImage = file.type.startsWith('image/');
+            const preview = document.createElement('div');
+            preview.className = 'flex items-center gap-3 p-3 bg-base-200/50 rounded-lg border border-base-300';
+
+            let thumbnailHtml = '';
+            if (isImage) {
+                const url = URL.createObjectURL(file);
+                thumbnailHtml = `<img src="${url}" class="w-12 h-12 object-cover rounded-lg" alt="${file.name}">`;
+            } else {
+                thumbnailHtml = `<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"><span class="${getFileIcon(file.name)} size-6 text-primary"></span></div>`;
+            }
+
+            preview.innerHTML = `
+                ${thumbnailHtml}
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">${file.name}</p>
+                    <p class="text-xs text-base-content/60">${formatFileSize(file.size)}</p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm btn-circle text-error" data-index="${index}">
+                    <span class="icon-[tabler--x] size-5"></span>
+                </button>
+            `;
+
+            preview.querySelector('button').addEventListener('click', function() {
+                removeFile(index);
+            });
+
+            previewContainer.appendChild(preview);
+        });
+    }
+
+    function removeFile(index) {
+        const newFiles = new DataTransfer();
+        Array.from(selectedFiles.files).forEach((file, i) => {
+            if (i !== index) newFiles.items.add(file);
+        });
+        selectedFiles = newFiles;
+        fileInput.files = selectedFiles.files;
+        updatePreviews();
+    }
+
+    function addFiles(files) {
+        Array.from(files).forEach(file => {
+            if (file.size <= 10 * 1024 * 1024) {
+                selectedFiles.items.add(file);
+            }
+        });
+        fileInput.files = selectedFiles.files;
+        updatePreviews();
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-primary', 'bg-primary/10');
+    });
+
+    dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-primary/10');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-primary/10');
+        addFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        addFiles(e.target.files);
+    });
+
     // ==================== MEMBERS ====================
     const memberSelect = document.getElementById('member-select');
     const memberDropdown = document.getElementById('member-dropdown');
@@ -282,8 +416,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const memberHiddenInputs = document.getElementById('member-hidden-inputs');
     const memberOptions = document.querySelectorAll('.member-option');
     const noMemberResults = document.getElementById('no-member-results');
+    const selectAllCheckbox = document.getElementById('select-all-members');
     let selectedMembers = [...preselectedMembers];
     let memberHighlightIndex = -1;
+
+    // Select All checkbox state update function
+    function updateSelectAllCheckbox() {
+        if (selectAllCheckbox) {
+            const totalMembers = memberOptions.length;
+            const selectedCount = selectedMembers.length;
+            selectAllCheckbox.checked = selectedCount === totalMembers && totalMembers > 0;
+            selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalMembers;
+        }
+    }
+
+    // Select All checkbox click handler
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Select all members
+                selectedMembers = [];
+                memberOptions.forEach(option => {
+                    const id = option.dataset.id;
+                    const name = option.dataset.name;
+                    selectedMembers.push({ id, name });
+                    option.querySelector('.member-check').classList.remove('hidden');
+                    option.classList.add('bg-primary/10');
+                });
+            } else {
+                // Deselect all members
+                selectedMembers = [];
+                memberOptions.forEach(option => {
+                    option.querySelector('.member-check').classList.add('hidden');
+                    option.classList.remove('bg-primary/10');
+                });
+            }
+            updateSelectedMembers();
+        });
+    }
 
     // Initialize pre-selected members
     selectedMembers.forEach(m => {
@@ -294,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     updateSelectedMembers();
+    updateSelectAllCheckbox();
 
     function showMemberDropdown() { memberDropdown.classList.remove('hidden'); memberSelect.classList.add('ring-2', 'ring-primary', 'ring-offset-2'); }
     function hideMemberDropdown() { memberDropdown.classList.add('hidden'); memberSelect.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'); }
@@ -335,6 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (index > -1) { selectedMembers.splice(index, 1); checkIcon.classList.add('hidden'); this.classList.remove('bg-primary/10'); }
             else { selectedMembers.push({ id, name }); checkIcon.classList.remove('hidden'); this.classList.add('bg-primary/10'); }
             updateSelectedMembers();
+            updateSelectAllCheckbox();
             memberSearch.focus();
         });
     });
@@ -353,6 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const option = document.querySelector(`.member-option[data-id="${id}"]`);
             if (option) { option.querySelector('.member-check').classList.add('hidden'); option.classList.remove('bg-primary/10'); }
             updateSelectedMembers();
+            updateSelectAllCheckbox();
         }
     };
 

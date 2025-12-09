@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Auth\Http\Controllers\AccountPausedController;
+use App\Modules\Auth\Http\Controllers\ForgotPasswordController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,15 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/login', function () {
         return view('auth::login');
     })->name('login');
+
+    // Forgot Password page
+    Route::get('/forgot-password', function () {
+        return view('auth::forgot-password');
+    })->name('password.request');
+
+    // Reset Password page
+    Route::get('/reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])
+        ->name('password.reset');
 });
 
 Route::middleware(['auth'])->group(function () {
