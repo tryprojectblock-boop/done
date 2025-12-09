@@ -27,9 +27,7 @@
                     <div class="flex items-center gap-2">
                         <h1 class="text-lg font-bold text-base-content truncate">{{ $channel->name }}</h1>
                         <span class="badge {{ $channel->badge_class }} badge-sm">{{ $channel->tag }}</span>
-                        @if($channel->is_private)
-                        <span class="icon-[tabler--lock] size-4 text-base-content/50" title="Private"></span>
-                        @endif
+                        <span class="badge {{ $channel->status_badge_class }} badge-sm">{{ $channel->status_label }}</span>
                     </div>
                     @if($channel->description)
                     <p class="text-sm text-base-content/60 truncate hidden sm:block">{{ $channel->description }}</p>
@@ -69,11 +67,11 @@
                     </div>
                     @endif
 
-                    <!-- Pending Join Requests Indicator (visible to channel managers) -->
-                    @if($channel->canManage($user) && $channel->pendingJoinRequests->count() > 0)
-                    <a href="{{ route('channels.join-requests', $channel) }}" class="hidden md:flex items-center gap-1 btn btn-ghost btn-sm text-warning" title="{{ $channel->pendingJoinRequests->count() }} pending join {{ Str::plural('request', $channel->pendingJoinRequests->count()) }}">
+                    <!-- Manage Members (visible to channel managers) -->
+                    @if($channel->canManage($user))
+                    <a href="{{ route('channels.members', $channel) }}" class="hidden md:flex items-center gap-1 btn btn-ghost btn-sm" title="Manage channel members">
                         <span class="icon-[tabler--user-plus] size-5"></span>
-                        <span class="badge badge-warning badge-sm">{{ $channel->pendingJoinRequests->count() }}</span>
+                        <span class="hidden lg:inline">Invite</span>
                     </a>
                     @endif
 
@@ -83,31 +81,6 @@
                         <span class="icon-[tabler--plus] size-4"></span>
                         <span class="hidden sm:inline">Add Thread</span>
                     </a>
-                    @endif
-
-                    <!-- Join Request / Status for non-members -->
-                    @if(!$channel->isMember($user))
-                        @if($channel->hasPendingJoinRequest($user))
-                        <!-- User has pending request -->
-                        <div class="flex items-center gap-2">
-                            <span class="badge badge-warning badge-sm gap-1">
-                                <span class="icon-[tabler--clock] size-3"></span>
-                                Request Pending
-                            </span>
-                            <form action="{{ route('channels.cancel-join-request', $channel) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-ghost btn-xs text-error" title="Cancel Request">
-                                    <span class="icon-[tabler--x] size-4"></span>
-                                </button>
-                            </form>
-                        </div>
-                        @else
-                        <!-- Request to Join button -->
-                        <button type="button" onclick="openModal('joinRequestModal')" class="btn btn-outline btn-sm gap-2">
-                            <span class="icon-[tabler--user-plus] size-4"></span>
-                            Request to Join
-                        </button>
-                        @endif
                     @endif
 
                     <!-- More Actions Dropdown -->
@@ -125,12 +98,9 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item flex items-center gap-2" href="{{ route('channels.join-requests', $channel) }}">
-                                    <span class="icon-[tabler--user-check] size-4"></span>
-                                    Join Requests
-                                    @if($channel->pendingJoinRequests->count() > 0)
-                                    <span class="badge badge-sm badge-primary ml-auto">{{ $channel->pendingJoinRequests->count() }}</span>
-                                    @endif
+                                <a class="dropdown-item flex items-center gap-2" href="{{ route('channels.members', $channel) }}">
+                                    <span class="icon-[tabler--users] size-4"></span>
+                                    Manage Members
                                 </a>
                             </li>
                             <li>
@@ -160,58 +130,7 @@
 
         <!-- Content Area -->
         <div class="flex-1 p-4 md:p-6 pt-3">
-            <!-- Success/Error Messages -->
-            @if(session('success'))
-            <div class="alert alert-success mb-3">
-                <span class="icon-[tabler--check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-            @endif
-
-            @if(session('error'))
-            <div class="alert alert-error mb-3">
-                <span class="icon-[tabler--x] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-            @endif
-
-            <!-- Pending Request State - User cannot view threads yet -->
-            @if($hasPendingRequest)
-            <div class="card bg-base-100 shadow">
-                <div class="card-body text-center py-12">
-                    <div class="text-warning">
-                        <span class="icon-[tabler--clock] size-16 block mx-auto mb-4"></span>
-                        <p class="text-xl font-medium mb-2">Request Pending</p>
-                        <p class="text-sm text-base-content/60 mb-4">Your request to join this channel is pending approval.</p>
-                        <p class="text-sm text-base-content/60">Once approved, you'll be able to view threads and participate in discussions.</p>
-                        <div class="mt-6">
-                            <form action="{{ route('channels.cancel-join-request', $channel) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="btn btn-ghost btn-sm text-error">
-                                    <span class="icon-[tabler--x] size-4"></span>
-                                    Cancel Request
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @elseif(!$canViewThreads)
-            <!-- Non-member cannot view threads -->
-            <div class="card bg-base-100 shadow">
-                <div class="card-body text-center py-12">
-                    <div class="text-base-content/50">
-                        <span class="icon-[tabler--lock] size-16 block mx-auto mb-4 opacity-50"></span>
-                        <p class="text-xl font-medium mb-2">Private Channel</p>
-                        <p class="text-sm mb-6">Request to join this channel to view threads and participate in discussions.</p>
-                        <button type="button" onclick="openModal('joinRequestModal')" class="btn btn-primary">
-                            <span class="icon-[tabler--user-plus] size-5"></span>
-                            Request to Join
-                        </button>
-                    </div>
-                </div>
-            </div>
-            @elseif($threads->isEmpty())
+            @if($threads->isEmpty())
             <!-- Member but no threads -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body text-center py-12">
@@ -291,35 +210,6 @@
         </div>
     </main>
 </div>
-
-<!-- Join Request Modal -->
-@if(!$canViewThreads && !$hasPendingRequest)
-<div id="joinRequestModal" class="channel-modal">
-    <div class="channel-modal-backdrop" onclick="closeModal('joinRequestModal')"></div>
-    <div class="channel-modal-box bg-base-100 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <button type="button" onclick="closeModal('joinRequestModal')" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-            <span class="icon-[tabler--x] size-5"></span>
-        </button>
-        <h3 class="font-bold text-lg mb-4">Request to Join {{ $channel->name }}</h3>
-        <form action="{{ route('channels.request-join', $channel) }}" method="POST">
-            @csrf
-            <div class="form-control mb-4">
-                <label class="label">
-                    <span class="label-text">Message (optional)</span>
-                </label>
-                <textarea name="message" class="textarea textarea-bordered h-24" placeholder="Tell the channel admins why you'd like to join..."></textarea>
-            </div>
-            <div class="flex justify-end gap-2 mt-4">
-                <button type="button" onclick="closeModal('joinRequestModal')" class="btn btn-ghost">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                    <span class="icon-[tabler--send] size-4"></span>
-                    Send Request
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-@endif
 
 <!-- Members Modal -->
 @if($channel->members->count() > 0)

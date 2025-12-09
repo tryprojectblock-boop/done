@@ -7,11 +7,6 @@ namespace App\Modules\Discussion\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Discussion\Models\TeamChannel;
-use App\Modules\Discussion\Models\TeamChannelThread;
-use App\Modules\Discussion\Models\TeamChannelReply;
-use App\Modules\Discussion\Models\TeamChannelJoinRequest;
-use App\Models\Notification;
-use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +83,7 @@ class TeamChannelController extends Controller
             'tag' => ['required', 'string', 'max:50'],
             'description' => 'nullable|string|max:500',
             'color' => 'nullable|string|in:primary,secondary,accent,info,success,warning,error,orange,teal,indigo,gray',
-            'is_private' => 'nullable|boolean',
+            'status' => 'nullable|string|in:active,inactive,archive',
             'member_ids' => 'nullable|array',
             'member_ids.*' => 'exists:users,id',
         ]);
@@ -99,7 +94,7 @@ class TeamChannelController extends Controller
             $tag = '#' . $tag;
         }
 
-        // Check if tag already exists for this company
+        // Check if tag already exists for this company (only non-deleted)
         $existingChannel = TeamChannel::where('company_id', $user->company_id)
             ->where('tag', $tag)
             ->first();
@@ -107,6 +102,12 @@ class TeamChannelController extends Controller
         if ($existingChannel) {
             return back()->withInput()->withErrors(['tag' => 'This channel tag already exists.']);
         }
+
+        // Force delete any soft-deleted channel with same tag to avoid unique constraint
+        TeamChannel::onlyTrashed()
+            ->where('company_id', $user->company_id)
+            ->where('tag', $tag)
+            ->forceDelete();
 
         DB::transaction(function () use ($user, $validated, $tag) {
             $channel = TeamChannel::create([
@@ -116,7 +117,7 @@ class TeamChannelController extends Controller
                 'tag' => $tag,
                 'description' => $validated['description'] ?? null,
                 'color' => $validated['color'] ?? 'primary',
-                'is_private' => $validated['is_private'] ?? false,
+                'status' => $validated['status'] ?? TeamChannel::STATUS_ACTIVE,
             ]);
 
             // Add creator as admin member
@@ -148,36 +149,27 @@ class TeamChannelController extends Controller
             abort(403, 'You do not have permission to view this channel.');
         }
 
-        // Load members and pending join requests for UI
-        $channel->load(['members', 'pendingJoinRequests']);
+        // Load members for UI
+        $channel->load(['members']);
 
         // Get all channels for sidebar
         $allChannels = TeamChannel::visibleTo($user)
             ->orderBy('name')
             ->get();
 
-        // Check if user can view threads (members, admins, or public channels)
-        $canViewThreads = $channel->canAccess($user);
-        $hasPendingRequest = $channel->hasPendingJoinRequest($user);
-
-        // Only load threads if user can view them
-        $threads = collect();
-        if ($canViewThreads) {
-            $threads = $channel->threads()
-                ->with(['creator', 'allReplies.user'])
-                ->withCount('allReplies')
-                ->orderByDesc('is_pinned')
-                ->orderByDesc('last_reply_at')
-                ->paginate(20);
-        }
+        // Load threads
+        $threads = $channel->threads()
+            ->with(['creator', 'allReplies.user'])
+            ->withCount('allReplies')
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('last_reply_at')
+            ->paginate(20);
 
         return view('discussion::channels.show', [
             'channel' => $channel,
             'threads' => $threads,
             'allChannels' => $allChannels,
             'user' => $user,
-            'canViewThreads' => $canViewThreads,
-            'hasPendingRequest' => $hasPendingRequest,
         ]);
     }
 
@@ -224,7 +216,7 @@ class TeamChannelController extends Controller
             'tag' => ['required', 'string', 'max:50'],
             'description' => 'nullable|string|max:500',
             'color' => 'nullable|string|in:primary,secondary,accent,info,success,warning,error,orange,teal,indigo,gray',
-            'is_private' => 'nullable|boolean',
+            'status' => 'nullable|string|in:active,inactive,archive',
             'member_ids' => 'nullable|array',
             'member_ids.*' => 'exists:users,id',
         ]);
@@ -235,7 +227,7 @@ class TeamChannelController extends Controller
             $tag = '#' . $tag;
         }
 
-        // Check if tag already exists for another channel
+        // Check if tag already exists for another channel (only non-deleted)
         $existingChannel = TeamChannel::where('company_id', $user->company_id)
             ->where('tag', $tag)
             ->where('id', '!=', $channel->id)
@@ -245,13 +237,19 @@ class TeamChannelController extends Controller
             return back()->withInput()->withErrors(['tag' => 'This channel tag already exists.']);
         }
 
+        // Force delete any soft-deleted channel with same tag to avoid unique constraint
+        TeamChannel::onlyTrashed()
+            ->where('company_id', $user->company_id)
+            ->where('tag', $tag)
+            ->forceDelete();
+
         DB::transaction(function () use ($channel, $user, $validated, $tag) {
             $channel->update([
                 'name' => $validated['name'],
                 'tag' => $tag,
                 'description' => $validated['description'] ?? null,
                 'color' => $validated['color'] ?? 'primary',
-                'is_private' => $validated['is_private'] ?? false,
+                'status' => $validated['status'] ?? TeamChannel::STATUS_ACTIVE,
             ]);
 
             // Sync members (keep creator always)
@@ -300,24 +298,57 @@ class TeamChannelController extends Controller
     }
 
     /**
-     * Join a public channel.
+     * Invite a team member to the channel (admin/owner only).
      */
-    public function join(Request $request, TeamChannel $channel): RedirectResponse
+    public function inviteMember(Request $request, TeamChannel $channel): RedirectResponse
     {
         $user = $request->user();
 
-        if ($channel->is_private) {
-            abort(403, 'You cannot join a private channel.');
+        if (!$channel->canManage($user)) {
+            abort(403, 'Only administrators and owners can invite members.');
         }
 
-        if ($channel->company_id !== $user->company_id) {
-            abort(403, 'You cannot join this channel.');
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $memberToInvite = User::find($validated['user_id']);
+
+        if (!$memberToInvite || $memberToInvite->company_id !== $user->company_id) {
+            return back()->with('error', 'Invalid user selected.');
         }
 
-        $channel->addMember($user);
+        if ($channel->isMember($memberToInvite)) {
+            return back()->with('info', 'This user is already a member of this channel.');
+        }
 
-        return redirect()->route('channels.show', $channel)
-            ->with('success', 'You have joined the channel.');
+        $channel->addMember($memberToInvite, $user, 'member');
+
+        return back()->with('success', "{$memberToInvite->name} has been added to the channel.");
+    }
+
+    /**
+     * Remove a member from the channel (admin/owner only).
+     */
+    public function removeMember(Request $request, TeamChannel $channel, User $member): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$channel->canManage($user)) {
+            abort(403, 'Only administrators and owners can remove members.');
+        }
+
+        if ($member->id === $channel->created_by) {
+            return back()->with('error', 'Cannot remove the channel creator.');
+        }
+
+        if (!$channel->isMember($member)) {
+            return back()->with('error', 'This user is not a member of this channel.');
+        }
+
+        $channel->removeMember($member);
+
+        return back()->with('success', "{$member->name} has been removed from the channel.");
     }
 
     /**
@@ -338,58 +369,24 @@ class TeamChannelController extends Controller
     }
 
     /**
-     * Request to join a channel.
+     * View team members to invite to channel (admin/owner only).
      */
-    public function requestJoin(Request $request, TeamChannel $channel): RedirectResponse
-    {
-        $user = $request->user();
-
-        // Check if user is from the same company
-        if ($channel->company_id !== $user->company_id) {
-            abort(403, 'You cannot request to join this channel.');
-        }
-
-        // Check if already a member
-        if ($channel->isMember($user)) {
-            return back()->with('info', 'You are already a member of this channel.');
-        }
-
-        // Check if already has pending request
-        if ($channel->hasPendingJoinRequest($user)) {
-            return back()->with('info', 'You already have a pending join request for this channel.');
-        }
-
-        $validated = $request->validate([
-            'message' => 'nullable|string|max:500',
-        ]);
-
-        TeamChannelJoinRequest::create([
-            'channel_id' => $channel->id,
-            'user_id' => $user->id,
-            'message' => $validated['message'] ?? null,
-            'status' => TeamChannelJoinRequest::STATUS_PENDING,
-        ]);
-
-        // Notify channel admins (creator and admins)
-        $this->notifyChannelAdminsOfJoinRequest($channel, $user);
-
-        return back()->with('success', 'Your join request has been submitted.');
-    }
-
-    /**
-     * View pending join requests for a channel (admin/owner only).
-     */
-    public function joinRequests(Request $request, TeamChannel $channel): View
+    public function manageMembers(Request $request, TeamChannel $channel): View
     {
         $user = $request->user();
 
         if (!$channel->canManage($user)) {
-            abort(403, 'You do not have permission to manage join requests.');
+            abort(403, 'You do not have permission to manage channel members.');
         }
 
-        $pendingRequests = $channel->pendingJoinRequests()
-            ->with('user')
-            ->orderBy('created_at', 'desc')
+        // Get current channel member IDs
+        $currentMemberIds = $channel->members->pluck('id')->toArray();
+
+        // Get team members who are not already in the channel
+        $availableMembers = User::where('company_id', $user->company_id)
+            ->whereNotIn('id', $currentMemberIds)
+            ->where('role', '!=', User::ROLE_GUEST)
+            ->orderBy('first_name')
             ->get();
 
         // Get all channels for sidebar
@@ -397,138 +394,11 @@ class TeamChannelController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('discussion::channels.join-requests', [
+        return view('discussion::channels.manage-members', [
             'channel' => $channel,
-            'pendingRequests' => $pendingRequests,
+            'availableMembers' => $availableMembers,
             'allChannels' => $allChannels,
             'user' => $user,
-        ]);
-    }
-
-    /**
-     * Approve a join request.
-     */
-    public function approveJoinRequest(Request $request, TeamChannelJoinRequest $joinRequest): RedirectResponse
-    {
-        $user = $request->user();
-        $channel = $joinRequest->channel;
-
-        if (!$channel->canManage($user)) {
-            abort(403, 'You do not have permission to approve join requests.');
-        }
-
-        if (!$joinRequest->isPending()) {
-            return back()->with('error', 'This request has already been processed.');
-        }
-
-        $joinRequest->approve($user);
-
-        // The notification is already sent via addMember in the approve method
-
-        return back()->with('success', 'Join request approved. User has been added to the channel.');
-    }
-
-    /**
-     * Reject a join request.
-     */
-    public function rejectJoinRequest(Request $request, TeamChannelJoinRequest $joinRequest): RedirectResponse
-    {
-        $user = $request->user();
-        $channel = $joinRequest->channel;
-
-        if (!$channel->canManage($user)) {
-            abort(403, 'You do not have permission to reject join requests.');
-        }
-
-        if (!$joinRequest->isPending()) {
-            return back()->with('error', 'This request has already been processed.');
-        }
-
-        $joinRequest->reject($user);
-
-        // Notify user that their request was rejected
-        $this->notifyUserOfRejection($joinRequest, $user);
-
-        return back()->with('success', 'Join request rejected.');
-    }
-
-    /**
-     * Cancel a join request (by the requester).
-     */
-    public function cancelJoinRequest(Request $request, TeamChannel $channel): RedirectResponse
-    {
-        $user = $request->user();
-
-        $joinRequest = $channel->getPendingJoinRequest($user);
-
-        if (!$joinRequest) {
-            return back()->with('error', 'No pending join request found.');
-        }
-
-        $joinRequest->delete();
-
-        return back()->with('success', 'Join request cancelled.');
-    }
-
-    /**
-     * Notify channel admins of a new join request.
-     */
-    protected function notifyChannelAdminsOfJoinRequest(TeamChannel $channel, User $requester): void
-    {
-        // Get creator and admin members
-        $adminIds = [$channel->created_by];
-        $adminMembers = $channel->members()
-            ->wherePivot('role', 'admin')
-            ->pluck('user_id')
-            ->toArray();
-        $adminIds = array_unique(array_merge($adminIds, $adminMembers));
-
-        foreach ($adminIds as $adminId) {
-            if ($adminId === $requester->id) {
-                continue;
-            }
-
-            Notification::create([
-                'user_id' => $adminId,
-                'type' => 'channel_join_request',
-                'title' => 'New join request',
-                'message' => "{$requester->name} requested to join channel: {$channel->name}",
-                'notifiable_type' => TeamChannel::class,
-                'notifiable_id' => $channel->id,
-                'data' => [
-                    'requester_id' => $requester->id,
-                    'requester_name' => $requester->name,
-                    'requester_avatar' => $requester->avatar_url,
-                    'channel_id' => $channel->id,
-                    'channel_uuid' => $channel->uuid,
-                    'channel_name' => $channel->name,
-                    'channel_url' => route('channels.join-requests', $channel->uuid),
-                ],
-            ]);
-        }
-    }
-
-    /**
-     * Notify user that their join request was rejected.
-     */
-    protected function notifyUserOfRejection(TeamChannelJoinRequest $joinRequest, User $reviewer): void
-    {
-        $channel = $joinRequest->channel;
-
-        Notification::create([
-            'user_id' => $joinRequest->user_id,
-            'type' => 'channel_join_rejected',
-            'title' => 'Join request rejected',
-            'message' => "Your request to join channel: {$channel->name} was rejected.",
-            'notifiable_type' => TeamChannel::class,
-            'notifiable_id' => $channel->id,
-            'data' => [
-                'reviewer_id' => $reviewer->id,
-                'reviewer_name' => $reviewer->name,
-                'channel_id' => $channel->id,
-                'channel_uuid' => $channel->uuid,
-                'channel_name' => $channel->name,
-            ],
         ]);
     }
 }

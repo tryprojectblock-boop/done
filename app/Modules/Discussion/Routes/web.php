@@ -27,13 +27,12 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
         Route::get('/{channel}/edit', [TeamChannelController::class, 'edit'])->name('edit');
         Route::put('/{channel}', [TeamChannelController::class, 'update'])->name('update');
         Route::delete('/{channel}', [TeamChannelController::class, 'destroy'])->name('destroy');
-        Route::post('/{channel}/join', [TeamChannelController::class, 'join'])->name('join');
         Route::post('/{channel}/leave', [TeamChannelController::class, 'leave'])->name('leave');
 
-        // Join Requests
-        Route::post('/{channel}/request-join', [TeamChannelController::class, 'requestJoin'])->name('request-join');
-        Route::post('/{channel}/cancel-join-request', [TeamChannelController::class, 'cancelJoinRequest'])->name('cancel-join-request');
-        Route::get('/{channel}/join-requests', [TeamChannelController::class, 'joinRequests'])->name('join-requests');
+        // Member Management (admin/owner only)
+        Route::get('/{channel}/members', [TeamChannelController::class, 'manageMembers'])->name('members');
+        Route::post('/{channel}/invite-member', [TeamChannelController::class, 'inviteMember'])->name('invite-member');
+        Route::delete('/{channel}/remove-member/{member}', [TeamChannelController::class, 'removeMember'])->name('remove-member');
 
         // Channel Threads
         Route::get('/{channel}/threads/create', [TeamChannelThreadController::class, 'create'])->name('threads.create');
@@ -50,8 +49,4 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     // Reply management (outside channel context)
     Route::patch('channel-replies/{reply}', [TeamChannelThreadController::class, 'updateReply'])->name('channels.replies.update');
     Route::delete('channel-replies/{reply}', [TeamChannelThreadController::class, 'destroyReply'])->name('channels.replies.destroy');
-
-    // Join request actions (outside channel context)
-    Route::post('channel-join-requests/{joinRequest}/approve', [TeamChannelController::class, 'approveJoinRequest'])->name('channels.join-requests.approve');
-    Route::post('channel-join-requests/{joinRequest}/reject', [TeamChannelController::class, 'rejectJoinRequest'])->name('channels.join-requests.reject');
 });

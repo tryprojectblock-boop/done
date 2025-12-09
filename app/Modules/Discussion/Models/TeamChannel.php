@@ -19,6 +19,11 @@ class TeamChannel extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // Channel status constants
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+    public const STATUS_ARCHIVE = 'archive';
+
     protected $fillable = [
         'uuid',
         'company_id',
@@ -27,14 +32,13 @@ class TeamChannel extends Model
         'tag',
         'description',
         'color',
-        'is_private',
+        'status',
         'members_count',
         'threads_count',
         'last_activity_at',
     ];
 
     protected $casts = [
-        'is_private' => 'boolean',
         'members_count' => 'integer',
         'threads_count' => 'integer',
         'last_activity_at' => 'datetime',
@@ -115,38 +119,67 @@ class TeamChannel extends Model
         return $query->where('company_id', $companyId);
     }
 
-    public function scopePublic($query)
+    public function scopeActive($query)
     {
-        return $query->where('is_private', false);
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 
-    public function scopePrivate($query)
+    public function scopeInactive($query)
     {
-        return $query->where('is_private', true);
+        return $query->where('status', self::STATUS_INACTIVE);
     }
 
+    public function scopeArchived($query)
+    {
+        return $query->where('status', self::STATUS_ARCHIVE);
+    }
+
+    public function scopeNotArchived($query)
+    {
+        return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_INACTIVE]);
+    }
+
+    /**
+     * Get channels accessible by the user (member of the channel).
+     * Only members can see channels now.
+     */
     public function scopeAccessibleBy($query, User $user)
     {
         return $query->where('company_id', $user->company_id)
             ->where(function ($q) use ($user) {
-                // Public channels
-                $q->where('is_private', false)
-                    // Or private channels where user is a member
-                    ->orWhereHas('members', function ($memberQuery) use ($user) {
-                        $memberQuery->where('user_id', $user->id);
-                    })
-                    // Or channels created by the user
-                    ->orWhere('created_by', $user->id);
+                // Admin/Owner can see all channels
+                if ($user->isAdminOrHigher()) {
+                    return;
+                }
+                // Regular users can only see channels they are a member of
+                $q->whereHas('members', function ($memberQuery) use ($user) {
+                    $memberQuery->where('user_id', $user->id);
+                })
+                // Or channels created by the user
+                ->orWhere('created_by', $user->id);
             });
     }
 
     /**
-     * Get all channels visible in listing (includes private channels for display).
-     * Private channels will show but won't be accessible to non-members.
+     * Get channels visible to the user in the listing.
+     * Only channels where user is a member will be shown.
+     * Admin/Owner can see all channels.
      */
     public function scopeVisibleTo($query, User $user)
     {
-        return $query->where('company_id', $user->company_id);
+        return $query->where('company_id', $user->company_id)
+            ->where(function ($q) use ($user) {
+                // Admin/Owner can see all channels
+                if ($user->isAdminOrHigher()) {
+                    return;
+                }
+                // Regular users can only see channels they are a member of
+                $q->whereHas('members', function ($memberQuery) use ($user) {
+                    $memberQuery->where('user_id', $user->id);
+                })
+                // Or channels created by the user
+                ->orWhere('created_by', $user->id);
+            });
     }
 
     // ==================== PERMISSIONS ====================
@@ -163,17 +196,12 @@ class TeamChannel extends Model
             return true;
         }
 
-        // Public channels are visible to all
-        if (!$this->is_private) {
-            return true;
-        }
-
         // Creator can always view
         if ($user->id === $this->created_by) {
             return true;
         }
 
-        // Check if user is a member
+        // Only members can view channels
         return $this->members()->where('user_id', $user->id)->exists();
     }
 
@@ -190,7 +218,35 @@ class TeamChannel extends Model
 
     public function canPost(User $user): bool
     {
+        // Can only post to active channels
+        if ($this->status !== self::STATUS_ACTIVE) {
+            return false;
+        }
         return $this->canView($user);
+    }
+
+    /**
+     * Check if the channel is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Check if the channel is inactive.
+     */
+    public function isInactive(): bool
+    {
+        return $this->status === self::STATUS_INACTIVE;
+    }
+
+    /**
+     * Check if the channel is archived.
+     */
+    public function isArchived(): bool
+    {
+        return $this->status === self::STATUS_ARCHIVE;
     }
 
     // ==================== MEMBER MANAGEMENT ====================
@@ -234,18 +290,12 @@ class TeamChannel extends Model
 
     /**
      * Check if user can access (click/open) this channel.
-     * Public channels: anyone in company
-     * Private channels: only members, creator, or admin/owner
+     * Only members, creator, or admin/owner can access.
      */
     public function canAccess(User $user): bool
     {
         if ($user->company_id !== $this->company_id) {
             return false;
-        }
-
-        // Public channels are accessible to all company members
-        if (!$this->is_private) {
-            return true;
         }
 
         // Admin/Owner can access all channels
@@ -330,6 +380,26 @@ class TeamChannel extends Model
             'indigo' => 'bg-indigo-500 text-white',
             'gray' => 'bg-gray-500 text-white',
             default => 'badge-primary',
+        };
+    }
+
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_ACTIVE => 'badge-success',
+            self::STATUS_INACTIVE => 'badge-warning',
+            self::STATUS_ARCHIVE => 'badge-neutral',
+            default => 'badge-success',
+        };
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_INACTIVE => 'Inactive',
+            self::STATUS_ARCHIVE => 'Archived',
+            default => 'Active',
         };
     }
 }

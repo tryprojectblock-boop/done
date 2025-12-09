@@ -1,5 +1,27 @@
 <!-- Toast Notification Container -->
-<div id="toast-container" class="toast toast-top toast-end z-[300]"></div>
+<div id="toast-container" class="fixed top-20 right-4 z-[9999] flex flex-col gap-2"></div>
+
+<!-- Auto-show session flash messages -->
+@if(session('success') || session('error') || session('warning') || session('info'))
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+    showToast(@json(session('success')), 'success');
+    @endif
+    @if(session('error'))
+    showToast(@json(session('error')), 'error');
+    @endif
+    @if(session('warning'))
+    showToast(@json(session('warning')), 'warning');
+    @endif
+    @if(session('info'))
+    showToast(@json(session('info')), 'info');
+    @endif
+});
+</script>
+@endpush
+@endif
 
 @push('scripts')
 <script>

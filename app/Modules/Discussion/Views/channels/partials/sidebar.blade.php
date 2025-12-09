@@ -17,25 +17,16 @@
         <nav class="p-2">
             @forelse($allChannels as $ch)
             @php
-                $chCanAccess = $ch->canAccess($user);
                 $isActive = isset($channel) && $ch->id === $channel->id;
             @endphp
-            @if($chCanAccess)
             <a href="{{ route('channels.show', $ch) }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ $isActive ? 'bg-primary/10 text-primary' : 'hover:bg-base-200 text-base-content/70' }}">
                 <span class="icon-[tabler--hash] size-4 flex-shrink-0"></span>
                 <span class="truncate flex-1">{{ $ch->name }}</span>
-                @if($ch->is_private)
-                <span class="icon-[tabler--lock] size-3 text-base-content/40"></span>
+                @if($ch->status !== 'active')
+                <span class="badge badge-xs {{ $ch->status_badge_class }}">{{ $ch->status_label }}</span>
                 @endif
             </a>
-            @else
-            <div class="flex items-center gap-3 px-3 py-2 rounded-lg text-base-content/40 cursor-not-allowed" title="You need to be invited to access this channel">
-                <span class="icon-[tabler--hash] size-4 flex-shrink-0"></span>
-                <span class="truncate flex-1">{{ $ch->name }}</span>
-                <span class="icon-[tabler--lock] size-3"></span>
-            </div>
-            @endif
             @empty
             <p class="text-sm text-base-content/50 text-center py-4">No channels yet</p>
             @endforelse

@@ -11,10 +11,20 @@
         </div>
         <div class="flex justify-end gap-2 mt-2">
             <button type="button" class="btn btn-ghost" id="confirm-modal-cancel">Cancel</button>
+            <!-- Link button (default) -->
             <a href="#" class="btn btn-primary" id="confirm-modal-confirm">
                 <span id="confirm-modal-confirm-icon" class="icon-[tabler--check] size-5"></span>
                 <span id="confirm-modal-confirm-text">Confirm</span>
             </a>
+            <!-- Form button (for POST/DELETE requests) -->
+            <form id="confirm-modal-form" method="POST" class="hidden">
+                @csrf
+                <input type="hidden" name="_method" id="confirm-modal-method" value="POST">
+                <button type="submit" class="btn btn-primary" id="confirm-modal-form-btn">
+                    <span id="confirm-modal-form-icon" class="icon-[tabler--check] size-5"></span>
+                    <span id="confirm-modal-form-text">Confirm</span>
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -59,6 +69,11 @@ window.ConfirmModal = {
     confirmIcon: null,
     confirmText: null,
     header: null,
+    form: null,
+    formBtn: null,
+    formIcon: null,
+    formText: null,
+    formMethod: null,
 
     init: function() {
         this.modal = document.getElementById('global-confirm-modal');
@@ -69,6 +84,11 @@ window.ConfirmModal = {
         this.confirmIcon = document.getElementById('confirm-modal-confirm-icon');
         this.confirmText = document.getElementById('confirm-modal-confirm-text');
         this.header = document.getElementById('confirm-modal-header');
+        this.form = document.getElementById('confirm-modal-form');
+        this.formBtn = document.getElementById('confirm-modal-form-btn');
+        this.formIcon = document.getElementById('confirm-modal-form-icon');
+        this.formText = document.getElementById('confirm-modal-form-text');
+        this.formMethod = document.getElementById('confirm-modal-method');
 
         // Cancel button
         document.getElementById('confirm-modal-cancel').addEventListener('click', () => this.close());
@@ -94,24 +114,38 @@ window.ConfirmModal = {
                 const buttonClass = btn.dataset.confirmClass || 'btn-primary';
                 const iconClass = btn.dataset.confirmIconClass || 'text-primary';
                 const titleIcon = btn.dataset.confirmTitleIcon || 'tabler--info-circle';
+                const method = btn.dataset.confirmMethod || null; // POST, DELETE, PUT, PATCH
 
-                this.open(action, title, content, buttonText, buttonIcon, buttonClass, iconClass, titleIcon);
+                this.open(action, title, content, buttonText, buttonIcon, buttonClass, iconClass, titleIcon, method);
             });
         });
     },
 
-    open: function(action, title, content, buttonText, buttonIcon, buttonClass, iconClass, titleIcon) {
-        this.confirmBtn.href = action;
+    open: function(action, title, content, buttonText, buttonIcon, buttonClass, iconClass, titleIcon, method) {
         this.title.textContent = title;
         this.content.innerHTML = content;
-        this.confirmText.textContent = buttonText;
 
         // Update icon classes
         this.icon.className = `icon-[${titleIcon}] size-6 ${iconClass}`;
-        this.confirmIcon.className = `icon-[${buttonIcon}] size-5`;
 
-        // Update button class
-        this.confirmBtn.className = `btn ${buttonClass}`;
+        if (method) {
+            // Use form for POST/DELETE/PUT/PATCH requests
+            this.confirmBtn.classList.add('hidden');
+            this.form.classList.remove('hidden');
+            this.form.action = action;
+            this.formMethod.value = method;
+            this.formText.textContent = buttonText;
+            this.formIcon.className = `icon-[${buttonIcon}] size-5`;
+            this.formBtn.className = `btn ${buttonClass}`;
+        } else {
+            // Use link for GET requests
+            this.form.classList.add('hidden');
+            this.confirmBtn.classList.remove('hidden');
+            this.confirmBtn.href = action;
+            this.confirmText.textContent = buttonText;
+            this.confirmIcon.className = `icon-[${buttonIcon}] size-5`;
+            this.confirmBtn.className = `btn ${buttonClass}`;
+        }
 
         this.modal.classList.add('open');
     },

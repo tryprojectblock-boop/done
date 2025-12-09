@@ -30,14 +30,7 @@
         <!-- Form Content -->
         <div class="flex-1 p-4 md:p-6 pt-3">
             <div class="max-w-2xl mx-auto">
-                <!-- Error Messages -->
-                @if(session('error'))
-                <div class="alert alert-error mb-4">
-                    <span class="icon-[tabler--x] size-5"></span>
-                    <span>{{ session('error') }}</span>
-                </div>
-                @endif
-
+                <!-- Validation Errors -->
                 @if($errors->any())
                 <div class="alert alert-error mb-4">
                     <span class="icon-[tabler--alert-circle] size-5"></span>
@@ -144,13 +137,34 @@
                         </div>
                     </div>
 
-                    <!-- Privacy -->
+                    <!-- Channel Status -->
                     <div class="form-control">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" name="is_private" value="1" class="checkbox checkbox-primary" {{ old('is_private') ? 'checked' : '' }} />
-                            <span class="label-text font-medium">Private Channel</span>
-                            <span class="text-xs text-base-content/50">Only invited members can view and post in this channel</span>
+                        <label class="label">
+                            <span class="label-text font-medium">Channel Status</span>
                         </label>
+                        <div class="flex flex-wrap gap-3">
+                            <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-base-300 hover:border-success transition-colors has-[:checked]:border-success has-[:checked]:bg-success/10">
+                                <input type="radio" name="status" value="active" class="radio radio-success radio-sm" {{ old('status', 'active') === 'active' ? 'checked' : '' }} />
+                                <div>
+                                    <span class="font-medium text-sm">Active</span>
+                                    <p class="text-xs text-base-content/50">Members can post and view threads</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-base-300 hover:border-warning transition-colors has-[:checked]:border-warning has-[:checked]:bg-warning/10">
+                                <input type="radio" name="status" value="inactive" class="radio radio-warning radio-sm" {{ old('status') === 'inactive' ? 'checked' : '' }} />
+                                <div>
+                                    <span class="font-medium text-sm">Inactive</span>
+                                    <p class="text-xs text-base-content/50">Read-only, no new posts allowed</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer flex items-center gap-2 p-3 rounded-lg border border-base-300 hover:border-neutral transition-colors has-[:checked]:border-neutral has-[:checked]:bg-neutral/10">
+                                <input type="radio" name="status" value="archive" class="radio radio-sm" {{ old('status') === 'archive' ? 'checked' : '' }} />
+                                <div>
+                                    <span class="font-medium text-sm">Archived</span>
+                                    <p class="text-xs text-base-content/50">Hidden from listing, read-only</p>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Invite Team Members -->

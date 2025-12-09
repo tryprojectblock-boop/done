@@ -29,21 +29,6 @@
             </a>
         </div>
 
-        <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="alert alert-success mb-4">
-                <span class="icon-[tabler--check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-4">
-                <span class="icon-[tabler--x] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
-
         <!-- Channels List - Single Column Layout -->
         @if($channels->isEmpty())
             <div class="card bg-base-100 shadow">
@@ -72,14 +57,7 @@
         @else
             <div class="space-y-3">
                 @foreach($channels as $channel)
-                @php
-                    $canAccess = $channel->canAccess($user);
-                @endphp
-                @if($canAccess)
                 <a href="{{ route('channels.show', $channel) }}" class="card bg-base-100 shadow hover:shadow-lg transition-all block">
-                @else
-                <div class="card bg-base-100 shadow opacity-75 cursor-not-allowed">
-                @endif
                     <div class="card-body p-4">
                         <div class="flex items-center gap-4">
                             <!-- Channel Icon -->
@@ -92,18 +70,10 @@
                                 <div class="flex items-center gap-2 mb-1">
                                     <h3 class="font-semibold text-base-content truncate">{{ $channel->name }}</h3>
                                     <span class="badge {{ $channel->badge_class }} badge-sm">{{ $channel->tag }}</span>
-                                    @if($channel->is_private)
-                                        <span class="icon-[tabler--lock] size-4 text-base-content/50" title="Private Channel"></span>
-                                    @endif
+                                    <span class="badge {{ $channel->status_badge_class }} badge-sm">{{ $channel->status_label }}</span>
                                 </div>
                                 @if($channel->description)
                                     <p class="text-sm text-base-content/60 truncate">{{ $channel->description }}</p>
-                                @endif
-                                @if(!$canAccess)
-                                    <p class="text-xs text-warning mt-1">
-                                        <span class="icon-[tabler--lock] size-3 inline-block mr-1"></span>
-                                        You need to be invited to access this channel
-                                    </p>
                                 @endif
                             </div>
 
@@ -124,19 +94,11 @@
                                 @endif
                             </div>
 
-                            <!-- Arrow or Lock icon -->
-                            @if($canAccess)
+                            <!-- Arrow icon -->
                             <span class="icon-[tabler--chevron-right] size-5 text-base-content/30"></span>
-                            @else
-                            <span class="icon-[tabler--lock] size-5 text-warning/50"></span>
-                            @endif
                         </div>
                     </div>
-                @if($canAccess)
                 </a>
-                @else
-                </div>
-                @endif
                 @endforeach
             </div>
         @endif
