@@ -58,7 +58,7 @@
                         </label>
                         <input type="text" name="name" id="edit-channel-name" value="{{ old('name', $channel->name) }}" placeholder="e.g., Marketing" class="input input-bordered @error('name') input-error @enderror" required maxlength="100" />
                         @error('name')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
@@ -72,7 +72,7 @@
                             <input type="text" name="tag" id="edit-channel-tag" value="{{ old('tag', ltrim($channel->tag, '#')) }}" placeholder="admin resources" class="input input-bordered pl-8 w-full @error('tag') input-error @enderror" required maxlength="50" />
                         </div>
                         @error('tag')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
@@ -83,7 +83,7 @@
                         </label>
                         <textarea name="description" id="edit-channel-description" placeholder="Describe what this channel is about..." class="textarea textarea-bordered h-24 @error('description') textarea-error @enderror" maxlength="500">{{ old('description', $channel->description) }}</textarea>
                         @error('description')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
@@ -209,9 +209,9 @@
                             </div>
                             @endif
                         </div>
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-base-content/50">Note: Channel creator ({{ $channel->creator->name }}) will always remain a member</span>
-                        </label>
+                        </div>
                     </div>
 
                     <!-- Actions -->

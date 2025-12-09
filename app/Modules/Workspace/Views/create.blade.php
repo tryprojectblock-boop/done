@@ -109,11 +109,11 @@
                         <label class="label" for="workspace-name">
                             <span class="label-text font-medium">Workspace Name <span class="text-error">*</span></span>
                         </label>
-                        <input type="text" name="name" id="workspace-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Marketing Team, Product Launch 2024" value="{{ old('name') }}" required maxlength="100">
+                        <input type="text" name="name" id="workspace-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Marketing Team, Product Launch 2024" value="{{ old('name') }}" required maxlength="100" @error('name') aria-describedby="workspace-name-error" @enderror>
                         @error('name')
-                            <label class="label">
+                            <div class="label" id="workspace-name-error">
                                 <span class="label-text-alt text-error">{{ $message }}</span>
-                            </label>
+                            </div>
                         @enderror
                     </div>
 
@@ -122,7 +122,7 @@
                         <label class="label" for="workflow-select">
                             <span class="label-text font-medium">Workflow <span class="text-error">*</span></span>
                         </label>
-                        <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required>
+                        <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required aria-describedby="workflow-select-hint @error('workflow_id') workflow-select-error @enderror">
                             <option value="">Select a workflow...</option>
                             @foreach($workflows as $workflow)
                                 <option value="{{ $workflow->id }}" {{ old('workflow_id') == $workflow->id ? 'selected' : '' }}>
@@ -131,13 +131,13 @@
                                 </option>
                             @endforeach
                         </select>
-                        <label class="label">
+                        <div class="label" id="workflow-select-hint">
                             <span class="label-text-alt text-base-content/60">Choose a workflow to manage task statuses in this workspace</span>
-                        </label>
+                        </div>
                         @error('workflow_id')
-                            <label class="label">
+                            <div class="label" id="workflow-select-error">
                                 <span class="label-text-alt text-error">{{ $message }}</span>
-                            </label>
+                            </div>
                         @enderror
                     </div>
 

@@ -40,14 +40,14 @@
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="plan-type">
                             <span class="label-text font-medium">Plan Type</span>
                         </label>
                         <input type="hidden" name="type" value="{{ $plan->type->value }}" />
-                        <input type="text" id="plan-type" value="{{ $plan->type->label() }}" class="input input-bordered bg-base-200" readonly disabled />
-                        <label class="label">
+                        <input type="text" id="plan-type" value="{{ $plan->type->label() }}" class="input input-bordered bg-base-200" readonly disabled aria-describedby="plan-type-hint" />
+                        <div class="label" id="plan-type-hint">
                             <span class="label-text-alt text-base-content/60">Plan type cannot be changed after creation</span>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,13 +187,13 @@
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="sort-order">
                         <span class="label-text font-medium">Sort Order</span>
                     </label>
-                    <input type="number" name="sort_order" value="{{ old('sort_order', $plan->sort_order) }}" class="input input-bordered w-32" min="0" />
-                    <label class="label">
+                    <input type="number" name="sort_order" id="sort-order" value="{{ old('sort_order', $plan->sort_order) }}" class="input input-bordered w-32" min="0" aria-describedby="sort-order-hint" />
+                    <div class="label" id="sort-order-hint">
                         <span class="label-text-alt text-base-content/60">Lower number = appears first</span>
-                    </label>
+                    </div>
                 </div>
             </div>
         </div>

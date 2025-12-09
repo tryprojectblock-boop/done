@@ -43,44 +43,44 @@
                 </div>
 
                 <div class="form-control mb-4">
-                    <label class="label">
+                    <label class="label" for="google_client_id">
                         <span class="label-text font-medium">Client ID</span>
                     </label>
-                    <input type="text" name="google_client_id" value="{{ $settings['google_client_id'] }}" class="input input-bordered font-mono text-sm" placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" />
+                    <input type="text" name="google_client_id" id="google_client_id" value="{{ $settings['google_client_id'] }}" class="input input-bordered font-mono text-sm" placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com" />
                     @error('google_client_id')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control mb-4">
-                    <label class="label">
+                    <label class="label" for="google_client_secret">
                         <span class="label-text font-medium">Client Secret</span>
                     </label>
-                    <input type="password" name="google_client_secret" value="{{ $settings['google_client_secret'] }}" class="input input-bordered font-mono text-sm" placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxx" />
-                    <label class="label">
+                    <input type="password" name="google_client_secret" id="google_client_secret" value="{{ $settings['google_client_secret'] }}" class="input input-bordered font-mono text-sm" placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxx" aria-describedby="google_client_secret_hint" />
+                    <div class="label" id="google_client_secret_hint">
                         <span class="label-text-alt text-base-content/60">Your client secret is stored securely and never exposed</span>
-                    </label>
+                    </div>
                     @error('google_client_secret')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control mb-4">
-                    <label class="label">
+                    <label class="label" for="google_redirect_uri">
                         <span class="label-text font-medium">Redirect URI</span>
                     </label>
-                    <input type="url" name="google_redirect_uri" value="{{ $settings['google_redirect_uri'] }}" class="input input-bordered font-mono text-sm" placeholder="{{ url('/auth/google/callback') }}" />
-                    <label class="label">
+                    <input type="url" name="google_redirect_uri" id="google_redirect_uri" value="{{ $settings['google_redirect_uri'] }}" class="input input-bordered font-mono text-sm" placeholder="{{ url('/auth/google/callback') }}" aria-describedby="google_redirect_uri_hint" />
+                    <div class="label" id="google_redirect_uri_hint">
                         <span class="label-text-alt text-base-content/60">Add this URI to your Google Cloud Console's authorized redirect URIs</span>
-                    </label>
+                    </div>
                     @error('google_redirect_uri')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 

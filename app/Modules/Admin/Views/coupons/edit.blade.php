@@ -30,53 +30,53 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="coupon-name">
                             <span class="label-text font-medium">Coupon Name</span>
                         </label>
-                        <input type="text" name="name" value="{{ old('name', $coupon->name) }}" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g., Summer Sale, Black Friday" required />
+                        <input type="text" name="name" id="coupon-name" value="{{ old('name', $coupon->name) }}" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g., Summer Sale, Black Friday" required />
                         @error('name')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="coupon-code">
                             <span class="label-text font-medium">Coupon Code</span>
                         </label>
-                        <input type="text" name="code" value="{{ old('code', $coupon->code) }}" class="input input-bordered font-mono uppercase @error('code') input-error @enderror" placeholder="e.g., SUMMER2024" required />
-                        <label class="label">
+                        <input type="text" name="code" id="coupon-code" value="{{ old('code', $coupon->code) }}" class="input input-bordered font-mono uppercase @error('code') input-error @enderror" placeholder="e.g., SUMMER2024" required aria-describedby="coupon-code-hint" />
+                        <div class="label" id="coupon-code-hint">
                             <span class="label-text-alt text-base-content/60">Code will be converted to uppercase</span>
-                        </label>
+                        </div>
                         @error('code')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="discount-percent">
                             <span class="label-text font-medium">Discount Percentage</span>
                         </label>
                         <div class="join">
-                            <input type="number" name="discount_percent" value="{{ old('discount_percent', $coupon->discount_percent) }}" class="input input-bordered join-item w-full @error('discount_percent') input-error @enderror" min="1" max="100" step="0.01" required />
+                            <input type="number" name="discount_percent" id="discount-percent" value="{{ old('discount_percent', $coupon->discount_percent) }}" class="input input-bordered join-item w-full @error('discount_percent') input-error @enderror" min="1" max="100" step="0.01" required />
                             <span class="btn btn-disabled join-item">%</span>
                         </div>
                         @error('discount_percent')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="usage-limit">
                             <span class="label-text font-medium">Usage Limit</span>
                         </label>
-                        <input type="number" name="usage_limit" value="{{ old('usage_limit', $coupon->usage_limit) }}" class="input input-bordered @error('usage_limit') input-error @enderror" min="1" placeholder="Leave empty for unlimited" />
-                        <label class="label">
+                        <input type="number" name="usage_limit" id="usage-limit" value="{{ old('usage_limit', $coupon->usage_limit) }}" class="input input-bordered @error('usage_limit') input-error @enderror" min="1" placeholder="Leave empty for unlimited" aria-describedby="usage-limit-hint" />
+                        <div class="label" id="usage-limit-hint">
                             <span class="label-text-alt text-base-content/60">Maximum number of times this coupon can be used</span>
-                        </label>
+                        </div>
                         @error('usage_limit')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
                 </div>
@@ -96,25 +96,25 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="start-date">
                             <span class="label-text font-medium">Start Date</span>
                         </label>
-                        <input type="date" name="start_date" value="{{ old('start_date', $coupon->start_date?->format('Y-m-d')) }}" class="input input-bordered @error('start_date') input-error @enderror" required />
+                        <input type="date" name="start_date" id="start-date" value="{{ old('start_date', $coupon->start_date?->format('Y-m-d')) }}" class="input input-bordered @error('start_date') input-error @enderror" required />
                         @error('start_date')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
 
                     <div class="form-control">
-                        <label class="label">
+                        <label class="label" for="end-date">
                             <span class="label-text font-medium">End Date</span>
                         </label>
-                        <input type="date" name="end_date" value="{{ old('end_date', $coupon->end_date?->format('Y-m-d')) }}" class="input input-bordered @error('end_date') input-error @enderror" />
-                        <label class="label">
+                        <input type="date" name="end_date" id="end-date" value="{{ old('end_date', $coupon->end_date?->format('Y-m-d')) }}" class="input input-bordered @error('end_date') input-error @enderror" aria-describedby="end-date-hint" />
+                        <div class="label" id="end-date-hint">
                             <span class="label-text-alt text-base-content/60">Leave empty for no expiration</span>
-                        </label>
+                        </div>
                         @error('end_date')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <div class="label"><span class="label-text-alt text-error">{{ $message }}</span></div>
                         @enderror
                     </div>
                 </div>

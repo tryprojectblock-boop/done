@@ -54,10 +54,10 @@
                             <label class="label" for="maintenance_until">
                                 <span class="label-text font-medium">End Date & Time (optional)</span>
                             </label>
-                            <input type="datetime-local" name="maintenance_until" id="maintenance_until" class="input input-bordered" />
-                            <label class="label">
+                            <input type="datetime-local" name="maintenance_until" id="maintenance_until" class="input input-bordered" aria-describedby="maintenance_until_hint" />
+                            <div class="label" id="maintenance_until_hint">
                                 <span class="label-text-alt text-base-content/60">Leave empty for indefinite maintenance</span>
-                            </label>
+                            </div>
                         </div>
 
                         <div class="form-control">

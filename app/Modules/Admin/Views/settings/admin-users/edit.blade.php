@@ -26,73 +26,73 @@
         <div class="card bg-base-100 shadow">
             <div class="card-body space-y-4">
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-name">
                         <span class="label-text font-medium">Full Name</span>
                     </label>
-                    <input type="text" name="name" value="{{ old('name', $admin->name) }}" class="input input-bordered @error('name') input-error @enderror" required />
+                    <input type="text" name="name" id="admin-name" value="{{ old('name', $admin->name) }}" class="input input-bordered @error('name') input-error @enderror" required />
                     @error('name')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-email">
                         <span class="label-text font-medium">Email Address</span>
                     </label>
-                    <input type="email" name="email" value="{{ old('email', $admin->email) }}" class="input input-bordered @error('email') input-error @enderror" required />
+                    <input type="email" name="email" id="admin-email" value="{{ old('email', $admin->email) }}" class="input input-bordered @error('email') input-error @enderror" required />
                     @error('email')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-password">
                         <span class="label-text font-medium">New Password</span>
                     </label>
-                    <input type="password" name="password" class="input input-bordered @error('password') input-error @enderror" />
-                    <label class="label">
+                    <input type="password" name="password" id="admin-password" class="input input-bordered @error('password') input-error @enderror" aria-describedby="admin-password-hint" />
+                    <div class="label" id="admin-password-hint">
                         <span class="label-text-alt text-base-content/60">Leave blank to keep current password</span>
-                    </label>
+                    </div>
                     @error('password')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-password-confirmation">
                         <span class="label-text font-medium">Confirm New Password</span>
                     </label>
-                    <input type="password" name="password_confirmation" class="input input-bordered" />
+                    <input type="password" name="password_confirmation" id="admin-password-confirmation" class="input input-bordered" />
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-role">
                         <span class="label-text font-medium">Role</span>
                     </label>
-                    <select name="role" class="select select-bordered @error('role') select-error @enderror" required {{ $admin->id === auth('admin')->id() ? 'disabled' : '' }}>
+                    <select name="role" id="admin-role" class="select select-bordered @error('role') select-error @enderror" required {{ $admin->id === auth('admin')->id() ? 'disabled' : '' }}>
                         <option value="member" {{ old('role', $admin->role->value) === 'member' ? 'selected' : '' }}>Member</option>
                         <option value="administrator" {{ old('role', $admin->role->value) === 'administrator' ? 'selected' : '' }}>Administrator</option>
                     </select>
                     @if($admin->id === auth('admin')->id())
                         <input type="hidden" name="role" value="{{ $admin->role->value }}" />
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-warning">You cannot change your own role</span>
-                        </label>
+                        </div>
                     @else
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-base-content/60">Administrators can manage other admin users</span>
-                        </label>
+                        </div>
                     @endif
                     @error('role')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
@@ -106,9 +106,9 @@
                     </label>
                     @if($admin->id === auth('admin')->id())
                         <input type="hidden" name="is_active" value="1" />
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-warning">You cannot deactivate your own account</span>
-                        </label>
+                        </div>
                     @endif
                 </div>
 

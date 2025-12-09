@@ -63,15 +63,16 @@
 
                         <!-- File Attachments -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="discussion-attachments">
                                 <span class="label-text font-medium">Attachments <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="file" name="attachments[]" multiple
+                            <input type="file" name="attachments[]" id="discussion-attachments" multiple
                                    class="file-input file-input-bordered w-full"
-                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar">
-                            <label class="label">
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip,.rar"
+                                   aria-describedby="attachments-hint">
+                            <div class="label" id="attachments-hint">
                                 <span class="label-text-alt text-base-content/50">Max 10MB per file. Allowed: PDF, DOC, XLS, PPT, Images, ZIP</span>
-                            </label>
+                            </div>
                         </div>
                     </div>
                 </div>

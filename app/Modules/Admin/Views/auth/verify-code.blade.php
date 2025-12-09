@@ -29,22 +29,24 @@
             @csrf
 
             <div class="form-control mb-6">
-                <label class="label">
+                <label class="label" for="verification-code">
                     <span class="label-text font-medium">Verification Code</span>
                 </label>
                 <input
                     type="text"
                     name="code"
+                    id="verification-code"
                     class="input input-bordered w-full text-center text-2xl tracking-widest"
                     placeholder="000000"
                     maxlength="6"
                     pattern="[0-9]{6}"
                     required
                     autofocus
+                    aria-describedby="verification-code-hint"
                 />
-                <label class="label">
+                <div class="label" id="verification-code-hint">
                     <span class="label-text-alt text-base-content/50">Code expires in 10 minutes</span>
-                </label>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary w-full mb-4">

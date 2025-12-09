@@ -191,13 +191,13 @@
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="sort-order">
                         <span class="label-text font-medium">Sort Order</span>
                     </label>
-                    <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}" class="input input-bordered w-32" min="0" />
-                    <label class="label">
+                    <input type="number" name="sort_order" id="sort-order" value="{{ old('sort_order', 0) }}" class="input input-bordered w-32" min="0" aria-describedby="sort-order-hint" />
+                    <div class="label" id="sort-order-hint">
                         <span class="label-text-alt text-base-content/60">Lower number = appears first</span>
-                    </label>
+                    </div>
                 </div>
             </div>
         </div>

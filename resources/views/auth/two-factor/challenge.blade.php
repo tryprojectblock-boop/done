@@ -47,12 +47,13 @@
                                    autocomplete="one-time-code"
                                    inputmode="numeric"
                                    required
-                                   autofocus />
-                            <label class="label">
+                                   autofocus
+                                   aria-describedby="two-factor-code-hint" />
+                            <div class="label" id="two-factor-code-hint">
                                 <span class="label-text-alt text-base-content/60">
                                     Enter the 6-digit code from your authenticator app
                                 </span>
-                            </label>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-full">

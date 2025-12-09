@@ -25,63 +25,63 @@
         <div class="card bg-base-100 shadow">
             <div class="card-body space-y-4">
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-name">
                         <span class="label-text font-medium">Full Name</span>
                     </label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="input input-bordered @error('name') input-error @enderror" required />
+                    <input type="text" name="name" id="admin-name" value="{{ old('name') }}" class="input input-bordered @error('name') input-error @enderror" required />
                     @error('name')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-email">
                         <span class="label-text font-medium">Email Address</span>
                     </label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="input input-bordered @error('email') input-error @enderror" required />
+                    <input type="email" name="email" id="admin-email" value="{{ old('email') }}" class="input input-bordered @error('email') input-error @enderror" required />
                     @error('email')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-password">
                         <span class="label-text font-medium">Password</span>
                     </label>
-                    <input type="password" name="password" class="input input-bordered @error('password') input-error @enderror" required />
+                    <input type="password" name="password" id="admin-password" class="input input-bordered @error('password') input-error @enderror" required />
                     @error('password')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-password-confirmation">
                         <span class="label-text font-medium">Confirm Password</span>
                     </label>
-                    <input type="password" name="password_confirmation" class="input input-bordered" required />
+                    <input type="password" name="password_confirmation" id="admin-password-confirmation" class="input input-bordered" required />
                 </div>
 
                 <div class="form-control">
-                    <label class="label">
+                    <label class="label" for="admin-role">
                         <span class="label-text font-medium">Role</span>
                     </label>
-                    <select name="role" class="select select-bordered @error('role') select-error @enderror" required>
+                    <select name="role" id="admin-role" class="select select-bordered @error('role') select-error @enderror" required aria-describedby="admin-role-hint">
                         <option value="member" {{ old('role') === 'member' ? 'selected' : '' }}>Member</option>
                         <option value="administrator" {{ old('role') === 'administrator' ? 'selected' : '' }}>Administrator</option>
                     </select>
-                    <label class="label">
+                    <div class="label" id="admin-role-hint">
                         <span class="label-text-alt text-base-content/60">Administrators can manage other admin users</span>
-                    </label>
+                    </div>
                     @error('role')
-                        <label class="label">
+                        <div class="label">
                             <span class="label-text-alt text-error">{{ $message }}</span>
-                        </label>
+                        </div>
                     @enderror
                 </div>
 
