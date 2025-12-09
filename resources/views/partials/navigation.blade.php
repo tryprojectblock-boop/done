@@ -95,7 +95,7 @@
                         @endif
                         <li><a class="dropdown-item" href="/workflows"><span class="icon-[tabler--git-branch] size-4 me-2"></span>Workflows</a></li>
                         <li><a class="dropdown-item" href="{{ route('drive.index') }}"><span class="icon-[tabler--cloud] size-4 me-2"></span>Drive</a></li>
-                        <li><a class="dropdown-item" href="/documents"><span class="icon-[tabler--file-text] size-4 me-2"></span>Documents</a></li>
+                        <li><a class="dropdown-item" href="{{ route('documents.index') }}"><span class="icon-[tabler--file-text] size-4 me-2"></span>Documents</a></li>
                     </ul>
                 </li>
             </ul>
@@ -133,7 +133,7 @@
                             </a>
                         </li>
                     @endif
-                    <li><a class="dropdown-item" href="#"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
+                    <li><a class="dropdown-item" href="{{ route('documents.create') }}"><span class="icon-[tabler--file-plus] size-4 me-2 text-warning"></span>Add Document</a></li>
                     <li><a class="dropdown-item" href="/guests"><span class="icon-[tabler--user-plus] size-4 me-2 text-secondary"></span>Add Guest</a></li>
                     <li><a class="dropdown-item" href="{{ route('ideas.create') }}"><span class="icon-[tabler--bulb] size-4 me-2 text-accent"></span>Add Idea</a></li>
                     <li><a class="dropdown-item" href="#"><span class="icon-[tabler--clock-plus] size-4 me-2 text-error"></span>Add Time</a></li>

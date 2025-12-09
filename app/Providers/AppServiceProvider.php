@@ -24,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Modules\Discussion\Providers\DiscussionServiceProvider::class,
         \App\Modules\Drive\Providers\DriveServiceProvider::class,
         \App\Modules\Calendar\Providers\CalendarServiceProvider::class,
+        \App\Modules\Document\Providers\DocumentServiceProvider::class,
     ];
 
     /**

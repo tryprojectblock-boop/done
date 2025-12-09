@@ -43,6 +43,7 @@ class Notification extends Model
     public const TYPE_CHANNEL_REPLY_MENTION = 'channel_reply_mention';
     public const TYPE_CHANNEL_JOIN_REQUEST = 'channel_join_request';
     public const TYPE_CHANNEL_JOIN_REJECTED = 'channel_join_rejected';
+    public const TYPE_DOCUMENT_MENTION = 'document_mention';
 
     public function user(): BelongsTo
     {
@@ -97,6 +98,7 @@ class Notification extends Model
             self::TYPE_CHANNEL_REPLY_MENTION => 'icon-[tabler--at]',
             self::TYPE_CHANNEL_JOIN_REQUEST => 'icon-[tabler--user-question]',
             self::TYPE_CHANNEL_JOIN_REJECTED => 'icon-[tabler--user-x]',
+            self::TYPE_DOCUMENT_MENTION => 'icon-[tabler--file-text]',
             default => 'icon-[tabler--bell]',
         };
     }
@@ -112,6 +114,7 @@ class Notification extends Model
             self::TYPE_CHANNEL_REPLY_MENTION => 'text-primary',
             self::TYPE_CHANNEL_JOIN_REQUEST => 'text-info',
             self::TYPE_CHANNEL_JOIN_REJECTED => 'text-error',
+            self::TYPE_DOCUMENT_MENTION => 'text-primary',
             default => 'text-base-content',
         };
     }

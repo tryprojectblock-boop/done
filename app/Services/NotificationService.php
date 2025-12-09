@@ -11,6 +11,8 @@ use App\Modules\Discussion\Models\DiscussionComment;
 use App\Modules\Discussion\Models\TeamChannel;
 use App\Modules\Discussion\Models\TeamChannelThread;
 use App\Modules\Discussion\Models\TeamChannelReply;
+use App\Modules\Document\Models\Document;
+use App\Modules\Document\Models\DocumentComment;
 use App\Modules\Idea\Models\Idea;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskComment;
@@ -298,6 +300,65 @@ class NotificationService
 
         foreach ($users as $user) {
             $notifications[] = $this->createChannelReplyMentionNotification($user, $author, $thread, $reply);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Create a mention notification for a Document.
+     */
+    public function createDocumentMentionNotification(
+        User $mentionedUser,
+        User $mentioner,
+        Document $document,
+        ?DocumentComment $comment = null
+    ): Notification {
+        $context = $comment ? 'comment' : 'document';
+
+        return Notification::create([
+            'user_id' => $mentionedUser->id,
+            'type' => Notification::TYPE_DOCUMENT_MENTION,
+            'title' => "{$mentioner->name} mentioned you",
+            'message' => "You were mentioned in a {$context} on: {$document->title}",
+            'notifiable_type' => $comment ? DocumentComment::class : Document::class,
+            'notifiable_id' => $comment ? $comment->id : $document->id,
+            'data' => [
+                'mentioner_id' => $mentioner->id,
+                'mentioner_name' => $mentioner->name,
+                'mentioner_avatar' => $mentioner->avatar_url,
+                'document_id' => $document->id,
+                'document_uuid' => $document->uuid,
+                'document_title' => $document->title,
+                'document_url' => route('documents.show', $document->uuid),
+                'comment_id' => $comment?->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Create notifications for all mentioned users in Document content.
+     */
+    public function notifyMentionedUsersInDocument(
+        string $content,
+        User $author,
+        Document $document,
+        ?DocumentComment $comment = null
+    ): array {
+        $mentionedUserIds = $this->parseMentionsFromContent($content);
+        $notifications = [];
+
+        // Don't notify the author if they mention themselves
+        $mentionedUserIds = array_filter($mentionedUserIds, fn($id) => $id !== $author->id);
+
+        if (empty($mentionedUserIds)) {
+            return [];
+        }
+
+        $users = User::whereIn('id', $mentionedUserIds)->get();
+
+        foreach ($users as $user) {
+            $notifications[] = $this->createDocumentMentionNotification($user, $author, $document, $comment);
         }
 
         return $notifications;

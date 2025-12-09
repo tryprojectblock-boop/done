@@ -5,7 +5,10 @@
       "WebFetch(domain:twist.com)",
       "Bash(php:*)",
       "Bash(php /Applications/MAMP/htdocs/NewDone/artisan route:list:*)",
-      "WebFetch(domain:flyonui.com)"
+      "WebFetch(domain:flyonui.com)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
