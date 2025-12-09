@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 class StoreTaskRequest extends FormRequest
 {
     private const MAX_FILE_SIZE_KB = 10240; // 10MB
+    private const MAX_FILES_COUNT = 10;
 
     public function authorize(): bool
     {
@@ -42,7 +43,7 @@ class StoreTaskRequest extends FormRequest
             'tag_ids.*' => ['exists:tags,id'],
             'watcher_ids' => ['nullable', 'array'],
             'watcher_ids.*' => ['exists:users,id'],
-            'files' => ['nullable', 'array'],
+            'files' => ['nullable', 'array', 'max:' . self::MAX_FILES_COUNT],
             'files.*' => ['file', 'max:' . self::MAX_FILE_SIZE_KB], // 10MB max per file
             'action' => ['nullable', 'string', 'in:create,create_and_add_more,create_and_copy'],
         ];
@@ -56,6 +57,7 @@ class StoreTaskRequest extends FormRequest
             'title.required' => 'Please enter a task title.',
             'title.max' => 'The task title cannot exceed 255 characters.',
             'files.*.max' => 'Each file must be less than 10MB.',
+            'files.max' => 'You can upload a maximum of ' . self::MAX_FILES_COUNT . ' files.',
         ];
     }
 
@@ -64,7 +66,7 @@ class StoreTaskRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             // Pre-check Content-Length header (defense in depth)
             $contentLength = $this->header('Content-Length');
-            $maxContentLength = self::MAX_FILE_SIZE_KB * 1024 * 10; // Allow for multiple files
+            $maxContentLength = self::MAX_FILE_SIZE_KB * 1024 * self::MAX_FILES_COUNT;
             if ($contentLength !== null && (int) $contentLength > $maxContentLength) {
                 $validator->errors()->add('files', 'Request size exceeds the maximum allowed size.');
             }

@@ -18,6 +18,7 @@ class DiscussionCommentController extends Controller
     ) {}
 
     private const MAX_ATTACHMENT_SIZE_KB = 10240; // 10MB
+    private const MAX_ATTACHMENTS_COUNT = 10;
 
     public function store(Request $request, Discussion $discussion): RedirectResponse
     {
@@ -29,7 +30,7 @@ class DiscussionCommentController extends Controller
 
         // Pre-check Content-Length header (defense in depth)
         $contentLength = $request->header('Content-Length');
-        $maxContentLength = self::MAX_ATTACHMENT_SIZE_KB * 1024 * 10; // Allow for multiple attachments
+        $maxContentLength = self::MAX_ATTACHMENT_SIZE_KB * 1024 * self::MAX_ATTACHMENTS_COUNT;
         if ($contentLength !== null && (int) $contentLength > $maxContentLength) {
             return back()->with('error', 'Request size exceeds the maximum allowed size.');
         }
@@ -37,7 +38,7 @@ class DiscussionCommentController extends Controller
         $request->validate([
             'content' => ['required', 'string', 'max:10000'],
             'parent_id' => ['nullable', 'exists:discussion_comments,id'],
-            'attachments' => ['nullable', 'array'],
+            'attachments' => ['nullable', 'array', 'max:' . self::MAX_ATTACHMENTS_COUNT],
             'attachments.*' => ['file', 'max:' . self::MAX_ATTACHMENT_SIZE_KB],
         ]);
 

@@ -17,6 +17,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TaskAttachmentController extends Controller
 {
+    private const MAX_FILE_SIZE_KB = 10240; // 10MB
+    private const MAX_FILES_COUNT = 10;
+
     public function __construct(
         private readonly FileUploadInterface $fileUploadService
     ) {}
@@ -24,9 +27,12 @@ class TaskAttachmentController extends Controller
     public function store(Request $request, Task $task): RedirectResponse
     {
         $request->validate([
-            'files' => 'required|array',
-            'files.*' => 'file|max:10240', // 10MB max per file
+            'files' => 'required|array|max:' . self::MAX_FILES_COUNT,
+            'files.*' => 'file|max:' . self::MAX_FILE_SIZE_KB,
             'description' => 'nullable|string|max:255',
+        ], [
+            'files.max' => 'You can upload a maximum of ' . self::MAX_FILES_COUNT . ' files at once.',
+            'files.*.max' => 'Each file must be less than 10MB.',
         ]);
 
         $user = auth()->user();
