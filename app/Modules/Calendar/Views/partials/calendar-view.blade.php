@@ -5,7 +5,7 @@
 </div>
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" integrity="sha256-i2IY4M/S/xLLWPNr4rL5/FU1HN66Ye5cFdQ2cPCAvrc=" crossorigin="anonymous">
 <style>
     .fc-custom {
         --fc-border-color: oklch(var(--bc) / 0.15);
@@ -129,7 +129,7 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" integrity="sha256-/cKjhmcMSUCjt0Bwn4Iz2m1GswFDqTZzKOEGqJ3jSY8=" crossorigin="anonymous"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('fullcalendar');

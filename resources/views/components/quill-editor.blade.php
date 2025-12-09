@@ -39,8 +39,8 @@
 
 @once
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/quill-mention@6.0.1/dist/quill.mention.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" integrity="sha256-M+Ds8gp8O3Y5O3gs29HMF6QuaSjg58ELh3ydc2jRSZk=" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/quill-mention@6.0.1/dist/quill.mention.css" rel="stylesheet" integrity="sha256-lnkwPMjNLVbCfzmVE8BKzM9p3PVj9F6EHQK2Wc5XyHg=" crossorigin="anonymous">
 <style>
 .quill-editor-wrapper .ql-toolbar {
     border: none !important;
@@ -293,12 +293,12 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js" integrity="sha256-m5WXE1PZFavMOU04I1nWQ2GunyhZAQrW2Z2yBIkJMdo=" crossorigin="anonymous"></script>
 <script>
 // quill-mention 6.x for Quill 2.x compatibility
 // The module self-registers when loaded
 </script>
-<script src="https://cdn.jsdelivr.net/npm/quill-mention@6.0.1/dist/quill.mention.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill-mention@6.0.1/dist/quill.mention.js" integrity="sha256-5HloSt6I2c6eSFO8plNZNjwi/IpUakEqamdRkAcoqw4=" crossorigin="anonymous"></script>
 <script>
 // Emoji data
 const emojiData = {
