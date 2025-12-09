@@ -101,17 +101,6 @@ class TeamChannel extends Model
         return $this->hasMany(TeamChannelThread::class, 'channel_id');
     }
 
-    public function joinRequests(): HasMany
-    {
-        return $this->hasMany(TeamChannelJoinRequest::class, 'channel_id');
-    }
-
-    public function pendingJoinRequests(): HasMany
-    {
-        return $this->hasMany(TeamChannelJoinRequest::class, 'channel_id')
-            ->where('status', TeamChannelJoinRequest::STATUS_PENDING);
-    }
-
     // ==================== SCOPES ====================
 
     public function scopeForCompany($query, int $companyId)
@@ -310,22 +299,6 @@ class TeamChannel extends Model
 
         // Check if user is a member
         return $this->isMember($user);
-    }
-
-    public function hasPendingJoinRequest(User $user): bool
-    {
-        return $this->joinRequests()
-            ->where('user_id', $user->id)
-            ->where('status', TeamChannelJoinRequest::STATUS_PENDING)
-            ->exists();
-    }
-
-    public function getPendingJoinRequest(User $user): ?TeamChannelJoinRequest
-    {
-        return $this->joinRequests()
-            ->where('user_id', $user->id)
-            ->where('status', TeamChannelJoinRequest::STATUS_PENDING)
-            ->first();
     }
 
     // ==================== COUNTERS ====================

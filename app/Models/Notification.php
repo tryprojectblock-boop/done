@@ -41,8 +41,6 @@ class Notification extends Model
     public const TYPE_TASK_STATUS = 'task_status';
     public const TYPE_CHANNEL_MEMBER_ADDED = 'channel_member_added';
     public const TYPE_CHANNEL_REPLY_MENTION = 'channel_reply_mention';
-    public const TYPE_CHANNEL_JOIN_REQUEST = 'channel_join_request';
-    public const TYPE_CHANNEL_JOIN_REJECTED = 'channel_join_rejected';
 
     public function user(): BelongsTo
     {
