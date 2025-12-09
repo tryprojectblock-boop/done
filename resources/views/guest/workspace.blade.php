@@ -32,7 +32,7 @@
                 </button>
             </form>
             <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     @if($guest->avatar_url)
                         <div class="w-10 rounded-full">
                             <img src="{{ $guest->avatar_url }}" alt="{{ $guest->full_name }}" />

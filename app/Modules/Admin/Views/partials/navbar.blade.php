@@ -12,7 +12,7 @@
     <div class="flex-none gap-2">
         <!-- Quick Actions -->
         <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                 <span class="icon-[tabler--plus] size-5"></span>
             </div>
             <ul tabindex="0" class="dropdown-menu dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
@@ -22,7 +22,7 @@
 
         <!-- User Menu -->
         <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                 <div class="w-10 rounded-full">
                     <img src="{{ auth()->guard('admin')->user()->avatar_url }}" alt="{{ auth()->guard('admin')->user()->name }}" />
                 </div>
