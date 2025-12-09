@@ -12,10 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('team_channels', function (Blueprint $table) {
-            // Add status column to replace is_private
-            $table->enum('status', ['active', 'inactive', 'archive'])->default('active')->after('color');
-            // Drop is_private column
-            $table->dropColumn('is_private');
+            // Add status column to replace is_private (if it doesn't exist)
+            if (!Schema::hasColumn('team_channels', 'status')) {
+                $table->enum('status', ['active', 'inactive', 'archive'])->default('active')->after('color');
+            }
+            // Drop is_private column (if it exists)
+            if (Schema::hasColumn('team_channels', 'is_private')) {
+                $table->dropColumn('is_private');
+            }
         });
     }
 
@@ -25,8 +29,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('team_channels', function (Blueprint $table) {
-            $table->dropColumn('status');
-            $table->boolean('is_private')->default(false)->after('color');
+            if (Schema::hasColumn('team_channels', 'status')) {
+                $table->dropColumn('status');
+            }
+            if (!Schema::hasColumn('team_channels', 'is_private')) {
+                $table->boolean('is_private')->default(false)->after('color');
+            }
         });
     }
 };
