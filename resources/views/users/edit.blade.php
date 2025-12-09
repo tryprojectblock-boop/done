@@ -50,45 +50,45 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Email (Read Only) -->
                             <div class="form-control">
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text font-medium">Email Address</span>
                                     <span class="label-text-alt">
                                         <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
                                     </span>
-                                </label>
+                                </span>
                                 <input type="email" value="{{ $user->email }}" class="input input-bordered bg-base-200" readonly disabled>
                             </div>
 
                             <!-- Joined Date (Read Only) -->
                             <div class="form-control">
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text font-medium">Joined</span>
                                     <span class="label-text-alt">
                                         <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
                                     </span>
-                                </label>
+                                </span>
                                 <input type="text" value="{{ $user->created_at->format('M d, Y') }}" class="input input-bordered bg-base-200" readonly disabled>
                             </div>
 
                             <!-- Last Login (Read Only) -->
                             <div class="form-control">
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text font-medium">Last Login</span>
                                     <span class="label-text-alt">
                                         <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
                                     </span>
-                                </label>
+                                </span>
                                 <input type="text" value="{{ $user->last_login_at ? $user->last_login_at->format('M d, Y h:i A') : 'Never' }}" class="input input-bordered bg-base-200" readonly disabled>
                             </div>
 
                             <!-- Timezone (Read Only) -->
                             <div class="form-control">
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text font-medium">Timezone</span>
                                     <span class="label-text-alt">
                                         <span class="icon-[tabler--lock] size-4 text-base-content/50"></span>
                                     </span>
-                                </label>
+                                </span>
                                 <input type="text" value="{{ $user->timezone ?? 'UTC' }}" class="input input-bordered bg-base-200" readonly disabled>
                             </div>
                         </div>
@@ -132,13 +132,13 @@
                                         <option value="{{ $key }}" {{ $user->role === $key ? 'selected' : '' }}>{{ $role['label'] }}</option>
                                     @endforeach
                                 </select>
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text-alt text-base-content/50">
                                         @if($user->role === 'owner')
                                             Changing from Owner will revoke full access
                                         @endif
                                     </span>
-                                </label>
+                                </span>
                             @endif
                         </div>
 
@@ -164,11 +164,11 @@
                                         <option value="{{ $key }}" {{ $user->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
                                 </select>
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text-alt text-base-content/50">
                                         Suspended users cannot log in
                                     </span>
-                                </label>
+                                </span>
                             @endif
                         </div>
                     </div>

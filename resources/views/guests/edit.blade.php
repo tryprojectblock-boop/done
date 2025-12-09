@@ -26,9 +26,9 @@
                                 <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
                             </label>
                             <input type="text" name="first_name" id="edit-guest-first-name" value="{{ $guest->first_name }}" placeholder="John" class="input input-bordered" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed">
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
-                            </label>
+                            </span>
                         </div>
 
                         <!-- Last Name -->
@@ -37,9 +37,9 @@
                                 <span class="label-text font-medium">Last Name <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <input type="text" name="last_name" id="edit-guest-last-name" value="{{ $guest->last_name }}" placeholder="Doe" class="input input-bordered" pattern="[A-Za-z\s\-']*" title="Only letters, spaces, hyphens and apostrophes allowed">
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">Letters only</span>
-                            </label>
+                            </span>
                         </div>
                     </div>
 
@@ -97,9 +97,9 @@
                             <input type="text" id="tag-input" placeholder="Type and press Enter to add tags..." class="flex-1 min-w-[150px] outline-none bg-transparent text-sm">
                         </div>
                         <input type="hidden" name="tags" id="tags-hidden" value="{{ $guest->tags ? implode(',', $guest->tags) : '' }}">
-                        <label class="label">
+                        <span class="label">
                             <span class="label-text-alt text-base-content/50">Press Enter or comma to add a tag</span>
-                        </label>
+                        </span>
                     </div>
 
                     <div class="divider">Additional Information</div>

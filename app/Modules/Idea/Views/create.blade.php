@@ -57,9 +57,9 @@
                                 <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <textarea name="short_description" id="idea-short-description" class="textarea textarea-bordered h-20" maxlength="500" placeholder="Brief summary of your idea (max 500 characters)">{{ old('short_description') }}</textarea>
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">This will be shown in the ideas list</span>
-                            </label>
+                            </span>
                         </div>
 
                         <!-- Detailed Description (Quill Rich Text Editor) -->
@@ -145,9 +145,9 @@
                             </div>
                             <!-- Hidden inputs for form submission -->
                             <div id="member-hidden-inputs"></div>
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">Members will be notified and can collaborate on this idea</span>
-                            </label>
+                            </span>
                         </div>
 
                         <!-- Invite Guests (Optional) -->
@@ -185,9 +185,9 @@
                             </div>
                             <!-- Hidden inputs for form submission -->
                             <div id="guest-hidden-inputs"></div>
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">Guests can view and comment on this idea</span>
-                            </label>
+                            </span>
                         </div>
                     </div>
                 </div>

@@ -215,7 +215,6 @@ class PlanLimitService
      */
     public function getStorageUsageGb(Company $company): float
     {
-        // TODO: Calculate actual storage usage from files/attachments
         // For now, return 0
         return 0.0;
     }

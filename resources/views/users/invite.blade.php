@@ -21,16 +21,16 @@
                         <!-- Member Row Template -->
                         <div class="member-row grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 pb-4 border-b border-base-200" data-index="0">
                             <div class="md:col-span-4">
-                                <label class="label"><span class="label-text">First Name <span class="text-error">*</span></span></label>
-                                <input type="text" name="members[0][first_name]" placeholder="John" class="input input-bordered w-full" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed" />
+                                <label class="label" for="member-0-first-name"><span class="label-text">First Name <span class="text-error">*</span></span></label>
+                                <input type="text" name="members[0][first_name]" id="member-0-first-name" placeholder="John" class="input input-bordered w-full" required pattern="[A-Za-z\s\-']+" title="Only letters, spaces, hyphens and apostrophes allowed" />
                             </div>
                             <div class="md:col-span-5">
-                                <label class="label"><span class="label-text">Email Address <span class="text-error">*</span></span></label>
-                                <input type="email" name="members[0][email]" placeholder="john@example.com" class="input input-bordered w-full" required />
+                                <label class="label" for="member-0-email"><span class="label-text">Email Address <span class="text-error">*</span></span></label>
+                                <input type="email" name="members[0][email]" id="member-0-email" placeholder="john@example.com" class="input input-bordered w-full" required />
                             </div>
                             <div class="md:col-span-2">
-                                <label class="label"><span class="label-text">Role <span class="text-error">*</span></span></label>
-                                <select name="members[0][role]" class="select select-bordered w-full" required>
+                                <label class="label" for="member-0-role"><span class="label-text">Role <span class="text-error">*</span></span></label>
+                                <select name="members[0][role]" id="member-0-role" class="select select-bordered w-full" required>
                                     <option value="" disabled selected>Select role</option>
                                     @foreach($roles as $key => $role)
                                         @if($key !== 'owner' && $key !== 'guest' || ($key === 'owner' && auth()->user()->isOwner()))
@@ -116,16 +116,16 @@ function addMember() {
 
     memberRow.innerHTML = `
         <div class="md:col-span-4">
-            <label class="label"><span class="label-text">First Name <span class="text-error">*</span></span></label>
-            <input type="text" name="members[${index}][first_name]" placeholder="John" class="input input-bordered w-full" required pattern="[A-Za-z\\s\\-']+" title="Only letters, spaces, hyphens and apostrophes allowed" />
+            <label class="label" for="member-${index}-first-name"><span class="label-text">First Name <span class="text-error">*</span></span></label>
+            <input type="text" name="members[${index}][first_name]" id="member-${index}-first-name" placeholder="John" class="input input-bordered w-full" required pattern="[A-Za-z\\s\\-']+" title="Only letters, spaces, hyphens and apostrophes allowed" />
         </div>
         <div class="md:col-span-5">
-            <label class="label"><span class="label-text">Email Address <span class="text-error">*</span></span></label>
-            <input type="email" name="members[${index}][email]" placeholder="john@example.com" class="input input-bordered w-full" required />
+            <label class="label" for="member-${index}-email"><span class="label-text">Email Address <span class="text-error">*</span></span></label>
+            <input type="email" name="members[${index}][email]" id="member-${index}-email" placeholder="john@example.com" class="input input-bordered w-full" required />
         </div>
         <div class="md:col-span-2">
-            <label class="label"><span class="label-text">Role <span class="text-error">*</span></span></label>
-            <select name="members[${index}][role]" class="select select-bordered w-full" required>
+            <label class="label" for="member-${index}-role"><span class="label-text">Role <span class="text-error">*</span></span></label>
+            <select name="members[${index}][role]" id="member-${index}-role" class="select select-bordered w-full" required>
                 <option value="" disabled selected>Select role</option>
                 @foreach($roles as $key => $role)
                     @if($key !== 'owner' && $key !== 'guest' || ($key === 'owner' && auth()->user()->isOwner()))

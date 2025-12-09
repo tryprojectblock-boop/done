@@ -69,7 +69,7 @@
                             </div>
                         </div>
                         @error('file')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
                         @enderror
                     </div>
 
@@ -80,7 +80,7 @@
                         </label>
                         <input type="text" name="name" id="display-name" value="{{ old('name') }}" class="input input-bordered" placeholder="Enter a name for this file" required />
                         @error('name')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
                         @enderror
                     </div>
 
@@ -91,7 +91,7 @@
                         </label>
                         <textarea name="description" id="drive-description" class="textarea textarea-bordered" rows="3" placeholder="Add a description for this file (optional)">{{ old('description') }}</textarea>
                         @error('description')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
                         @enderror
                     </div>
 

@@ -51,7 +51,7 @@
                     <div class="space-y-4">
                         <!-- Workspace (Required) - Searchable -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="workspace-search">
                                 <span class="label-text font-medium">Workspace <span class="text-error">*</span></span>
                             </label>
                             <div class="relative">
@@ -81,10 +81,10 @@
 
                         <!-- Task Name -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="task-title">
                                 <span class="label-text font-medium">Task Name <span class="text-error">*</span></span>
                             </label>
-                            <input type="text" name="title" value="{{ old('title') }}"
+                            <input type="text" name="title" id="task-title" value="{{ old('title') }}"
                                    class="input input-bordered w-full" placeholder="Enter task name" required>
                         </div>
 
@@ -100,7 +100,7 @@
 
                         <!-- File Upload -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="file-input">
                                 <span class="label-text font-medium">Attachments <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <div id="file-drop-zone" class="border-2 border-dashed border-base-300 rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
@@ -139,9 +139,9 @@
                         <!-- Parent Task (for subtasks) -->
                         @if($parentTask)
                             <div class="form-control">
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text font-medium">Parent Task</span>
-                                </label>
+                                </span>
                                 <input type="hidden" name="parent_task_id" value="{{ $parentTask->id }}">
                                 <div class="input input-bordered flex items-center gap-2 bg-base-200">
                                     <span class="icon-[tabler--subtask] size-4"></span>
@@ -165,10 +165,10 @@
                     <div class="space-y-4">
                         <!-- Priority -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="task-priority">
                                 <span class="label-text font-medium">Priority</span>
                             </label>
-                            <select name="priority" class="select select-bordered w-full">
+                            <select name="priority" id="task-priority" class="select select-bordered w-full">
                                 @foreach($priorities as $priority)
                                     <option value="{{ $priority->value }}" {{ old('priority', 'medium') === $priority->value ? 'selected' : '' }}>
                                         {{ $priority->label() }}
@@ -179,7 +179,7 @@
 
                         <!-- Task Type - Multi-select -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="tasktype-search">
                                 <span class="label-text font-medium">Task Type</span>
                             </label>
                             <div class="relative">
@@ -210,7 +210,7 @@
 
                         <!-- Status (Dynamic based on workspace) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="status-select">
                                 <span class="label-text font-medium">Status</span>
                             </label>
                             <select name="status_id" id="status-select" class="select select-bordered w-full">
@@ -221,16 +221,16 @@
 
                         <!-- Tags (Optional) -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="tag-input">
                                 <span class="label-text font-medium">Tags <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <div id="tags-container" class="flex flex-wrap gap-2 p-3 border border-base-300 rounded-lg min-h-[3rem] focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
                                 <input type="text" id="tag-input" placeholder="Type and press Enter to add tags..." class="flex-1 min-w-[150px] outline-none bg-transparent text-sm">
                             </div>
                             <input type="hidden" name="tags" id="tags-hidden">
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/50">Press Enter or comma to add a tag</span>
-                            </label>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -247,7 +247,7 @@
                     <div class="space-y-4">
                         <!-- Assignee (Optional) - Multi-select -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="assignee-search">
                                 <span class="label-text font-medium">Assignee <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <div class="relative">
@@ -281,9 +281,9 @@
 
                         <!-- Notification Settings -->
                         <div class="form-control">
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text font-medium">When I post this, notify...</span>
-                            </label>
+                            </span>
 
                             <!-- Notification Options -->
                             <div class="space-y-3 p-4 border border-base-300 rounded-lg">
@@ -388,7 +388,7 @@
                     <div class="space-y-4">
                         <!-- Due Date (Optional) with Custom Date Picker -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="due-date-display">
                                 <span class="label-text font-medium">Due Date <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <!-- Date Display Input -->
@@ -470,10 +470,10 @@
 
                         <!-- Estimated Hours -->
                         <div class="form-control">
-                            <label class="label">
+                            <label class="label" for="task-estimated-hours">
                                 <span class="label-text font-medium">Estimated Hours <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
-                            <input type="number" name="estimated_hours" value="{{ old('estimated_hours') }}"
+                            <input type="number" name="estimated_hours" id="task-estimated-hours" value="{{ old('estimated_hours') }}"
                                    class="input input-bordered w-full" min="0" step="0.5" placeholder="Enter estimated hours">
                         </div>
                     </div>

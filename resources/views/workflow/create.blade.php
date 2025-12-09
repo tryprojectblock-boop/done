@@ -39,9 +39,9 @@
                         </label>
                         <input type="text" name="name" id="workflow-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Basic Task Workflow" value="{{ old('name') }}" required maxlength="100">
                         @error('name')
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-error">{{ $message }}</span>
-                            </label>
+                            </span>
                         @enderror
                     </div>
 

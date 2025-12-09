@@ -49,7 +49,7 @@
                         </label>
                         <input type="text" name="name" id="drive-edit-name" value="{{ old('name', $attachment->name) }}" class="input input-bordered" placeholder="Enter a name for this file" required />
                         @error('name')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
                         @enderror
                     </div>
 
@@ -60,7 +60,7 @@
                         </label>
                         <textarea name="description" id="drive-edit-description" class="textarea textarea-bordered" rows="3" placeholder="Add a description for this file (optional)">{{ old('description', $attachment->description) }}</textarea>
                         @error('description')
-                            <label class="label"><span class="label-text-alt text-error">{{ $message }}</span></label>
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
                         @enderror
                     </div>
 

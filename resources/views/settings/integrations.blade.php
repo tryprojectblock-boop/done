@@ -93,9 +93,9 @@
                                 placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
                             />
                             @error('google_client_id')
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
-                                </label>
+                                </span>
                             @enderror
                         </div>
 
@@ -111,13 +111,13 @@
                                 class="input input-bordered font-mono text-sm"
                                 placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxx"
                             />
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/60">Your client secret is stored securely</span>
-                            </label>
+                            </span>
                             @error('google_client_secret')
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
-                                </label>
+                                </span>
                             @enderror
                         </div>
 
@@ -133,13 +133,13 @@
                                 class="input input-bordered font-mono text-sm"
                                 placeholder="{{ url('/auth/google/callback') }}"
                             />
-                            <label class="label">
+                            <span class="label">
                                 <span class="label-text-alt text-base-content/60">Add this URI to your Google Cloud Console's authorized redirect URIs</span>
-                            </label>
+                            </span>
                             @error('google_redirect_uri')
-                                <label class="label">
+                                <span class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
-                                </label>
+                                </span>
                             @enderror
                         </div>
                     </div>
