@@ -18,11 +18,12 @@ return new class extends Migration
 
         if (!$exists) {
             DB::table('admin_users')->insert([
+                'uuid' => \Illuminate\Support\Str::uuid()->toString(),
                 'name' => 'Admin',
                 'email' => 'rohitcphilip@gmail.com',
                 'password' => Hash::make('admin123'),
                 'role' => 'administrator',
-                'is_active' => true,
+                'is_active' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
