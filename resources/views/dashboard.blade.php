@@ -233,14 +233,19 @@
                                                 <p class="font-medium truncate {{ $task['completed'] ? 'line-through text-base-content/50' : '' }}">{{ $task['title'] }}</p>
                                                 <p class="text-xs text-base-content/50">{{ $task['workspace'] ?? 'No workspace' }}</p>
                                             </div>
+                                            @if(isset($task['status']) && $task['status'])
+                                                <span class="badge badge-sm border" style="background-color: {{ $task['status_color'] }}20; color: {{ $task['status_color'] }}; border-color: {{ $task['status_color'] }}40;">
+                                                    {{ $task['status'] }}
+                                                </span>
+                                            @endif
                                             @if(isset($task['due_date']) && $task['due_date'])
                                                 <span class="badge badge-sm {{ $task['overdue'] ? 'badge-error' : 'badge-ghost' }}">
                                                     {{ $task['due_date'] }}
                                                 </span>
                                             @endif
                                             @if(isset($task['priority']) && $task['priority'])
-                                                <span class="badge badge-sm badge-{{ $task['priority'] === 'high' ? 'error' : ($task['priority'] === 'medium' ? 'warning' : 'ghost') }}">
-                                                    {{ ucfirst($task['priority']) }}
+                                                <span class="badge badge-sm border" style="background-color: {{ $task['priority_color'] }}20; color: {{ $task['priority_color'] }}; border-color: {{ $task['priority_color'] }}40;">
+                                                    {{ $task['priority_label'] }}
                                                 </span>
                                             @endif
                                         </a>

@@ -68,7 +68,10 @@ class DashboardController extends Controller
                     'due_date' => $task->due_date?->format('M d'),
                     'overdue' => $task->due_date && $task->due_date->isPast(),
                     'priority' => $task->priority?->value,
+                    'priority_label' => $task->priority?->label(),
+                    'priority_color' => $task->priority?->color(),
                     'status' => $task->status?->name,
+                    'status_color' => $task->status?->background_color,
                 ];
             })
             ->toArray();
