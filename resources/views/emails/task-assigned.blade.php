@@ -140,7 +140,7 @@
                 @if($task->priority)
                 <div class="meta-item">
                     <span class="meta-label">Priority:</span>
-                    <span class="priority-badge priority-{{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
+                    <span class="priority-badge priority-{{ $task->priority->value ?? $task->priority }}">{{ ucfirst($task->priority->value ?? $task->priority) }}</span>
                 </div>
                 @endif
 

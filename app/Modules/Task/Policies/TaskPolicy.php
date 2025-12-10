@@ -16,11 +16,27 @@ class TaskPolicy
 
     public function view(User $user, Task $task): bool
     {
-        // User can view if they're in the same company, or they're a watcher
-        return $user->company_id === $task->company_id
-            || $task->isWatcher($user)
-            || $task->isOwner($user)
-            || $task->isAssignee($user);
+        // Assignee can always view their assigned tasks
+        if ($task->assignee_id == $user->id) {
+            return true;
+        }
+
+        // Task owner can always view
+        if ($task->created_by == $user->id) {
+            return true;
+        }
+
+        // Watchers can view
+        if ($task->isWatcher($user)) {
+            return true;
+        }
+
+        // Same company can view
+        if ($user->company_id == $task->company_id) {
+            return true;
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
