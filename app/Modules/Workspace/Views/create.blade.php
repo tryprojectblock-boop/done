@@ -151,17 +151,92 @@
 
                     <!-- Date Range -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Start Date -->
                         <div class="form-control">
-                            <label class="label" for="workspace-start-date">
+                            <label class="label">
                                 <span class="label-text font-medium">Start Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="date" name="start_date" id="workspace-start-date" class="input input-bordered" value="{{ old('start_date') }}">
+                            <div class="relative" id="start-date-wrapper">
+                                <input type="hidden" name="start_date" id="start-date-input" value="{{ old('start_date') }}">
+                                <button type="button" id="start-date-btn" class="input input-bordered w-full text-left flex items-center justify-between">
+                                    <span id="start-date-display" class="{{ old('start_date') ? '' : 'text-base-content/40' }}">
+                                        {{ old('start_date') ? \Carbon\Carbon::parse(old('start_date'))->format('M d, Y') : 'Select date...' }}
+                                    </span>
+                                    <span class="icon-[tabler--calendar] size-5 text-base-content/50"></span>
+                                </button>
+                                <!-- Calendar Dropdown -->
+                                <div id="start-date-calendar" class="absolute z-50 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg p-3 hidden w-72">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <button type="button" class="btn btn-ghost btn-xs btn-circle" onclick="changeCalendarMonth('start', -1)">
+                                            <span class="icon-[tabler--chevron-left] size-4"></span>
+                                        </button>
+                                        <span id="start-calendar-month-year" class="font-semibold text-sm"></span>
+                                        <button type="button" class="btn btn-ghost btn-xs btn-circle" onclick="changeCalendarMonth('start', 1)">
+                                            <span class="icon-[tabler--chevron-right] size-4"></span>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-7 gap-1 mb-2">
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                    </div>
+                                    <div id="start-calendar-days" class="grid grid-cols-7 gap-1"></div>
+                                    <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                        <button type="button" onclick="setQuickCalendarDate('start', 'today')" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                        <button type="button" onclick="setQuickCalendarDate('start', 'tomorrow')" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
+                                        <button type="button" onclick="setQuickCalendarDate('start', 'next-week')" class="btn btn-soft btn-primary btn-xs">Next Week</button>
+                                        <button type="button" onclick="clearCalendarDate('start')" class="btn btn-soft btn-error btn-xs">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- End Date -->
                         <div class="form-control">
-                            <label class="label" for="workspace-end-date">
+                            <label class="label">
                                 <span class="label-text font-medium">End Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <input type="date" name="end_date" id="workspace-end-date" class="input input-bordered" value="{{ old('end_date') }}">
+                            <div class="relative" id="end-date-wrapper">
+                                <input type="hidden" name="end_date" id="end-date-input" value="{{ old('end_date') }}">
+                                <button type="button" id="end-date-btn" class="input input-bordered w-full text-left flex items-center justify-between">
+                                    <span id="end-date-display" class="{{ old('end_date') ? '' : 'text-base-content/40' }}">
+                                        {{ old('end_date') ? \Carbon\Carbon::parse(old('end_date'))->format('M d, Y') : 'Select date...' }}
+                                    </span>
+                                    <span class="icon-[tabler--calendar] size-5 text-base-content/50"></span>
+                                </button>
+                                <!-- Calendar Dropdown -->
+                                <div id="end-date-calendar" class="absolute z-50 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg p-3 hidden w-72">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <button type="button" class="btn btn-ghost btn-xs btn-circle" onclick="changeCalendarMonth('end', -1)">
+                                            <span class="icon-[tabler--chevron-left] size-4"></span>
+                                        </button>
+                                        <span id="end-calendar-month-year" class="font-semibold text-sm"></span>
+                                        <button type="button" class="btn btn-ghost btn-xs btn-circle" onclick="changeCalendarMonth('end', 1)">
+                                            <span class="icon-[tabler--chevron-right] size-4"></span>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-7 gap-1 mb-2">
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                        <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                    </div>
+                                    <div id="end-calendar-days" class="grid grid-cols-7 gap-1"></div>
+                                    <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                        <button type="button" onclick="setQuickCalendarDate('end', 'next-week')" class="btn btn-soft btn-primary btn-xs">Next Week</button>
+                                        <button type="button" onclick="setQuickCalendarDate('end', 'next-month')" class="btn btn-soft btn-primary btn-xs">Next Month</button>
+                                        <button type="button" onclick="setQuickCalendarDate('end', 'quarter')" class="btn btn-soft btn-primary btn-xs">3 Months</button>
+                                        <button type="button" onclick="clearCalendarDate('end')" class="btn btn-soft btn-error btn-xs">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -292,8 +367,229 @@
     </div>
 </div>
 
+<style>
+    /* Calendar day button styles */
+    .calendar-day {
+        min-height: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+        background-color: oklch(var(--b3));
+        color: oklch(var(--bc));
+        border: none;
+    }
+    .calendar-day:hover {
+        background-color: oklch(var(--p) / 0.2);
+    }
+    .calendar-day.is-past {
+        color: oklch(var(--bc) / 0.4);
+        background-color: oklch(var(--b2));
+    }
+    .calendar-day.is-today {
+        border: 2px solid oklch(var(--p));
+        background-color: oklch(var(--p) / 0.1);
+    }
+    .calendar-day.is-selected {
+        background-color: oklch(var(--p));
+        color: oklch(var(--pc));
+        font-weight: 700;
+        box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+    }
+</style>
+
 <script>
+// Calendar functionality for workspace dates
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const calendarState = {
+    start: {
+        currentDate: new Date(),
+        selectedDate: null
+    },
+    end: {
+        currentDate: new Date(),
+        selectedDate: null
+    }
+};
+
+// Initialize from old values
+@if(old('start_date'))
+calendarState.start.selectedDate = new Date('{{ old('start_date') }}T00:00:00');
+calendarState.start.currentDate = new Date(calendarState.start.selectedDate);
+@endif
+
+@if(old('end_date'))
+calendarState.end.selectedDate = new Date('{{ old('end_date') }}T00:00:00');
+calendarState.end.currentDate = new Date(calendarState.end.selectedDate);
+@endif
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatDisplayDate(date) {
+    return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+}
+
+function renderCalendar(type) {
+    const state = calendarState[type];
+    const calendarDays = document.getElementById(type + '-calendar-days');
+    const monthYearEl = document.getElementById(type + '-calendar-month-year');
+
+    if (!calendarDays || !monthYearEl) return;
+
+    monthYearEl.textContent = months[state.currentDate.getMonth()] + ' ' + state.currentDate.getFullYear();
+
+    const firstDay = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth(), 1);
+    const lastDay = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth() + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let html = '';
+
+    for (let i = 0; i < startDay; i++) {
+        html += '<div class="p-1"></div>';
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        const date = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth(), day);
+        const dateStr = formatDate(date);
+        const isToday = date.getTime() === today.getTime();
+        const isSelected = state.selectedDate && date.getTime() === state.selectedDate.getTime();
+        const isPast = date < today;
+
+        let classes = 'btn btn-xs w-full aspect-square calendar-day';
+
+        if (isSelected) {
+            classes += ' is-selected';
+        } else if (isToday) {
+            classes += ' is-today';
+        } else if (isPast) {
+            classes += ' is-past';
+        }
+
+        html += `<button type="button" onclick="selectCalendarDate('${type}', '${dateStr}', event)" class="${classes}">${day}</button>`;
+    }
+
+    calendarDays.innerHTML = html;
+}
+
+function selectCalendarDate(type, dateStr, event) {
+    if (event) event.stopPropagation();
+
+    const state = calendarState[type];
+    state.selectedDate = new Date(dateStr + 'T00:00:00');
+
+    document.getElementById(type + '-date-input').value = dateStr;
+
+    const displayEl = document.getElementById(type + '-date-display');
+    displayEl.textContent = formatDisplayDate(state.selectedDate);
+    displayEl.classList.remove('text-base-content/40');
+
+    renderCalendar(type);
+    closeCalendar(type);
+}
+
+function changeCalendarMonth(type, delta) {
+    const state = calendarState[type];
+    state.currentDate.setMonth(state.currentDate.getMonth() + delta);
+    renderCalendar(type);
+}
+
+function setQuickCalendarDate(type, preset) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+
+    switch(preset) {
+        case 'today':
+            break;
+        case 'tomorrow':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'next-week':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'next-month':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'quarter':
+            date.setMonth(date.getMonth() + 3);
+            break;
+    }
+
+    calendarState[type].currentDate = new Date(date);
+    selectCalendarDate(type, formatDate(date));
+}
+
+function clearCalendarDate(type) {
+    calendarState[type].selectedDate = null;
+    document.getElementById(type + '-date-input').value = '';
+
+    const displayEl = document.getElementById(type + '-date-display');
+    displayEl.textContent = 'Select date...';
+    displayEl.classList.add('text-base-content/40');
+
+    renderCalendar(type);
+    closeCalendar(type);
+}
+
+function toggleCalendar(type) {
+    const calendar = document.getElementById(type + '-date-calendar');
+    const isHidden = calendar.classList.contains('hidden');
+
+    // Close all calendars first
+    document.getElementById('start-date-calendar').classList.add('hidden');
+    document.getElementById('end-date-calendar').classList.add('hidden');
+
+    if (isHidden) {
+        calendar.classList.remove('hidden');
+        renderCalendar(type);
+    }
+}
+
+function closeCalendar(type) {
+    document.getElementById(type + '-date-calendar').classList.add('hidden');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Calendar toggle buttons
+    document.getElementById('start-date-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCalendar('start');
+    });
+
+    document.getElementById('end-date-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCalendar('end');
+    });
+
+    // Close calendars on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#start-date-wrapper')) {
+            closeCalendar('start');
+        }
+        if (!e.target.closest('#end-date-wrapper')) {
+            closeCalendar('end');
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCalendar('start');
+            closeCalendar('end');
+        }
+    });
+
+    // Initialize calendars
+    renderCalendar('start');
+    renderCalendar('end');
+
     const membersList = document.getElementById('members-list');
     const memberSelect = document.getElementById('member-select');
     const memberRole = document.getElementById('member-role');

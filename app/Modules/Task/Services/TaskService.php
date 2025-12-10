@@ -189,6 +189,8 @@ class TaskService implements TaskServiceInterface
             if ($assigneeId && $assigneeId !== $user->id) {
                 $assignee = User::find($assigneeId);
                 if ($assignee) {
+                    // Load workspace for email template
+                    $task->load(['workspace', 'status']);
                     $this->notificationService->createTaskAssignedNotification($assignee, $user, $task);
                 }
             }
@@ -332,6 +334,8 @@ class TaskService implements TaskServiceInterface
 
         // Notify new assignee if assigned to someone else
         if ($newAssignee && $newAssignee->id !== $user->id) {
+            // Load workspace for email template
+            $task->load(['workspace', 'status']);
             $this->notificationService->createTaskAssignedNotification($newAssignee, $user, $task);
         }
 

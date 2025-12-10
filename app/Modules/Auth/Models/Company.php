@@ -279,7 +279,7 @@ class Company extends BaseModel
     public function isMilestonesEnabled(): bool
     {
         $settings = $this->settings ?? [];
-        return $settings['milestones_enabled'] ?? true; // Enabled by default
+        return $settings['milestones_enabled'] ?? false; // Disabled by default until user enables it
     }
 
     /**
@@ -288,6 +288,6 @@ class Company extends BaseModel
     public function isModuleEnabled(string $module): bool
     {
         $settings = $this->settings ?? [];
-        return $settings["{$module}_enabled"] ?? true;
+        return $settings["{$module}_enabled"] ?? false; // Disabled by default
     }
 }

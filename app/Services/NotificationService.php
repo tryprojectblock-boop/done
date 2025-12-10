@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Mail\TaskAssignedMail;
 use App\Models\Notification;
 use App\Models\User;
 use App\Modules\Discussion\Models\Discussion;
@@ -17,6 +18,7 @@ use App\Modules\Idea\Models\Idea;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskComment;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
@@ -110,14 +112,15 @@ class NotificationService
     }
 
     /**
-     * Create a task assigned notification.
+     * Create a task assigned notification and send email.
      */
     public function createTaskAssignedNotification(
         User $assignee,
         User $assigner,
         Task $task
     ): Notification {
-        return Notification::create([
+        // Create in-app notification
+        $notification = Notification::create([
             'user_id' => $assignee->id,
             'type' => Notification::TYPE_TASK_ASSIGNED,
             'title' => "Task assigned to you",
@@ -134,6 +137,15 @@ class NotificationService
                 'task_url' => route('tasks.show', $task->uuid),
             ],
         ]);
+
+        // Send email notification
+        try {
+            Mail::to($assignee->email)->send(new TaskAssignedMail($task, $assignee, $assigner));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send task assigned email: ' . $e->getMessage());
+        }
+
+        return $notification;
     }
 
     /**
