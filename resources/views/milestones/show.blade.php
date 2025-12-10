@@ -123,13 +123,13 @@
                         </h2>
 
                         <!-- Progress -->
-                        <div class="mb-4">
+                        <div class="mb-4" id="progress-section">
                             <div class="flex items-center justify-between text-sm mb-2">
                                 <span class="font-medium">Progress</span>
-                                <span class="text-lg font-bold" style="color: {{ $milestone->status_color }}">{{ $milestone->progress }}%</span>
+                                <span class="text-lg font-bold" id="progress-percentage" style="color: {{ $milestone->status_color }}">{{ $milestone->progress }}%</span>
                             </div>
                             <div class="w-full bg-base-200 rounded-full h-3">
-                                <div class="h-3 rounded-full transition-all duration-300" style="width: {{ $milestone->progress }}%; background-color: {{ $milestone->status_color }};"></div>
+                                <div class="h-3 rounded-full transition-all duration-500" id="progress-bar" style="width: {{ $milestone->progress }}%; background-color: {{ $milestone->status_color }};"></div>
                             </div>
                         </div>
 
@@ -411,25 +411,25 @@
                 </div>
 
                 <!-- Task Stats Card -->
-                <div class="card bg-base-100 shadow">
+                <div class="card bg-base-100 shadow" id="stats-card">
                     <div class="card-body">
                         <h3 class="font-semibold text-sm text-base-content/60 mb-3">Task Statistics</h3>
                         @php $stats = $milestone->task_stats; @endphp
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm">Total Tasks</span>
-                                <span class="font-bold">{{ $stats['total'] }}</span>
+                                <span class="font-bold" id="stats-total">{{ $stats['total'] }}</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-success">Completed</span>
-                                <span class="font-bold text-success">{{ $stats['completed'] }}</span>
+                                <span class="font-bold text-success" id="stats-completed">{{ $stats['completed'] }}</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-warning">Open</span>
-                                <span class="font-bold text-warning">{{ $stats['open'] }}</span>
+                                <span class="font-bold text-warning" id="stats-open">{{ $stats['open'] }}</span>
                             </div>
                             <div class="w-full bg-base-200 rounded-full h-2 mt-2">
-                                <div class="bg-success h-2 rounded-full" style="width: {{ $stats['percentage'] }}%"></div>
+                                <div class="bg-success h-2 rounded-full transition-all duration-500" id="stats-progress-bar" style="width: {{ $stats['percentage'] }}%"></div>
                             </div>
                         </div>
                     </div>
@@ -519,4 +519,71 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressUrl = '{{ route('milestones.getProgress', [$workspace->uuid, $milestone->uuid]) }}';
+    let lastProgress = {{ $milestone->progress }};
+
+    // Function to update progress UI
+    function updateProgressUI(data) {
+        // Update progress bar and percentage
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        if (progressBar && progressPercentage) {
+            progressBar.style.width = data.progress + '%';
+            progressBar.style.backgroundColor = data.status_color;
+            progressPercentage.textContent = data.progress + '%';
+            progressPercentage.style.color = data.status_color;
+        }
+
+        // Update stats
+        const statsTotal = document.getElementById('stats-total');
+        const statsCompleted = document.getElementById('stats-completed');
+        const statsOpen = document.getElementById('stats-open');
+        const statsProgressBar = document.getElementById('stats-progress-bar');
+
+        if (statsTotal) statsTotal.textContent = data.stats.total;
+        if (statsCompleted) statsCompleted.textContent = data.stats.completed;
+        if (statsOpen) statsOpen.textContent = data.stats.open;
+        if (statsProgressBar) statsProgressBar.style.width = data.stats.percentage + '%';
+
+        // Check if all tasks completed and show prompt
+        if (data.all_completed && data.status !== 'completed') {
+            // Reload page to show completion prompt
+            if (lastProgress !== data.progress) {
+                window.location.reload();
+            }
+        }
+
+        lastProgress = data.progress;
+    }
+
+    // Function to fetch progress
+    function fetchProgress() {
+        fetch(progressUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateProgressUI(data);
+        })
+        .catch(error => {
+            console.error('Error fetching progress:', error);
+        });
+    }
+
+    // Poll for progress every 5 seconds
+    setInterval(fetchProgress, 5000);
+
+    // Also fetch immediately on page load
+    fetchProgress();
+});
+</script>
+@endpush
 @endsection

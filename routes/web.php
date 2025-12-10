@@ -250,6 +250,7 @@ Route::middleware(['auth'])->prefix('workspaces/{workspace:uuid}/milestones')->n
     Route::put('/{milestone:uuid}', [MilestoneController::class, 'update'])->name('update');
     Route::delete('/{milestone:uuid}', [MilestoneController::class, 'destroy'])->name('destroy');
     Route::post('/{milestone:uuid}/status', [MilestoneController::class, 'updateStatus'])->name('updateStatus');
+    Route::get('/{milestone:uuid}/progress', [MilestoneController::class, 'getProgress'])->name('getProgress');
     Route::post('/{milestone:uuid}/tasks', [MilestoneController::class, 'addTask'])->name('addTask');
     Route::delete('/{milestone:uuid}/tasks/{task:uuid}', [MilestoneController::class, 'removeTask'])->name('removeTask');
     Route::post('/{milestone:uuid}/comments', [MilestoneController::class, 'addComment'])->name('addComment');

@@ -356,14 +356,46 @@
                                 <form id="assignee-edit" action="{{ route('tasks.update-assignee', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
-                                    <select name="assignee_id" class="select select-bordered select-sm w-full">
-                                        <option value="">Unassigned</option>
-                                        @foreach($users as $u)
-                                            <option value="{{ $u->id }}" {{ $task->assignee_id == $u->id ? 'selected' : '' }}>
-                                                {{ $u->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <input type="hidden" name="assignee_id" id="assignee-input" value="{{ $task->assignee_id }}">
+
+                                    <!-- Search Input -->
+                                    <div class="relative">
+                                        <input type="text"
+                                               id="assignee-search"
+                                               class="input input-bordered input-sm w-full pr-8"
+                                               placeholder="Search users..."
+                                               autocomplete="off"
+                                               value="{{ $task->assignee?->name ?? '' }}">
+                                        <span class="icon-[tabler--search] size-4 absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40"></span>
+                                    </div>
+
+                                    <!-- Dropdown Results -->
+                                    <div id="assignee-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden">
+                                        <div class="p-1">
+                                            <button type="button" class="assignee-option w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2" data-id="" data-name="Unassigned">
+                                                <div class="avatar placeholder">
+                                                    <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
+                                                        <span class="icon-[tabler--user-off] size-3"></span>
+                                                    </div>
+                                                </div>
+                                                <span>Unassigned</span>
+                                            </button>
+                                            @foreach($users as $u)
+                                            <button type="button" class="assignee-option w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->assignee_id == $u->id ? 'bg-primary/10' : '' }}" data-id="{{ $u->id }}" data-name="{{ $u->name }}">
+                                                <div class="avatar placeholder">
+                                                    <div class="bg-primary text-primary-content rounded-full w-6 h-6 flex items-center justify-center">
+                                                        <span class="text-xs">{{ substr($u->name, 0, 1) }}</span>
+                                                    </div>
+                                                </div>
+                                                <span>{{ $u->name }}</span>
+                                                @if($task->assignee_id == $u->id)
+                                                <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                @endif
+                                            </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
                                     <div class="flex gap-2 mt-2">
                                         <button type="submit" class="btn btn-primary btn-xs">
                                             <span class="icon-[tabler--check] size-3.5"></span>
@@ -883,6 +915,7 @@ function clearDate(event) {
 const originalToggleEdit = toggleEdit;
 toggleEdit = function(field) {
     originalToggleEdit(field);
+
     if (field === 'due-date') {
         const editEl = document.getElementById('due-date-edit');
         if (editEl && !editEl.classList.contains('hidden')) {
@@ -895,7 +928,104 @@ toggleEdit = function(field) {
             renderCalendar();
         }
     }
+
+    // Focus search input when assignee edit opens
+    if (field === 'assignee') {
+        const editEl = document.getElementById('assignee-edit');
+        if (editEl && !editEl.classList.contains('hidden')) {
+            setTimeout(() => {
+                const searchInput = document.getElementById('assignee-search');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }, 100);
+        }
+    }
 };
+
+// Assignee search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('assignee-search');
+    const dropdown = document.getElementById('assignee-dropdown');
+    const hiddenInput = document.getElementById('assignee-input');
+    const options = document.querySelectorAll('.assignee-option');
+
+    if (!searchInput || !dropdown) return;
+
+    // Show dropdown on focus
+    searchInput.addEventListener('focus', function() {
+        dropdown.classList.remove('hidden');
+        filterOptions('');
+    });
+
+    // Filter options on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        filterOptions(query);
+        dropdown.classList.remove('hidden');
+    });
+
+    // Filter function
+    function filterOptions(query) {
+        options.forEach(option => {
+            const name = option.dataset.name.toLowerCase();
+            if (name.includes(query) || query === '') {
+                option.classList.remove('hidden');
+            } else {
+                option.classList.add('hidden');
+            }
+        });
+    }
+
+    // Select option on click
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+
+            // Update hidden input
+            hiddenInput.value = id;
+
+            // Update search input display
+            searchInput.value = name === 'Unassigned' ? '' : name;
+
+            // Update selected styling
+            options.forEach(opt => {
+                opt.classList.remove('bg-primary/10');
+                const checkIcon = opt.querySelector('.icon-\\[tabler--check\\]');
+                if (checkIcon) checkIcon.remove();
+            });
+
+            this.classList.add('bg-primary/10');
+            if (id) {
+                const checkSpan = document.createElement('span');
+                checkSpan.className = 'icon-[tabler--check] size-4 text-primary ml-auto';
+                this.appendChild(checkSpan);
+            }
+
+            // Hide dropdown
+            dropdown.classList.add('hidden');
+        });
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#assignee-edit')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+        }
+    });
+});
 </script>
 @endpush
 @endsection

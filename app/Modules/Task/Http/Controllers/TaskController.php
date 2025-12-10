@@ -45,7 +45,7 @@ class TaskController extends Controller
             $filters['is_closed'] = false;
         }
 
-        $tasks = $this->taskService->getTasksForUser($user, $filters, 20);
+        $tasks = $this->taskService->getTasksForUser($user, $filters, 10);
 
         // Get filter options - workspaces where user is a member
         $workspaces = Workspace::forUser($user)->get();

@@ -10,6 +10,7 @@ use App\Modules\Task\Models\Tag;
 use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
 use App\Services\MilestoneNotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -560,6 +561,35 @@ class MilestoneController extends Controller
         $attachment->delete();
 
         return back()->with('success', 'Attachment deleted.');
+    }
+
+    /**
+     * Get milestone progress data (for real-time updates).
+     */
+    public function getProgress(Request $request, Workspace $workspace, Milestone $milestone): JsonResponse
+    {
+        $user = $request->user();
+
+        // Check access
+        if (!$workspace->hasAccess($user)) {
+            abort(403, 'You do not have access to this workspace.');
+        }
+
+        // Recalculate progress from tasks
+        $milestone->recalculateProgress();
+        $milestone->refresh();
+
+        $stats = $milestone->task_stats;
+
+        return response()->json([
+            'progress' => $milestone->progress,
+            'status' => $milestone->status,
+            'status_label' => $milestone->status_label,
+            'status_color' => $milestone->status_color,
+            'status_badge' => $milestone->status_badge,
+            'stats' => $stats,
+            'all_completed' => $stats['total'] > 0 && $stats['completed'] === $stats['total'],
+        ]);
     }
 
     /**
