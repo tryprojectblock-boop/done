@@ -68,7 +68,16 @@ class DocumentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('document::create', compact('members'));
+        $workspaces = \App\Modules\Workspace\Models\Workspace::where(function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhereHas('members', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('document::create', compact('members', 'workspaces'));
     }
 
     public function store(StoreDocumentRequest $request): RedirectResponse

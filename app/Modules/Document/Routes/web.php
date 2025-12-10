@@ -47,5 +47,13 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
             ->name('content.save');
         Route::post('{document}/auto-save', [DocumentContentController::class, 'autoSave'])
             ->name('content.autosave');
+
+        // Collaborators
+        Route::post('{document}/collaborators', [DocumentContentController::class, 'addCollaborator'])
+            ->name('collaborators.add');
+        Route::patch('{document}/collaborators/{user}', [DocumentContentController::class, 'updateCollaboratorRole'])
+            ->name('collaborators.update');
+        Route::delete('{document}/collaborators/{user}', [DocumentContentController::class, 'removeCollaborator'])
+            ->name('collaborators.remove');
     });
 });

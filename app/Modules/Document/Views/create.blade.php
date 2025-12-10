@@ -59,6 +59,21 @@
                             <textarea name="description" id="document-description" rows="2"
                                       class="textarea textarea-bordered w-full" placeholder="Brief description of this document">{{ old('description') }}</textarea>
                         </div>
+
+                        <!-- Workspace -->
+                        <div class="form-control">
+                            <label class="label" for="document-workspace">
+                                <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
+                            </label>
+                            <select name="workspace_id" id="document-workspace" class="select select-bordered w-full">
+                                <option value="">No Workspace (General)</option>
+                                @foreach($workspaces as $workspace)
+                                    <option value="{{ $workspace->id }}" {{ old('workspace_id') == $workspace->id ? 'selected' : '' }}>
+                                        {{ $workspace->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -90,10 +105,10 @@
                                     <label id="select-all-option" class="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-300 sticky top-0 bg-base-100 z-10">
                                         <input type="checkbox" id="select-all-members" class="checkbox checkbox-primary checkbox-sm">
                                         <span class="font-medium text-sm">Select All Members</span>
-                                        <span class="text-xs text-base-content/50">(as Editor)</span>
+                                        <span class="text-xs text-base-content/50">(as Reader)</span>
                                     </label>
                                     @foreach($members as $member)
-                                        <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $member->id }}" data-name="{{ $member->name }}" data-email="{{ $member->email }}" data-avatar="{{ $member->avatar_url }}" data-search="{{ strtolower($member->name) }}">
+                                        <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $member->id }}" data-name="{{ $member->name }}" data-email="{{ $member->email }}" data-avatar="{{ $member->avatar_url }}" data-search="{{ strtolower($member->name . ' ' . $member->email) }}">
                                             <div class="avatar">
                                                 <div class="w-8 rounded-full">
                                                     <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
@@ -112,13 +127,37 @@
                         </div>
 
                         <!-- Selected Members with Role -->
-                        <div id="selected-members-container" class="space-y-2 hidden">
-                            <label class="label">
-                                <span class="label-text font-medium">Selected Collaborators</span>
-                            </label>
-                            <div id="selected-members-list" class="space-y-2">
+                        <div id="selected-members-container" class="space-y-3 hidden">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center gap-3">
+                                    <label class="label py-0">
+                                        <span class="label-text font-medium">Selected Collaborators</span>
+                                    </label>
+                                    <!-- Collaborator Counts -->
+                                    <div id="collaborator-counts" class="flex items-center gap-2 text-xs">
+                                        <span class="badge badge-sm gap-1">
+                                            <span class="icon-[tabler--users] size-3"></span>
+                                            <span id="total-count">0</span> total
+                                        </span>
+                                        <span class="badge badge-primary badge-sm gap-1">
+                                            <span class="icon-[tabler--pencil] size-3"></span>
+                                            <span id="editor-count">0</span> editors
+                                        </span>
+                                        <span class="badge badge-info badge-sm gap-1">
+                                            <span class="icon-[tabler--eye] size-3"></span>
+                                            <span id="reader-count">0</span> readers
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <span class="icon-[tabler--search] size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/50"></span>
+                                    <input type="text" id="selected-search" class="input input-bordered input-sm pl-8 w-48" placeholder="Filter selected..." autocomplete="off">
+                                </div>
+                            </div>
+                            <div id="selected-members-list" class="space-y-2 max-h-64 overflow-y-auto">
                                 <!-- Selected members will be added here -->
                             </div>
+                            <div id="no-selected-results" class="p-3 text-center text-base-content/50 text-sm hidden">No matching collaborators</div>
                         </div>
 
                         <div id="collaborator-hidden-inputs"></div>
@@ -156,6 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const memberOptions = document.querySelectorAll('.member-option');
     const noMemberResults = document.getElementById('no-member-results');
     const selectAllCheckbox = document.getElementById('select-all-members');
+    const selectedSearch = document.getElementById('selected-search');
+    const noSelectedResults = document.getElementById('no-selected-results');
 
     let selectedMembers = []; // {id, name, email, avatar, role}
     let memberHighlightIndex = -1;
@@ -173,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             name: option.dataset.name,
                             email: option.dataset.email,
                             avatar: option.dataset.avatar,
-                            role: 'editor'
+                            role: 'reader'
                         });
                         option.classList.add('hidden');
                     }
@@ -234,9 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchTerm = this.value.toLowerCase();
         let visibleCount = 0;
         memberOptions.forEach(option => {
-            const name = option.dataset.search;
+            const searchText = option.dataset.search;
             const isSelected = selectedMembers.some(m => m.id === option.dataset.id);
-            if (name.includes(searchTerm) && !isSelected) {
+            if (searchText.includes(searchTerm) && !isSelected) {
                 option.classList.remove('hidden');
                 visibleCount++;
             } else {
@@ -285,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if already selected
             if (selectedMembers.some(m => m.id === id)) return;
 
-            // Add to selected with default role 'editor'
-            selectedMembers.push({ id, name, email, avatar, role: 'editor' });
+            // Add to selected with default role 'reader'
+            selectedMembers.push({ id, name, email, avatar, role: 'reader' });
 
             // Hide from dropdown
             this.classList.add('hidden');
@@ -298,9 +339,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Filter selected members
+    if (selectedSearch) {
+        selectedSearch.addEventListener('input', function() {
+            filterSelectedMembers(this.value.toLowerCase());
+        });
+    }
+
+    function filterSelectedMembers(searchTerm) {
+        const items = selectedMembersList.querySelectorAll('[data-member-id]');
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const memberId = item.dataset.memberId;
+            const member = selectedMembers.find(m => m.id === memberId);
+            if (member) {
+                const searchText = (member.name + ' ' + member.email).toLowerCase();
+                if (searchText.includes(searchTerm)) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            }
+        });
+
+        noSelectedResults.classList.toggle('hidden', visibleCount > 0 || selectedMembers.length === 0);
+    }
+
+    function updateCollaboratorCounts() {
+        const totalCount = selectedMembers.length;
+        const editorCount = selectedMembers.filter(m => m.role === 'editor').length;
+        const readerCount = selectedMembers.filter(m => m.role === 'reader').length;
+
+        document.getElementById('total-count').textContent = totalCount;
+        document.getElementById('editor-count').textContent = editorCount;
+        document.getElementById('reader-count').textContent = readerCount;
+    }
+
     function updateSelectedMembers() {
         // Show/hide container
         selectedMembersContainer.classList.toggle('hidden', selectedMembers.length === 0);
+
+        // Clear search when list changes
+        if (selectedSearch) {
+            selectedSearch.value = '';
+        }
+
+        // Update collaborator counts
+        updateCollaboratorCounts();
 
         // Render selected members
         selectedMembersList.innerHTML = selectedMembers.map(m => `
@@ -315,8 +402,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-xs text-base-content/50">${m.email || ''}</p>
                 </div>
                 <select class="select select-bordered select-sm w-28" onchange="updateMemberRole('${m.id}', this.value)">
-                    <option value="editor" ${m.role === 'editor' ? 'selected' : ''}>Editor</option>
                     <option value="reader" ${m.role === 'reader' ? 'selected' : ''}>Reader</option>
+                    <option value="editor" ${m.role === 'editor' ? 'selected' : ''}>Editor</option>
                 </select>
                 <button type="button" class="btn btn-ghost btn-sm btn-circle text-error" onclick="removeMember('${m.id}')">
                     <span class="icon-[tabler--x] size-5"></span>
@@ -332,13 +419,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update search placeholder
         memberSearch.placeholder = selectedMembers.length > 0 ? 'Add more collaborators...' : 'Search and select members...';
+
+        // Hide no results message
+        noSelectedResults.classList.add('hidden');
     }
 
     window.updateMemberRole = function(id, role) {
         const member = selectedMembers.find(m => m.id === id);
         if (member) {
             member.role = role;
-            updateSelectedMembers();
+            // Update hidden input only, not the whole list
+            const hiddenInput = document.querySelector(`input[name="collaborators[${id}][role]"]`);
+            if (hiddenInput) {
+                hiddenInput.value = role;
+            }
+            // Update counts when role changes
+            updateCollaboratorCounts();
         }
     };
 

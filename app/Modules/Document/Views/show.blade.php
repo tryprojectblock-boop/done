@@ -6,11 +6,15 @@
     <div class="bg-base-100 border-b border-base-300 sticky top-0 z-20">
         <div class="max-w-full mx-auto px-4 py-3">
             <div class="flex items-center justify-between gap-4">
-                <!-- Left: Back & Save Status -->
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('documents.index') }}" class="btn btn-ghost btn-sm btn-circle">
+                <!-- Left: Back, Sections Toggle & Save Status -->
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('documents.index') }}" class="btn btn-ghost btn-sm btn-circle" title="Back to Documents">
                         <span class="icon-[tabler--arrow-left] size-5"></span>
                     </a>
+                    <button type="button" id="toggle-sections-btn" class="btn btn-ghost btn-sm gap-1" title="Toggle Sections">
+                        <span class="icon-[tabler--list] size-4"></span>
+                        <span class="hidden sm:inline text-xs">Sections</span>
+                    </button>
                     <span id="save-status" class="text-sm text-base-content/50 flex items-center gap-1">
                         <span class="icon-[tabler--check] size-4"></span>
                         Saved
@@ -19,6 +23,33 @@
 
                 <!-- Right: Actions -->
                 <div class="flex items-center gap-2">
+                    <!-- Collaborators -->
+                    <button type="button" id="collaborators-btn" class="btn btn-soft btn-secondary btn-sm gap-1">
+                        <div class="avatar-group -space-x-3">
+                            <!-- Creator -->
+                            <div class="avatar" title="{{ $document->creator->name }} (Owner)">
+                                <div class="w-6 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
+                                    <img src="{{ $document->creator->avatar_url }}" alt="{{ $document->creator->name }}" />
+                                </div>
+                            </div>
+                            @foreach($document->collaborators->take(3) as $collaborator)
+                                <div class="avatar" title="{{ $collaborator->name }}">
+                                    <div class="w-6 rounded-full">
+                                        <img src="{{ $collaborator->avatar_url }}" alt="{{ $collaborator->name }}" />
+                                    </div>
+                                </div>
+                            @endforeach
+                            @if($document->collaborators->count() > 3)
+                                <div class="avatar placeholder">
+                                    <div class="w-6 rounded-full bg-neutral text-neutral-content text-xs">
+                                        <span>+{{ $document->collaborators->count() - 3 }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        <span class="icon-[tabler--chevron-down] size-4 text-base-content/60"></span>
+                    </button>
+
                     @if($canEdit)
                         <button type="button" id="save-btn" class="btn btn-primary btn-sm">
                             <span class="icon-[tabler--device-floppy] size-4"></span>
@@ -75,59 +106,111 @@
 
     <!-- Main Content Area -->
     <div class="flex h-[calc(100vh-57px)]">
-        <!-- Editor Area -->
-        <div id="editor-container" class="flex-1 overflow-y-auto transition-all duration-300">
-            <div class="max-w-4xl mx-auto px-4 py-4">
-                <!-- Add Comment Tooltip (appears on text selection) -->
-                <div id="add-comment-tooltip" class="fixed z-50 hidden">
-                    <button type="button" id="add-comment-btn" class="btn btn-primary btn-sm shadow-lg">
-                        <span class="icon-[tabler--message-plus] size-4"></span>
-                        Comment
-                    </button>
-                </div>
-
-                <!-- Document Card with Title & Editor -->
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body p-0">
-                        <!-- Editable Title -->
-                        <div class="px-6 pt-6 pb-3 border-b border-base-200">
-                            <input type="text"
-                                   id="document-title"
-                                   value="{{ $document->title }}"
-                                   placeholder="Untitled Document"
-                                   class="w-full text-2xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder:text-base-content/30 {{ !$canEdit ? 'pointer-events-none' : '' }}"
-                                   {{ !$canEdit ? 'readonly' : '' }}>
-                            @if($document->description)
-                                <p class="text-sm text-base-content/60 mt-1 italic">{{ $document->description }}</p>
-                            @endif
-                        </div>
-
-                        <!-- Document Editor -->
-                        <div id="document-editor"
-                             class="document-editor"
-                             data-document-uuid="{{ $document->uuid }}"
-                             data-can-edit="{{ $canEdit ? 'true' : 'false' }}"
-                             data-content-url="{{ route('api.documents.content.get', $document->uuid) }}"
-                             data-save-url="{{ route('api.documents.content.save', $document->uuid) }}"
-                             data-autosave-url="{{ route('api.documents.content.autosave', $document->uuid) }}"
-                             data-upload-url="{{ route('upload.image') }}"
-                             data-csrf="{{ csrf_token() }}"
-                             data-initial-content="{{ json_encode($document->content ?? '') }}">
-                        </div>
+        <!-- Left Sidebar: Document Sections/Pages -->
+        <div id="pages-sidebar" class="w-56 bg-base-100 border-r border-base-300 h-full overflow-hidden flex flex-col transition-all duration-300">
+            <!-- Sidebar Header -->
+            <div class="p-3 border-b border-base-300">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-sm flex items-center gap-2">
+                        <span class="icon-[tabler--list] size-4"></span>
+                        Sections
+                    </h3>
+                    <div class="flex items-center gap-1">
+                        @if($canEdit)
+                        <button type="button" id="add-section-btn" class="btn btn-ghost btn-xs btn-circle" title="Add Section">
+                            <span class="icon-[tabler--plus] size-4"></span>
+                        </button>
+                        @endif
+                        <button type="button" id="toggle-pages-sidebar" class="btn btn-ghost btn-xs btn-circle" title="Hide Sidebar">
+                            <span class="icon-[tabler--layout-sidebar-left-collapse] size-4"></span>
+                        </button>
                     </div>
                 </div>
-
-                <!-- Last Edited Info -->
-                <div class="mt-3 text-xs text-base-content/50 text-center pb-4">
-                    @if($document->last_edited_at)
-                        Last edited by {{ $document->lastEditor?->name ?? 'Unknown' }}
-                        <span title="{{ $document->last_edited_at->format('M d, Y g:i A') }}">
-                            {{ $document->last_edited_at->diffForHumans() }}
-                        </span>
-                    @else
-                        Created {{ $document->created_at->diffForHumans() }}
-                    @endif
+            </div>
+            <!-- Sections/Pages List -->
+            <div id="sections-list" class="flex-1 overflow-y-auto py-2">
+                <!-- Sections will be dynamically generated -->
+                <div class="px-3 py-4 text-center text-base-content/50 text-sm" id="no-sections">
+                    <span class="icon-[tabler--file-text] size-8 block mx-auto mb-2 opacity-50"></span>
+                    <p>No sections yet</p>
+                    <p class="text-xs mt-1">Add headings to create sections</p>
                 </div>
+            </div>
+            <!-- Current Position Indicator -->
+            <div id="current-position" class="p-3 border-t border-base-300 bg-base-200/50">
+                <div class="flex items-center justify-between text-xs mb-2">
+                    <span class="flex items-center gap-1 text-base-content/60">
+                        <span class="icon-[tabler--file-text] size-4"></span>
+                        Page
+                    </span>
+                    <span class="font-bold text-primary" id="current-page-num">1</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-base-content/60 mb-2">
+                    <span class="icon-[tabler--map-pin] size-3"></span>
+                    <span class="truncate"><strong id="current-section-name" class="text-base-content">Top</strong></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-base-300 rounded-full h-1.5">
+                        <div id="scroll-progress" class="bg-primary rounded-full h-1.5 transition-all" style="width: 0%"></div>
+                    </div>
+                    <span id="scroll-percent" class="text-xs text-base-content/50">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsed Sidebar Button -->
+        <button type="button" id="show-pages-sidebar" class="hidden h-full w-10 bg-base-100 border-r border-base-300 flex-col items-center pt-3 hover:bg-base-200 transition-colors">
+            <span class="icon-[tabler--layout-sidebar-left-expand] size-5 text-base-content/60"></span>
+        </button>
+
+        <!-- Editor Area -->
+        <div id="editor-container" class="flex-1 overflow-y-auto transition-all duration-300 bg-base-200">
+            <!-- Add Comment Tooltip (appears on text selection) -->
+            <div id="add-comment-tooltip" class="fixed z-50 hidden">
+                <button type="button" id="add-comment-btn" class="btn btn-primary btn-sm shadow-lg">
+                    <span class="icon-[tabler--message-plus] size-4"></span>
+                    Comment
+                </button>
+            </div>
+
+            <!-- Document Title Bar -->
+            <div class="bg-base-100 border-b border-base-300 px-6 py-3 sticky top-0 z-10">
+                <input type="text"
+                       id="document-title"
+                       value="{{ $document->title }}"
+                       placeholder="Untitled Document"
+                       class="w-full text-xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder:text-base-content/30 {{ !$canEdit ? 'pointer-events-none' : '' }}"
+                       {{ !$canEdit ? 'readonly' : '' }}>
+                @if($document->description)
+                    <p class="text-sm text-base-content/60 mt-1 italic">{{ $document->description }}</p>
+                @endif
+            </div>
+
+            <!-- Document Editor - Page Style -->
+            <div id="document-editor-wrapper" class="p-6">
+                <div id="document-editor"
+                     class="document-editor bg-base-100 shadow-xl rounded-lg overflow-hidden"
+                     data-document-uuid="{{ $document->uuid }}"
+                     data-can-edit="{{ $canEdit ? 'true' : 'false' }}"
+                     data-content-url="{{ route('api.documents.content.get', $document->uuid) }}"
+                     data-save-url="{{ route('api.documents.content.save', $document->uuid) }}"
+                     data-autosave-url="{{ route('api.documents.content.autosave', $document->uuid) }}"
+                     data-upload-url="{{ route('upload.image') }}"
+                     data-csrf="{{ csrf_token() }}"
+                     data-initial-content="{{ json_encode($document->content ?? '') }}">
+                </div>
+            </div>
+
+            <!-- Last Edited Info -->
+            <div class="text-xs text-base-content/50 text-center pb-6">
+                @if($document->last_edited_at)
+                    Last edited by {{ $document->lastEditor?->name ?? 'Unknown' }}
+                    <span title="{{ $document->last_edited_at->format('M d, Y g:i A') }}">
+                        {{ $document->last_edited_at->diffForHumans() }}
+                    </span>
+                @else
+                    Created {{ $document->created_at->diffForHumans() }}
+                @endif
             </div>
         </div>
 
@@ -190,16 +273,22 @@
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <style>
-/* Document Editor Styles */
+/* Document Editor Styles - Page-based layout */
+#document-editor-wrapper {
+    min-height: calc(100vh - 200px);
+}
+
 .document-editor {
     min-height: 250px;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .document-editor .ql-toolbar {
     border: none !important;
     border-bottom: 1px solid oklch(var(--bc) / 0.1) !important;
-    background: oklch(var(--b2));
-    padding: 8px 12px;
+    background: oklch(var(--b1));
+    padding: 10px 16px;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -207,20 +296,82 @@
 
 .document-editor .ql-container {
     border: none !important;
-    font-family: inherit;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1rem;
+    line-height: 1.8;
+    background: oklch(var(--b1));
 }
 
+/* Page-style editor */
 .document-editor .ql-editor {
-    padding: 16px 24px;
-    min-height: 250px;
+    padding: 72px 90px;
+    min-height: 1123px; /* A4 height */
+    background: oklch(var(--b1));
 }
 
 .document-editor .ql-editor.ql-blank::before {
     color: oklch(var(--bc) / 0.3);
     font-style: normal;
-    left: 24px;
+    left: 90px;
+}
+
+/* Page break visual indicator */
+.document-editor .ql-editor hr {
+    border: none;
+    border-top: 1px dashed oklch(var(--bc) / 0.3);
+    margin: 60px -90px;
+    position: relative;
+}
+
+.document-editor .ql-editor hr::after {
+    content: 'Page Break';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: oklch(var(--b1));
+    padding: 0 12px;
+    font-size: 0.7rem;
+    color: oklch(var(--bc) / 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Headings styling */
+.document-editor .ql-editor h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc));
+}
+
+.document-editor .ql-editor h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc) / 0.9);
+}
+
+.document-editor .ql-editor h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc) / 0.85);
+}
+
+.document-editor .ql-editor p {
+    margin-bottom: 1em;
+}
+
+.document-editor .ql-editor blockquote {
+    border-left: 4px solid oklch(var(--p));
+    padding-left: 1em;
+    margin: 1.5em 0;
+    color: oklch(var(--bc) / 0.8);
+    font-style: italic;
 }
 
 /* Read-only mode */
@@ -308,6 +459,96 @@
     #comments-sidebar.show-mobile {
         transform: translateX(0);
     }
+
+    #pages-sidebar {
+        position: fixed;
+        left: 0;
+        top: 57px;
+        height: calc(100vh - 57px);
+        z-index: 30;
+        transform: translateX(-100%);
+    }
+
+    #pages-sidebar.show-mobile {
+        transform: translateX(0);
+    }
+}
+
+/* Pages/Sections sidebar */
+#pages-sidebar.hidden-sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+}
+
+#show-pages-sidebar.visible {
+    display: flex !important;
+}
+
+/* Section item */
+.section-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+}
+
+.section-item:hover {
+    background: oklch(var(--b2));
+}
+
+.section-item.active {
+    background: oklch(var(--p) / 0.1);
+    border-left-color: oklch(var(--p));
+}
+
+.section-item.active .section-title {
+    color: oklch(var(--p));
+    font-weight: 600;
+}
+
+.section-item.h1 {
+    padding-left: 0.75rem;
+}
+
+.section-item.h2 {
+    padding-left: 1.25rem;
+}
+
+.section-item.h3 {
+    padding-left: 1.75rem;
+}
+
+.section-icon {
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.section-item.active .section-icon {
+    opacity: 1;
+    color: oklch(var(--p));
+}
+
+.section-title {
+    flex: 1;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.section-page {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    background: oklch(var(--b3));
+    border-radius: 0.25rem;
+    color: oklch(var(--bc) / 0.6);
 }
 </style>
 @endpush
@@ -317,6 +558,11 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const editorEl = document.getElementById('document-editor');
+    if (!editorEl) {
+        console.error('Document editor element not found');
+        return;
+    }
+
     const canEdit = editorEl.dataset.canEdit === 'true';
     const saveUrl = editorEl.dataset.saveUrl;
     const autosaveUrl = editorEl.dataset.autosaveUrl;
@@ -346,6 +592,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelCommentBtn = document.getElementById('cancel-comment');
     const commentsList = document.getElementById('comments-list');
 
+    // ==================== SECTIONS/PAGES SIDEBAR ELEMENTS ====================
+    const pagesSidebar = document.getElementById('pages-sidebar');
+    const togglePagesSidebarBtn = document.getElementById('toggle-pages-sidebar');
+    const showPagesSidebarBtn = document.getElementById('show-pages-sidebar');
+    const sectionsList = document.getElementById('sections-list');
+    const noSections = document.getElementById('no-sections');
+    const currentSectionName = document.getElementById('current-section-name');
+    const scrollProgress = document.getElementById('scroll-progress');
+    const scrollPercent = document.getElementById('scroll-percent');
+    const addSectionBtn = document.getElementById('add-section-btn');
+    const toggleSectionsBtn = document.getElementById('toggle-sections-btn');
+    const currentPageNum = document.getElementById('current-page-num');
+
+    // Page height constant (A4 at 96dpi = 1056px, minus padding)
+    const PAGE_HEIGHT = 936; // 1056 - 120 (top+bottom padding)
+
+    let sections = [];
+    let activeSection = null;
+
+    // Toggle pages sidebar functions
+    function hideSidebar() {
+        pagesSidebar?.classList.add('hidden-sidebar');
+        showPagesSidebarBtn?.classList.add('visible');
+    }
+
+    function showSidebar() {
+        pagesSidebar?.classList.remove('hidden-sidebar');
+        showPagesSidebarBtn?.classList.remove('visible');
+    }
+
+    togglePagesSidebarBtn?.addEventListener('click', hideSidebar);
+    showPagesSidebarBtn?.addEventListener('click', showSidebar);
+
+    // Header toggle button
+    toggleSectionsBtn?.addEventListener('click', function() {
+        if (pagesSidebar?.classList.contains('hidden-sidebar')) {
+            showSidebar();
+        } else {
+            hideSidebar();
+        }
+    });
+
     // State
     let lastSavedContent = initialContent;
     let lastSavedTitle = titleInput?.value || '';
@@ -365,8 +653,9 @@ document.addEventListener('DOMContentLoaded', function() {
     ] : false;
 
     // Build modules config
-    const modules = {
-        toolbar: canEdit ? {
+    let modules = {};
+    if (canEdit) {
+        modules.toolbar = {
             container: toolbarOptions,
             handlers: {
                 image: function() {
@@ -383,8 +672,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 }
             }
-        } : false
-    };
+        };
+    } else {
+        modules.toolbar = false;
+    }
 
     // Initialize Quill
     const quill = new Quill(editorEl, {
@@ -393,6 +684,9 @@ document.addEventListener('DOMContentLoaded', function() {
         readOnly: !canEdit,
         modules: modules
     });
+
+    // Make quill available globally for debugging
+    window.quill = quill;
 
     // Add read-only class if needed
     if (!canEdit) {
@@ -403,6 +697,166 @@ document.addEventListener('DOMContentLoaded', function() {
     if (initialContent) {
         quill.root.innerHTML = initialContent;
     }
+
+    // ==================== SECTIONS FUNCTIONALITY (after Quill init) ====================
+
+    // Extract sections from headings in document
+    function extractSections() {
+        if (!quill || !quill.root) return;
+
+        const editor = quill.root;
+        const headings = editor.querySelectorAll('h1, h2, h3');
+        sections = [];
+
+        headings.forEach((heading, index) => {
+            const text = heading.textContent.trim();
+            if (text) {
+                // Add unique ID if not present
+                if (!heading.id) {
+                    heading.id = `section-${index}`;
+                }
+                sections.push({
+                    id: heading.id,
+                    text: text,
+                    level: heading.tagName.toLowerCase(),
+                    element: heading,
+                    top: heading.offsetTop
+                });
+            }
+        });
+
+        renderSections();
+    }
+
+    // Render sections in sidebar
+    function renderSections() {
+        if (!sectionsList || !noSections) return;
+
+        if (sections.length === 0) {
+            noSections.classList.remove('hidden');
+            sectionsList.innerHTML = '';
+            sectionsList.appendChild(noSections);
+            return;
+        }
+
+        noSections.classList.add('hidden');
+        sectionsList.innerHTML = '';
+
+        sections.forEach((section, index) => {
+            const item = document.createElement('div');
+            item.className = `section-item ${section.level}`;
+            item.dataset.sectionId = section.id;
+
+            const icon = section.level === 'h1' ? 'file-text' :
+                        section.level === 'h2' ? 'hash' : 'point';
+
+            item.innerHTML = `
+                <span class="section-icon icon-[tabler--${icon}] size-4"></span>
+                <span class="section-title" title="${section.text}">${section.text}</span>
+                <span class="section-page">${index + 1}</span>
+            `;
+
+            item.addEventListener('click', () => scrollToSection(section.id));
+            sectionsList.appendChild(item);
+        });
+    }
+
+    // Scroll to section
+    function scrollToSection(sectionId) {
+        const section = sections.find(s => s.id === sectionId);
+        if (section && section.element) {
+            section.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            updateActiveSection(sectionId);
+        }
+    }
+
+    // Update active section highlight
+    function updateActiveSection(sectionId) {
+        document.querySelectorAll('.section-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.sectionId === sectionId) {
+                item.classList.add('active');
+            }
+        });
+
+        const section = sections.find(s => s.id === sectionId);
+        if (section && currentSectionName) {
+            currentSectionName.textContent = section.text;
+            activeSection = sectionId;
+        }
+    }
+
+    // Track scroll position and update active section
+    function handleScroll() {
+        if (!editorContainer) return;
+
+        const scrollTop = editorContainer.scrollTop;
+        const scrollHeight = editorContainer.scrollHeight - editorContainer.clientHeight;
+        const percent = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
+
+        if (scrollProgress) scrollProgress.style.width = `${percent}%`;
+        if (scrollPercent) scrollPercent.textContent = `${percent}%`;
+
+        // Calculate current page based on scroll position
+        const currentPage = Math.max(1, Math.ceil((scrollTop + 100) / PAGE_HEIGHT));
+        if (currentPageNum) currentPageNum.textContent = currentPage;
+
+        // Find current section based on scroll position
+        let currentSection = null;
+        for (let i = sections.length - 1; i >= 0; i--) {
+            const section = sections[i];
+            if (section.element) {
+                const rect = section.element.getBoundingClientRect();
+                const containerRect = editorContainer.getBoundingClientRect();
+                if (rect.top <= containerRect.top + 100) {
+                    currentSection = section;
+                    break;
+                }
+            }
+        }
+
+        if (currentSection && currentSection.id !== activeSection) {
+            updateActiveSection(currentSection.id);
+        } else if (!currentSection && sections.length > 0) {
+            // At the top, before first section
+            if (currentSectionName) currentSectionName.textContent = 'Top';
+            document.querySelectorAll('.section-item').forEach(item => item.classList.remove('active'));
+            activeSection = null;
+        }
+    }
+
+    // Debounce scroll handler
+    let scrollTimeout;
+    editorContainer?.addEventListener('scroll', function() {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(handleScroll, 50);
+    });
+
+    // Add section button - inserts a heading at cursor
+    addSectionBtn?.addEventListener('click', function() {
+        const range = quill.getSelection();
+        if (range) {
+            quill.insertText(range.index, '\n');
+            quill.formatLine(range.index + 1, 1, 'header', 2);
+            quill.setSelection(range.index + 1, 0);
+            quill.focus();
+
+            // Re-extract sections after a short delay
+            setTimeout(extractSections, 100);
+        }
+    });
+
+    // Re-extract sections when content changes
+    quill.on('text-change', function() {
+        clearTimeout(window.sectionExtractTimeout);
+        window.sectionExtractTimeout = setTimeout(extractSections, 500);
+    });
+
+    // Initial extraction after content loads
+    setTimeout(() => {
+        extractSections();
+        handleScroll();
+    }, 200);
 
     // ==================== SAVE FUNCTIONALITY ====================
 
@@ -873,7 +1327,331 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.comment-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
     });
+
+    // ==================== COLLABORATOR MANAGEMENT ====================
+
+    // Update collaborator role
+    document.querySelectorAll('.collaborator-role-select').forEach(select => {
+        select.addEventListener('change', async function() {
+            const userId = this.dataset.userId;
+            const role = this.value;
+
+            try {
+                const response = await fetch(`/api/documents/${documentUuid}/collaborators/${userId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ role: role })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.error || 'Failed to update role');
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Failed to update role:', error);
+                alert('Failed to update role');
+                location.reload();
+            }
+        });
+    });
+
+    // Remove collaborator
+    document.querySelectorAll('.remove-collaborator-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const userId = this.dataset.userId;
+            const row = this.closest('.collaborator-row');
+            const userName = row.querySelector('.text-sm.font-medium').textContent;
+
+            if (!confirm(`Remove ${userName} from this document?`)) return;
+
+            try {
+                const response = await fetch(`/api/documents/${documentUuid}/collaborators/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    row.remove();
+                    // Update avatar group
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to remove collaborator');
+                }
+            } catch (error) {
+                console.error('Failed to remove collaborator:', error);
+                alert('Failed to remove collaborator');
+            }
+        });
+    });
+
+    // Collaborators modal
+    const collaboratorsBtn = document.getElementById('collaborators-btn');
+    const collaboratorsModal = document.getElementById('collaborators-modal');
+    const inviteModal = document.getElementById('invite-modal');
+
+    window.openCollaboratorsModal = function() {
+        collaboratorsModal?.classList.add('open');
+    };
+
+    window.closeCollaboratorsModal = function() {
+        collaboratorsModal?.classList.remove('open');
+    };
+
+    window.openInviteModal = function() {
+        closeCollaboratorsModal();
+        inviteModal?.classList.add('open');
+    };
+
+    window.closeInviteModal = function() {
+        inviteModal?.classList.remove('open');
+    };
+
+    collaboratorsBtn?.addEventListener('click', openCollaboratorsModal);
+
+    // Invite button click
+    document.getElementById('invite-collaborator-btn')?.addEventListener('click', openInviteModal);
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCollaboratorsModal();
+            closeInviteModal();
+        }
+    });
+
+    // Invite form submission
+    const inviteForm = document.getElementById('invite-collaborator-form');
+    inviteForm?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const userId = document.getElementById('invite-user-select').value;
+        const role = document.getElementById('invite-role-select').value;
+
+        if (!userId) {
+            alert('Please select a team member');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/documents/${documentUuid}/collaborators`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, role: role })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeInviteModal();
+                location.reload();
+            } else {
+                alert(result.error || 'Failed to invite collaborator');
+            }
+        } catch (error) {
+            console.error('Failed to invite collaborator:', error);
+            alert('Failed to invite collaborator');
+        }
+    });
 });
 </script>
 @endpush
+
+<!-- Collaborators Popup Modal -->
+<div id="collaborators-modal" class="custom-modal">
+    <div class="custom-modal-backdrop" onclick="closeCollaboratorsModal()"></div>
+    <div class="custom-modal-box bg-base-100 rounded-xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-4 border-b border-base-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--users] size-5 text-primary"></span>
+                    Collaborators
+                </h3>
+                <div class="flex items-center gap-2">
+                    @if($document->canInvite(auth()->user()))
+                        <button type="button" id="invite-collaborator-btn" class="btn btn-primary btn-sm">
+                            <span class="icon-[tabler--user-plus] size-4"></span>
+                            Invite
+                        </button>
+                    @endif
+                    <button type="button" class="btn btn-ghost btn-sm btn-circle" onclick="closeCollaboratorsModal()">
+                        <span class="icon-[tabler--x] size-5"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="max-h-80 overflow-y-auto">
+            <!-- Owner -->
+            <div class="flex items-center justify-between p-4 hover:bg-base-200/50 border-b border-base-200">
+                <div class="flex items-center gap-3">
+                    <div class="avatar">
+                        <div class="w-10 rounded-full">
+                            <img src="{{ $document->creator->avatar_url }}" alt="{{ $document->creator->name }}" />
+                        </div>
+                    </div>
+                    <div>
+                        <p class="font-medium">{{ $document->creator->name }}</p>
+                        <p class="text-sm text-base-content/60">{{ $document->creator->email }}</p>
+                    </div>
+                </div>
+                <span class="badge badge-primary">Owner</span>
+            </div>
+            <!-- Collaborators -->
+            @foreach($document->collaborators as $collaborator)
+                <div class="flex items-center justify-between p-4 hover:bg-base-200/50 border-b border-base-200 last:border-b-0 collaborator-row" data-user-id="{{ $collaborator->id }}">
+                    <div class="flex items-center gap-3">
+                        <div class="avatar">
+                            <div class="w-10 rounded-full">
+                                <img src="{{ $collaborator->avatar_url }}" alt="{{ $collaborator->name }}" />
+                            </div>
+                        </div>
+                        <div>
+                            <p class="font-medium">{{ $collaborator->name }}</p>
+                            <p class="text-sm text-base-content/60">{{ $collaborator->email }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        @if($document->canInvite(auth()->user()))
+                            <select class="select select-bordered select-sm collaborator-role-select" data-user-id="{{ $collaborator->id }}">
+                                <option value="editor" {{ $collaborator->pivot->role === 'editor' ? 'selected' : '' }}>Editor</option>
+                                <option value="reader" {{ $collaborator->pivot->role === 'reader' ? 'selected' : '' }}>Reader</option>
+                            </select>
+                            <button type="button" class="btn btn-ghost btn-sm btn-circle text-error remove-collaborator-btn" data-user-id="{{ $collaborator->id }}" title="Remove">
+                                <span class="icon-[tabler--x] size-5"></span>
+                            </button>
+                        @else
+                            <span class="badge badge-ghost">{{ ucfirst($collaborator->pivot->role) }}</span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+            @if($document->collaborators->isEmpty())
+                <div class="p-8 text-center text-base-content/50">
+                    <span class="icon-[tabler--users-group] size-12 block mx-auto mb-2 opacity-50"></span>
+                    <p class="font-medium">No collaborators yet</p>
+                    <p class="text-sm">Invite team members to collaborate</p>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<!-- Invite Collaborator Popup Modal -->
+@if($document->canInvite(auth()->user()))
+<div id="invite-modal" class="custom-modal">
+    <div class="custom-modal-backdrop" onclick="closeInviteModal()"></div>
+    <div class="custom-modal-box bg-base-100 rounded-xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-4 border-b border-base-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--user-plus] size-5 text-primary"></span>
+                    Invite Collaborator
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm btn-circle" onclick="closeInviteModal()">
+                    <span class="icon-[tabler--x] size-5"></span>
+                </button>
+            </div>
+        </div>
+        <form id="invite-collaborator-form" class="p-4 space-y-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Team Member</span>
+                </label>
+                <select id="invite-user-select" class="select select-bordered w-full" required>
+                    <option value="">Select a team member...</option>
+                    @php
+                        $currentCollaboratorIds = $document->collaborators->pluck('id')->toArray();
+                        $availableMembers = \App\Models\User::where('company_id', auth()->user()->company_id)
+                            ->where('id', '!=', auth()->id())
+                            ->where('id', '!=', $document->created_by)
+                            ->whereNotIn('id', $currentCollaboratorIds)
+                            ->orderBy('name')
+                            ->get();
+                    @endphp
+                    @foreach($availableMembers as $member)
+                        <option value="{{ $member->id }}">{{ $member->name }} ({{ $member->email }})</option>
+                    @endforeach
+                </select>
+                @if($availableMembers->isEmpty())
+                    <p class="text-sm text-base-content/60 mt-2">All team members have already been added.</p>
+                @endif
+            </div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Role</span>
+                </label>
+                <select id="invite-role-select" class="select select-bordered w-full" required>
+                    <option value="reader">Reader - Can view and comment</option>
+                    <option value="editor">Editor - Can edit the document</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" class="btn btn-ghost" onclick="closeInviteModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" {{ $availableMembers->isEmpty() ? 'disabled' : '' }}>
+                    <span class="icon-[tabler--user-plus] size-4"></span>
+                    Invite
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+<style>
+.custom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+.custom-modal.open {
+    display: flex !important;
+}
+.custom-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+.custom-modal-box {
+    position: relative;
+    z-index: 2;
+    animation: modalSlideIn 0.2s ease-out;
+}
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+</style>
+
 @endsection
