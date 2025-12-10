@@ -105,7 +105,8 @@ class DashboardController extends Controller
             ->map(function ($activity) {
                 return [
                     'user' => $activity->user?->name ?? 'Unknown',
-                    'initials' => $activity->user ? strtoupper(substr($activity->user->name, 0, 1)) : '?',
+                    'initials' => $activity->user?->initials ?? '?',
+                    'avatar_url' => $activity->user?->avatar_url,
                     'action' => $activity->getFormattedDescription(),
                     'time' => $activity->created_at->diffForHumans(),
                 ];

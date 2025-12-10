@@ -293,9 +293,9 @@
                                 <div class="space-y-3">
                                     @foreach($activities as $activity)
                                         <div class="flex items-start gap-3">
-                                            <div class="avatar placeholder">
-                                                <div class="bg-neutral text-neutral-content rounded-full w-8">
-                                                    <span class="text-xs">{{ $activity['initials'] }}</span>
+                                            <div class="avatar">
+                                                <div class="w-8 h-8 rounded-full">
+                                                    <img src="{{ $activity['avatar_url'] }}" alt="{{ $activity['user'] }}" />
                                                 </div>
                                             </div>
                                             <div>
