@@ -38,6 +38,7 @@ class StoreTaskRequest extends FormRequest
             'parent_task_id' => ['nullable', 'exists:tasks,id'],
             'parent_link_notes' => ['nullable', 'string', 'max:255'],
             'estimated_time' => ['nullable', 'integer', 'min:0'],
+            'milestone_id' => ['nullable', 'exists:milestones,id'],
             'tags' => ['nullable', 'string'], // JSON from Tagify
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['exists:tags,id'],

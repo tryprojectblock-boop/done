@@ -108,13 +108,20 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <form action="{{ route('marketplace.two-factor.disable') }}" method="POST" onsubmit="return confirm('Are you sure you want to disable Two-Factor Authentication? This will reduce security for your organization.')">
-                            @csrf
-                            <button type="submit" class="btn btn-error btn-outline">
-                                <span class="icon-[tabler--shield-off] size-5"></span>
-                                Disable 2FA
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-error btn-outline"
+                            data-confirm
+                            data-confirm-action="{{ route('marketplace.two-factor.disable') }}"
+                            data-confirm-title="Disable Two-Factor Authentication"
+                            data-confirm-content="<p class='text-base-content/70'>Are you sure you want to disable Two-Factor Authentication?</p><p class='text-base-content/70 mt-2'>This will reduce security for your organization.</p>"
+                            data-confirm-button="Disable 2FA"
+                            data-confirm-icon="tabler--shield-off"
+                            data-confirm-class="btn-error"
+                            data-confirm-icon-class="text-error"
+                            data-confirm-title-icon="tabler--alert-triangle"
+                            data-confirm-method="POST">
+                            <span class="icon-[tabler--shield-off] size-5"></span>
+                            Disable 2FA
+                        </button>
                     </div>
                 @else
                     <!-- Disabled State -->

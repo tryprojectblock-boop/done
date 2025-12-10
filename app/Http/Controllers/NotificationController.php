@@ -123,6 +123,10 @@ class NotificationController extends Controller
             Notification::TYPE_TASK_STATUS => $data['task_url'] ?? null,
             Notification::TYPE_CHANNEL_MEMBER_ADDED => $data['channel_url'] ?? null,
             Notification::TYPE_CHANNEL_REPLY_MENTION => $data['thread_url'] ?? null,
+            Notification::TYPE_MILESTONE_ASSIGNED,
+            Notification::TYPE_MILESTONE_DUE_SOON,
+            Notification::TYPE_MILESTONE_COMPLETED,
+            Notification::TYPE_MILESTONE_COMMENT => $data['milestone_url'] ?? null,
             default => null,
         };
     }

@@ -152,6 +152,7 @@ class TaskService implements TaskServiceInterface
                 'parent_task_id' => $data['parent_task_id'] ?? null,
                 'parent_link_notes' => $data['parent_link_notes'] ?? null,
                 'estimated_time' => $data['estimated_time'] ?? null,
+                'milestone_id' => $data['milestone_id'] ?? null,
             ]);
 
             // Handle tags from tagify (JSON format) or tag_ids array
@@ -262,6 +263,11 @@ class TaskService implements TaskServiceInterface
 
         TaskActivity::log($task, $user, ActivityType::CLOSED);
 
+        // Recalculate milestone progress if task is linked to a milestone
+        if ($task->milestone_id) {
+            $task->milestone?->recalculateProgress();
+        }
+
         return $task->fresh();
     }
 
@@ -273,6 +279,11 @@ class TaskService implements TaskServiceInterface
         ]);
 
         TaskActivity::log($task, $user, ActivityType::REOPENED);
+
+        // Recalculate milestone progress if task is linked to a milestone
+        if ($task->milestone_id) {
+            $task->milestone?->recalculateProgress();
+        }
 
         return $task->fresh();
     }

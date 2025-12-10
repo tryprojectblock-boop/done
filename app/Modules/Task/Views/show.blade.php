@@ -277,77 +277,116 @@
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Task Info Card -->
-                <div class="card bg-base-100 shadow">
+                <div class="card bg-base-100 shadow group">
                     <div class="card-body">
                         <h2 class="card-title text-lg">Details</h2>
 
-                        <div class="space-y-4">
+                        <div class="divide-y divide-base-200">
                             <!-- Status -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Status</label>
+                            <div class="py-3 first:pt-0">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Status</label>
+                                    @if($task->canChangeStatus($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('status')" title="Edit status">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="status-display" class="mt-2">
+                                    @if($task->status)
+                                        <span class="badge" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
+                                            {{ $task->status->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-base-content/40 text-sm">Not set</span>
+                                    @endif
+                                </div>
+                                <!-- Edit Mode -->
                                 @if($task->canChangeStatus($user) && !$task->isClosed())
-                                    <form action="{{ route('tasks.update-status', $task) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <select name="status_id" class="select select-bordered select-sm w-full" onchange="this.form.submit()">
-                                            <option value="">No Status</option>
-                                            @foreach($statuses as $status)
-                                                <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
-                                                    {{ $status->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </form>
-                                @else
-                                    <div class="mt-1">
-                                        @if($task->status)
-                                            <span class="badge" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
-                                                {{ $task->status->name }}
-                                            </span>
-                                        @else
-                                            <span class="text-base-content/40">Not set</span>
-                                        @endif
+                                <form id="status-edit" action="{{ route('tasks.update-status', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="status_id" class="select select-bordered select-sm w-full">
+                                        <option value="">No Status</option>
+                                        @foreach($statuses as $status)
+                                            <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
+                                                {{ $status->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Cancel</button>
                                     </div>
+                                </form>
                                 @endif
                             </div>
+
                             <!-- Assignee -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Assignee</label>
-                                @if($task->canEdit($user) && !$task->isClosed())
-                                    <form action="{{ route('tasks.update-assignee', $task) }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
-                                        <select name="assignee_id" class="select select-bordered select-sm w-full" onchange="this.form.submit()">
-                                            <option value="">Unassigned</option>
-                                            @foreach($users as $u)
-                                                <option value="{{ $u->id }}" {{ $task->assignee_id == $u->id ? 'selected' : '' }}>
-                                                    {{ $u->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </form>
-                                @else
-                                    <div class="mt-1">
-                                        @if($task->assignee)
-                                            <div class="flex items-center gap-2">
-                                                <div class="avatar">
-                                                    <div class="w-6 rounded-full">
-                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
-                                                    </div>
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Assignee</label>
+                                    @if($task->canEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('assignee')" title="Edit assignee">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="assignee-display" class="mt-2">
+                                    @if($task->assignee)
+                                        <div class="flex items-center gap-2">
+                                            <div class="avatar">
+                                                <div class="w-6 rounded-full">
+                                                    <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
                                                 </div>
-                                                <span>{{ $task->assignee->name }}</span>
                                             </div>
-                                        @else
-                                            <span class="text-base-content/40">Unassigned</span>
-                                        @endif
+                                            <span class="text-sm">{{ $task->assignee->name }}</span>
+                                        </div>
+                                    @else
+                                        <span class="text-base-content/40 text-sm">Unassigned</span>
+                                    @endif
+                                </div>
+                                <!-- Edit Mode -->
+                                @if($task->canEdit($user) && !$task->isClosed())
+                                <form id="assignee-edit" action="{{ route('tasks.update-assignee', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="assignee_id" class="select select-bordered select-sm w-full">
+                                        <option value="">Unassigned</option>
+                                        @foreach($users as $u)
+                                            <option value="{{ $u->id }}" {{ $task->assignee_id == $u->id ? 'selected' : '' }}>
+                                                {{ $u->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('assignee')">Cancel</button>
                                     </div>
+                                </form>
                                 @endif
                             </div>
 
                             <!-- Task Type(s) -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Type</label>
-                                <div class="mt-1 flex flex-wrap gap-1">
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Type</label>
+                                    @if($task->canEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('type')" title="Edit type">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="type-display" class="mt-2 flex flex-wrap gap-1">
                                     @if($task->types && count($task->types) > 0)
                                         @foreach($task->types as $taskType)
                                             <span class="badge badge-sm gap-1">
@@ -356,32 +395,95 @@
                                             </span>
                                         @endforeach
                                     @else
-                                        <span class="text-base-content/40">Not set</span>
+                                        <span class="text-base-content/40 text-sm">Not set</span>
                                     @endif
                                 </div>
+                                <!-- Edit Mode -->
+                                @if($task->canEdit($user) && !$task->isClosed())
+                                <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div class="space-y-2 p-2 bg-base-200/50 rounded-lg">
+                                        @foreach(\App\Modules\Task\Enums\TaskType::cases() as $type)
+                                            <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
+                                                <input type="checkbox" name="type[]" value="{{ $type->value }}"
+                                                    class="checkbox checkbox-sm checkbox-primary"
+                                                    {{ $task->types && in_array($type, $task->types) ? 'checked' : '' }}>
+                                                <span class="icon-[{{ $type->icon() }}] size-4 text-base-content/70"></span>
+                                                <span class="text-sm">{{ $type->label() }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('type')">Cancel</button>
+                                    </div>
+                                </form>
+                                @endif
                             </div>
 
                             <!-- Priority -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Priority</label>
-                                <div class="mt-1">
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Priority</label>
+                                    @if($task->canEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('priority')" title="Edit priority">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="priority-display" class="mt-2">
                                     @if($task->priority)
-                                        <span class="flex items-center gap-1" style="color: {{ $task->priority->color() }}">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm" style="background-color: {{ $task->priority->color() }}15; color: {{ $task->priority->color() }}">
                                             <span class="icon-[{{ $task->priority->icon() }}] size-4"></span>
                                             {{ $task->priority->label() }}
                                         </span>
                                     @else
-                                        <span class="text-base-content/40">Not set</span>
+                                        <span class="text-base-content/40 text-sm">Not set</span>
                                     @endif
                                 </div>
+                                <!-- Edit Mode -->
+                                @if($task->canEdit($user) && !$task->isClosed())
+                                <form id="priority-edit" action="{{ route('tasks.update-priority', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="priority" class="select select-bordered select-sm w-full">
+                                        <option value="">No Priority</option>
+                                        @foreach(\App\Modules\Task\Enums\TaskPriority::cases() as $priority)
+                                            <option value="{{ $priority->value }}" {{ $task->priority == $priority ? 'selected' : '' }}>
+                                                {{ $priority->label() }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('priority')">Cancel</button>
+                                    </div>
+                                </form>
+                                @endif
                             </div>
 
                             <!-- Due Date -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Due Date</label>
-                                <div class="mt-1">
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Due Date</label>
+                                    @if($task->canEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('due-date')" title="Edit due date">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="due-date-display" class="mt-2">
                                     @if($task->due_date)
-                                        <span class="flex items-center gap-1 {{ $task->isOverdue() ? 'text-error font-medium' : '' }}">
+                                        <span class="inline-flex items-center gap-1.5 {{ $task->isOverdue() ? 'text-error font-medium' : 'text-base-content' }}">
                                             <span class="icon-[tabler--calendar] size-4"></span>
                                             {{ $task->due_date->format('M d, Y') }}
                                             @if($task->isOverdue())
@@ -389,16 +491,76 @@
                                             @endif
                                         </span>
                                     @else
-                                        <span class="text-base-content/40">Not set</span>
+                                        <span class="text-base-content/40 text-sm">Not set</span>
                                     @endif
                                 </div>
+                                <!-- Edit Mode with Calendar -->
+                                @if($task->canEdit($user) && !$task->isClosed())
+                                <div id="due-date-edit" class="hidden mt-2">
+                                    <form action="{{ route('tasks.update-due-date', $task) }}" method="POST" id="due-date-form">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="due_date" id="due-date-input" value="{{ $task->due_date?->format('Y-m-d') }}">
+
+                                        <!-- Calendar Widget -->
+                                        <div class="bg-base-200/50 rounded-lg p-3">
+                                            <!-- Month/Year Header -->
+                                            <div class="flex items-center justify-between mb-3">
+                                                <button type="button" onclick="changeMonth(-1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
+                                                </button>
+                                                <span id="calendar-month-year" class="font-semibold text-sm"></span>
+                                                <button type="button" onclick="changeMonth(1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
+                                                </button>
+                                            </div>
+
+                                            <!-- Days of Week -->
+                                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                            </div>
+
+                                            <!-- Calendar Days -->
+                                            <div id="calendar-days" class="grid grid-cols-7 gap-1"></div>
+
+                                            <!-- Quick Actions -->
+                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                                <button type="button" onclick="setQuickDate('today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                                <button type="button" onclick="setQuickDate('tomorrow', event)" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
+                                                <button type="button" onclick="setQuickDate('next-week', event)" class="btn btn-soft btn-primary btn-xs">Next Week</button>
+                                                <button type="button" onclick="clearDate(event)" class="btn btn-soft btn-error btn-xs">No Due Date</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Selected Date Display -->
+                                        <div class="mt-2 text-sm text-base-content/70">
+                                            Selected: <span id="selected-date-display" class="font-medium">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}</span>
+                                        </div>
+
+                                        <div class="flex gap-2 mt-2">
+                                            <button type="submit" class="btn btn-primary btn-xs">
+                                                <span class="icon-[tabler--check] size-3.5"></span>
+                                                Save
+                                            </button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('due-date')">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                @endif
                             </div>
 
                             <!-- Workspace -->
-                            <div>
-                                <label class="text-sm text-base-content/60">Workspace</label>
-                                <div class="mt-1">
-                                    <a href="{{ route('workspace.show', $task->workspace) }}" class="link link-primary">
+                            <div class="py-3">
+                                <label class="text-sm font-medium text-base-content/70">Workspace</label>
+                                <div class="mt-2">
+                                    <a href="{{ route('workspace.show', $task->workspace) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
+                                        <span class="icon-[tabler--folder] size-4"></span>
                                         {{ $task->workspace->name }}
                                     </a>
                                 </div>
@@ -406,23 +568,27 @@
 
                             <!-- Parent Task -->
                             @if($task->parentTask)
-                                <div>
-                                    <label class="text-sm text-base-content/60">Parent Task</label>
-                                    <div class="mt-1">
-                                        <a href="{{ route('tasks.show', $task->parentTask) }}" class="link link-primary flex items-center gap-1">
-                                            <span class="font-mono text-sm">{{ $task->parentTask->task_number }}</span>
-                                            {{ Str::limit($task->parentTask->title, 25) }}
-                                        </a>
-                                    </div>
+                            <div class="py-3">
+                                <label class="text-sm font-medium text-base-content/70">Parent Task</label>
+                                <div class="mt-2">
+                                    <a href="{{ route('tasks.show', $task->parentTask) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
+                                        <span class="icon-[tabler--subtask] size-4"></span>
+                                        <span class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded">{{ $task->parentTask->task_number }}</span>
+                                        <span class="text-sm">{{ Str::limit($task->parentTask->title, 20) }}</span>
+                                    </a>
                                 </div>
+                            </div>
                             @endif
 
                             <!-- Estimated Time -->
                             @if($task->estimated_time)
-                                <div>
-                                    <label class="text-sm text-base-content/60">Estimated Time</label>
-                                    <div class="mt-1">{{ floor($task->estimated_time / 60) }}h {{ $task->estimated_time % 60 }}m</div>
+                            <div class="py-3 last:pb-0">
+                                <label class="text-sm font-medium text-base-content/70">Estimated Time</label>
+                                <div class="mt-2 inline-flex items-center gap-1.5 text-base-content">
+                                    <span class="icon-[tabler--clock] size-4 text-base-content/60"></span>
+                                    <span class="text-sm">{{ floor($task->estimated_time / 60) }}h {{ $task->estimated_time % 60 }}m</span>
                                 </div>
+                            </div>
                             @endif
                         </div>
                     </div>
@@ -512,4 +678,224 @@
     </div>
 </div>
 
+@push('scripts')
+<style>
+    /* Edit button - hidden by default, show on hover */
+    .edit-btn {
+        opacity: 0 !important;
+        transition: all 0.2s ease;
+    }
+    .group:hover .edit-btn {
+        opacity: 0.7 !important;
+    }
+    .group:hover .edit-btn:hover {
+        opacity: 1 !important;
+        transform: scale(1.1);
+    }
+
+    /* Calendar styles */
+    #calendar-days .btn {
+        min-height: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+    #calendar-days .btn.calendar-day {
+        background-color: oklch(var(--b3));
+        color: oklch(var(--bc));
+        border: none;
+    }
+    #calendar-days .btn.calendar-day:hover {
+        background-color: oklch(var(--p) / 0.2);
+    }
+    #calendar-days .btn.calendar-day.is-past {
+        color: oklch(var(--bc) / 0.4);
+        background-color: oklch(var(--b2));
+    }
+    #calendar-days .btn.calendar-day.is-today {
+        border: 2px solid oklch(var(--p));
+        background-color: oklch(var(--p) / 0.1);
+    }
+    #calendar-days .btn.calendar-day.is-selected {
+        background-color: oklch(var(--p));
+        color: oklch(var(--pc));
+        font-weight: 700;
+        box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+    }
+</style>
+<script>
+function toggleEdit(field) {
+    const displayEl = document.getElementById(field + '-display');
+    const editEl = document.getElementById(field + '-edit');
+
+    if (displayEl && editEl) {
+        displayEl.classList.toggle('hidden');
+        editEl.classList.toggle('hidden');
+
+        // Focus the first input/select in the edit form
+        if (!editEl.classList.contains('hidden')) {
+            const input = editEl.querySelector('input, select');
+            if (input) {
+                setTimeout(() => input.focus(), 100);
+            }
+        }
+    }
+}
+
+// Close edit mode when clicking outside
+document.addEventListener('click', function(e) {
+    // Don't close if clicking inside card-body, edit button, or calendar elements
+    if (!e.target.closest('.card-body') && !e.target.closest('.edit-btn') && !e.target.closest('#calendar-days') && !e.target.closest('#due-date-edit')) {
+        document.querySelectorAll('[id$="-edit"]:not(.hidden)').forEach(form => {
+            const field = form.id.replace('-edit', '');
+            const display = document.getElementById(field + '-display');
+            if (display) {
+                form.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        });
+    }
+});
+
+// Close edit mode on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[id$="-edit"]:not(.hidden)').forEach(form => {
+            const field = form.id.replace('-edit', '');
+            const display = document.getElementById(field + '-display');
+            if (display) {
+                form.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        });
+    }
+});
+
+// Calendar functionality for due date
+let currentDate = new Date();
+let selectedDate = document.getElementById('due-date-input')?.value ? new Date(document.getElementById('due-date-input').value + 'T00:00:00') : null;
+
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function renderCalendar() {
+    const calendarDays = document.getElementById('calendar-days');
+    const monthYearEl = document.getElementById('calendar-month-year');
+
+    if (!calendarDays || !monthYearEl) return;
+
+    // Set header
+    monthYearEl.textContent = months[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
+
+    // Get first day of month and number of days
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+
+    // Get today for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build calendar HTML
+    let html = '';
+
+    // Empty cells for days before first day of month
+    for (let i = 0; i < startDay; i++) {
+        html += '<div class="p-1"></div>';
+    }
+
+    // Days of the month
+    for (let day = 1; day <= totalDays; day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const dateStr = formatDate(date);
+        const isToday = date.getTime() === today.getTime();
+        const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
+        const isPast = date < today;
+
+        let classes = 'btn btn-xs w-full aspect-square calendar-day';
+
+        if (isSelected) {
+            classes += ' is-selected';
+        } else if (isToday) {
+            classes += ' is-today';
+        } else if (isPast) {
+            classes += ' is-past';
+        }
+
+        html += `<button type="button" onclick="selectDate('${dateStr}', event)" class="${classes}">${day}</button>`;
+    }
+
+    calendarDays.innerHTML = html;
+}
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatDisplayDate(date) {
+    return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+}
+
+function selectDate(dateStr, event) {
+    if (event) event.stopPropagation();
+    selectedDate = new Date(dateStr + 'T00:00:00');
+    document.getElementById('due-date-input').value = dateStr;
+    document.getElementById('selected-date-display').textContent = formatDisplayDate(selectedDate);
+    renderCalendar();
+}
+
+function changeMonth(delta) {
+    currentDate.setMonth(currentDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function setQuickDate(type, event) {
+    if (event) event.stopPropagation();
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+
+    switch(type) {
+        case 'today':
+            break;
+        case 'tomorrow':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'next-week':
+            date.setDate(date.getDate() + 7);
+            break;
+    }
+
+    currentDate = new Date(date);
+    selectDate(formatDate(date), event);
+}
+
+function clearDate(event) {
+    if (event) event.stopPropagation();
+    selectedDate = null;
+    document.getElementById('due-date-input').value = '';
+    document.getElementById('selected-date-display').textContent = 'No Due Date';
+    renderCalendar();
+}
+
+// Initialize calendar when edit mode opens
+const originalToggleEdit = toggleEdit;
+toggleEdit = function(field) {
+    originalToggleEdit(field);
+    if (field === 'due-date') {
+        const editEl = document.getElementById('due-date-edit');
+        if (editEl && !editEl.classList.contains('hidden')) {
+            // Reset to current month or selected date's month
+            if (selectedDate) {
+                currentDate = new Date(selectedDate);
+            } else {
+                currentDate = new Date();
+            }
+            renderCalendar();
+        }
+    }
+};
+</script>
+@endpush
 @endsection

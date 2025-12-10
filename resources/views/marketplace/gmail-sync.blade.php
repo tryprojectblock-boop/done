@@ -138,13 +138,20 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <form action="{{ route('marketplace.gmail-sync.disable') }}" method="POST" onsubmit="return confirm('Are you sure you want to disable Gmail Calendar Sync? This will disconnect all users from Google Calendar.')">
-                            @csrf
-                            <button type="submit" class="btn btn-error btn-outline">
-                                <span class="icon-[tabler--unlink] size-5"></span>
-                                Disable Sync
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-error btn-outline"
+                            data-confirm
+                            data-confirm-action="{{ route('marketplace.gmail-sync.disable') }}"
+                            data-confirm-title="Disable Gmail Calendar Sync"
+                            data-confirm-content="<p class='text-base-content/70'>Are you sure you want to disable Gmail Calendar Sync?</p><p class='text-base-content/70 mt-2'>This will disconnect all users from Google Calendar.</p>"
+                            data-confirm-button="Disable Sync"
+                            data-confirm-icon="tabler--unlink"
+                            data-confirm-class="btn-error"
+                            data-confirm-icon-class="text-error"
+                            data-confirm-title-icon="tabler--alert-triangle"
+                            data-confirm-method="POST">
+                            <span class="icon-[tabler--unlink] size-5"></span>
+                            Disable Sync
+                        </button>
                     </div>
                 @else
                     <!-- Disabled State -->

@@ -266,4 +266,28 @@ class Company extends BaseModel
     {
         return $this->plan && $this->plan->storage_limit_gb === 0;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Module Feature Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Check if the milestones module is enabled for this company
+     */
+    public function isMilestonesEnabled(): bool
+    {
+        $settings = $this->settings ?? [];
+        return $settings['milestones_enabled'] ?? true; // Enabled by default
+    }
+
+    /**
+     * Check if a specific module is enabled
+     */
+    public function isModuleEnabled(string $module): bool
+    {
+        $settings = $this->settings ?? [];
+        return $settings["{$module}_enabled"] ?? true;
+    }
 }

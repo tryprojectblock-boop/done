@@ -82,12 +82,21 @@
                     <span class="badge badge-ghost badge-xs ml-2">{{ $discussions->count() }}</span>
                 @endif
             </a>
-            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'milestones']) }}"
+            @php
+                $milestonesEnabled = auth()->user()->company->isMilestonesEnabled();
+                $hasMilestones = $workspace->milestones()->exists();
+                $showMilestonesTab = $milestonesEnabled || $hasMilestones;
+            @endphp
+            @if($showMilestonesTab)
+            <a href="{{ route('milestones.index', $workspace->uuid) }}"
                class="tab tab-lg {{ request('tab') === 'milestones' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--flag] size-5 mr-2"></span>
                 Milestones
-                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+                @if(!$milestonesEnabled)
+                    <span class="badge badge-ghost badge-xs ml-2">Disabled</span>
+                @endif
             </a>
+            @endif
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'files']) }}"
                class="tab tab-lg {{ request('tab') === 'files' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--files] size-5 mr-2"></span>

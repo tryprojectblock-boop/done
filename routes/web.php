@@ -18,6 +18,8 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\MilestoneController;
+use App\Http\Controllers\Api\MilestoneApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -96,6 +98,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/marketplace/gmail-sync', [MarketplaceController::class, 'gmailSync'])->name('marketplace.gmail-sync');
     Route::post('/marketplace/gmail-sync/enable', [MarketplaceController::class, 'enableGmailSync'])->name('marketplace.gmail-sync.enable');
     Route::post('/marketplace/gmail-sync/disable', [MarketplaceController::class, 'disableGmailSync'])->name('marketplace.gmail-sync.disable');
+    Route::get('/marketplace/milestones', [MarketplaceController::class, 'milestones'])->name('marketplace.milestones');
+    Route::post('/marketplace/milestones/enable', [MarketplaceController::class, 'enableMilestones'])->name('marketplace.milestones.enable');
+    Route::post('/marketplace/milestones/disable', [MarketplaceController::class, 'disableMilestones'])->name('marketplace.milestones.disable');
 
     // Google Calendar OAuth routes
     Route::get('/auth/google/connect', [GoogleCalendarController::class, 'connect'])->name('google.connect');
@@ -192,6 +197,16 @@ Route::middleware(['auth'])->get('/api/mentions/search', [MentionController::cla
 
 /*
 |--------------------------------------------------------------------------
+| Milestone API Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('api/workspaces/{workspace}')->group(function () {
+    Route::get('/milestones', [MilestoneApiController::class, 'index']);
+    Route::post('/milestones', [MilestoneApiController::class, 'store']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Notification Routes
 |--------------------------------------------------------------------------
 */
@@ -219,5 +234,27 @@ Route::middleware(['auth'])->prefix('workflows')->name('workflows.')->group(func
     Route::post('/{workflow}/duplicate', [WorkflowController::class, 'duplicate'])->name('duplicate');
     Route::post('/{workflow}/archive', [WorkflowController::class, 'archive'])->name('archive');
     Route::post('/{workflow}/restore', [WorkflowController::class, 'restore'])->name('restore');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Milestone Routes (Workspace-scoped)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('workspaces/{workspace:uuid}/milestones')->name('milestones.')->group(function () {
+    Route::get('/', [MilestoneController::class, 'index'])->name('index');
+    Route::get('/create', [MilestoneController::class, 'create'])->name('create');
+    Route::post('/', [MilestoneController::class, 'store'])->name('store');
+    Route::get('/{milestone:uuid}', [MilestoneController::class, 'show'])->name('show');
+    Route::get('/{milestone:uuid}/edit', [MilestoneController::class, 'edit'])->name('edit');
+    Route::put('/{milestone:uuid}', [MilestoneController::class, 'update'])->name('update');
+    Route::delete('/{milestone:uuid}', [MilestoneController::class, 'destroy'])->name('destroy');
+    Route::post('/{milestone:uuid}/status', [MilestoneController::class, 'updateStatus'])->name('updateStatus');
+    Route::post('/{milestone:uuid}/tasks', [MilestoneController::class, 'addTask'])->name('addTask');
+    Route::delete('/{milestone:uuid}/tasks/{task:uuid}', [MilestoneController::class, 'removeTask'])->name('removeTask');
+    Route::post('/{milestone:uuid}/comments', [MilestoneController::class, 'addComment'])->name('addComment');
+    Route::delete('/{milestone:uuid}/comments/{comment}', [MilestoneController::class, 'deleteComment'])->name('deleteComment');
+    Route::post('/{milestone:uuid}/attachments', [MilestoneController::class, 'uploadAttachment'])->name('uploadAttachment');
+    Route::delete('/{milestone:uuid}/attachments/{attachment}', [MilestoneController::class, 'deleteAttachment'])->name('deleteAttachment');
 });
 

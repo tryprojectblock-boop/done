@@ -110,6 +110,11 @@ class Workspace extends BaseModel
         return $this->hasMany(Discussion::class);
     }
 
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(\App\Models\Milestone::class);
+    }
+
     /**
      * Check if a user has guest access to this workspace.
      */

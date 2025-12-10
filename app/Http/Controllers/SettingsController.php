@@ -26,10 +26,13 @@ class SettingsController extends Controller
         // Get marketplace data if admin
         $twoFactorStatus = null;
         $gmailSyncStatus = null;
+        $defaultWorkspace = null;
 
         if ($user->isAdminOrHigher()) {
             $twoFactorStatus = $this->getTwoFactorStatus($company);
             $gmailSyncStatus = $this->getGmailSyncStatus($company);
+            // Get first workspace for module links
+            $defaultWorkspace = Workspace::first();
         }
 
         return view('settings.index', [
@@ -38,6 +41,7 @@ class SettingsController extends Controller
             'tab' => $tab,
             'twoFactorStatus' => $twoFactorStatus,
             'gmailSyncStatus' => $gmailSyncStatus,
+            'defaultWorkspace' => $defaultWorkspace,
         ]);
     }
 

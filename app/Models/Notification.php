@@ -44,6 +44,10 @@ class Notification extends Model
     public const TYPE_CHANNEL_JOIN_REQUEST = 'channel_join_request';
     public const TYPE_CHANNEL_JOIN_REJECTED = 'channel_join_rejected';
     public const TYPE_DOCUMENT_MENTION = 'document_mention';
+    public const TYPE_MILESTONE_ASSIGNED = 'milestone_assigned';
+    public const TYPE_MILESTONE_DUE_SOON = 'milestone_due_soon';
+    public const TYPE_MILESTONE_COMPLETED = 'milestone_completed';
+    public const TYPE_MILESTONE_COMMENT = 'milestone_comment';
 
     public function user(): BelongsTo
     {
@@ -99,6 +103,10 @@ class Notification extends Model
             self::TYPE_CHANNEL_JOIN_REQUEST => 'icon-[tabler--user-question]',
             self::TYPE_CHANNEL_JOIN_REJECTED => 'icon-[tabler--user-x]',
             self::TYPE_DOCUMENT_MENTION => 'icon-[tabler--file-text]',
+            self::TYPE_MILESTONE_ASSIGNED => 'icon-[tabler--flag]',
+            self::TYPE_MILESTONE_DUE_SOON => 'icon-[tabler--clock-exclamation]',
+            self::TYPE_MILESTONE_COMPLETED => 'icon-[tabler--flag-check]',
+            self::TYPE_MILESTONE_COMMENT => 'icon-[tabler--message-2]',
             default => 'icon-[tabler--bell]',
         };
     }
@@ -115,6 +123,10 @@ class Notification extends Model
             self::TYPE_CHANNEL_JOIN_REQUEST => 'text-info',
             self::TYPE_CHANNEL_JOIN_REJECTED => 'text-error',
             self::TYPE_DOCUMENT_MENTION => 'text-primary',
+            self::TYPE_MILESTONE_ASSIGNED => 'text-purple-500',
+            self::TYPE_MILESTONE_DUE_SOON => 'text-warning',
+            self::TYPE_MILESTONE_COMPLETED => 'text-success',
+            self::TYPE_MILESTONE_COMMENT => 'text-info',
             default => 'text-base-content',
         };
     }

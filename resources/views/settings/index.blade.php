@@ -206,166 +206,313 @@
         <!-- Marketplace Panel (Admin/Owner only) -->
         @if($user->isAdminOrHigher())
         <div id="panel-marketplace" class="{{ $tab !== 'marketplace' ? 'hidden' : '' }}" role="tabpanel" aria-labelledby="tab-marketplace">
-            <!-- Security Features Section -->
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold text-base-content mb-4">Security Features</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Two-Factor Authentication Card -->
-                    <a href="{{ route('marketplace.two-factor') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--shield-lock] size-6 text-primary"></span>
+            <!-- Core Modules Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="icon-[tabler--puzzle] size-5 text-primary"></span>
+                    Core Modules
+                </h2>
+                <p class="text-sm text-base-content/60 mb-4">Enable or disable modules to customize your workspace experience</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- CRM Module -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'CRM Module',
+                        'description' => 'Manage customer relationships, contacts, and client interactions',
+                        'icon' => 'tabler--users-group',
+                        'color' => '#3b82f6',
+                        'status' => 'available',
+                        'route' => route('guests.index'),
+                    ])
+
+                    <!-- Support Inbox -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Support Inbox',
+                        'description' => 'Centralized inbox for customer support tickets and inquiries',
+                        'icon' => 'tabler--inbox',
+                        'color' => '#10b981',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Marketing Suite -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Marketing Suite',
+                        'description' => 'Email campaigns, automation, and marketing analytics',
+                        'icon' => 'tabler--speakerphone',
+                        'color' => '#f59e0b',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Landing Page / A/B Testing -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Landing Pages & A/B Testing',
+                        'description' => 'Create landing pages and run A/B tests to optimize conversions',
+                        'icon' => 'tabler--layout-dashboard',
+                        'color' => '#8b5cf6',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Reports & Analytics -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Reports & Analytics',
+                        'description' => 'Comprehensive reporting and business intelligence dashboards',
+                        'icon' => 'tabler--chart-bar',
+                        'color' => '#06b6d4',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Client Portal -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Client Portal',
+                        'description' => 'Secure portal for clients to view projects and collaborate',
+                        'icon' => 'tabler--door-enter',
+                        'color' => '#ec4899',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Billing & Invoice -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Billing & Invoice',
+                        'description' => 'Create invoices, track payments, and manage billing',
+                        'icon' => 'tabler--receipt',
+                        'color' => '#22c55e',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Service Module -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Service Module',
+                        'description' => 'Define and manage your service offerings and packages',
+                        'icon' => 'tabler--briefcase',
+                        'color' => '#6366f1',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Timesheet Management -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Timesheet Management',
+                        'description' => 'Track time spent on tasks and projects for billing',
+                        'icon' => 'tabler--clock-hour-4',
+                        'color' => '#f97316',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Milestone -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Milestones',
+                        'description' => 'Track project progress with milestones and deliverables',
+                        'icon' => 'tabler--flag',
+                        'color' => '#a855f7',
+                        'status' => 'available',
+                        'route' => route('marketplace.milestones'),
+                    ])
+
+                    <!-- Inventory -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Inventory',
+                        'description' => 'Track products, stock levels, and inventory management',
+                        'icon' => 'tabler--package',
+                        'color' => '#64748b',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Sales Onboarding -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Sales Onboarding',
+                        'description' => 'Streamline your sales process and client onboarding',
+                        'icon' => 'tabler--rocket',
+                        'color' => '#ef4444',
+                        'status' => 'coming_soon',
+                    ])
+                </div>
+            </div>
+
+            <!-- Security & Authentication Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="icon-[tabler--shield-check] size-5 text-success"></span>
+                    Security & Authentication
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Two-Factor Authentication -->
+                    <a href="{{ route('marketplace.two-factor') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
+                        <div class="card-body p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #3b82f620;">
+                                    <span class="icon-[tabler--shield-lock] size-6" style="color: #3b82f6;"></span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Two-Factor Authentication</h3>
-                                        <span class="badge badge-{{ $twoFactorStatus['status_color'] }} badge-sm">
+                                        <h3 class="font-semibold text-base-content text-sm">Two-Factor Auth</h3>
+                                        <span class="badge badge-{{ $twoFactorStatus['status_color'] }} badge-xs">
                                             {{ $twoFactorStatus['status_label'] }}
                                         </span>
                                     </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Add an extra layer of security using Google Authenticator or Microsoft Authenticator
+                                    <p class="text-xs text-base-content/60 line-clamp-2">
+                                        Extra security with Google/Microsoft Authenticator
                                     </p>
                                 </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
                             </div>
                         </div>
                     </a>
 
-                    <!-- Coming Soon: SSO Card -->
-                    <div class="card bg-base-100 shadow opacity-60 cursor-not-allowed">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--key] size-6 text-secondary"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Single Sign-On (SSO)</h3>
-                                        <span class="badge badge-ghost badge-sm">Coming Soon</span>
-                                    </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Enable SSO with SAML 2.0 or OAuth providers for seamless authentication
-                                    </p>
-                                </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Block AI -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Block AI',
+                        'description' => 'AI-powered assistance and automation for your workflows',
+                        'icon' => 'tabler--robot',
+                        'color' => '#8b5cf6',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Block Checkin -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Block Checkin',
+                        'description' => 'Daily check-ins and team status updates',
+                        'icon' => 'tabler--checklist',
+                        'color' => '#10b981',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Project Checkin -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Project Checkin',
+                        'description' => 'Regular project status updates and progress tracking',
+                        'icon' => 'tabler--clipboard-check',
+                        'color' => '#06b6d4',
+                        'status' => 'coming_soon',
+                    ])
                 </div>
             </div>
 
-            <!-- Calendar & Sync Section -->
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold text-base-content mb-4">Calendar & Sync</h2>
+            <!-- Calendar & Integrations Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="icon-[tabler--calendar] size-5 text-info"></span>
+                    Calendar & Integrations
+                </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Gmail Calendar Sync Card -->
-                    <a href="{{ route('marketplace.gmail-sync') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-error/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--brand-google] size-6 text-error"></span>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Google Calendar -->
+                    <a href="{{ route('marketplace.gmail-sync') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
+                        <div class="card-body p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #ea433520;">
+                                    <span class="icon-[tabler--brand-google] size-6" style="color: #ea4335;"></span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Gmail Calendar Sync</h3>
-                                        <span class="badge badge-{{ $gmailSyncStatus['status_color'] }} badge-sm">
+                                        <h3 class="font-semibold text-base-content text-sm">Google Calendar</h3>
+                                        <span class="badge badge-{{ $gmailSyncStatus['status_color'] }} badge-xs">
                                             {{ $gmailSyncStatus['status_label'] }}
                                         </span>
                                     </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Two-way sync between Project Block and Google Calendar
+                                    <p class="text-xs text-base-content/60 line-clamp-2">
+                                        Two-way sync with Google Calendar
                                     </p>
                                 </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
                             </div>
                         </div>
                     </a>
 
-                    <!-- Coming Soon: Outlook Calendar Sync -->
-                    <div class="card bg-base-100 shadow opacity-60 cursor-not-allowed">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--brand-windows] size-6 text-info"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Outlook Calendar Sync</h3>
-                                        <span class="badge badge-ghost badge-sm">Coming Soon</span>
-                                    </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Sync your tasks and events with Microsoft Outlook Calendar
-                                    </p>
-                                </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Outlook Calendar Sync -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Outlook Calendar',
+                        'description' => 'Sync tasks and events with Microsoft Outlook',
+                        'icon' => 'tabler--brand-windows',
+                        'color' => '#0078d4',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Booking -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Booking',
+                        'description' => 'Online scheduling and appointment booking system',
+                        'icon' => 'tabler--calendar-event',
+                        'color' => '#f59e0b',
+                        'status' => 'coming_soon',
+                    ])
                 </div>
             </div>
 
-            <!-- Integrations Section -->
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold text-base-content mb-4">Integrations</h2>
+            <!-- Storage & Cloud Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
+                    <span class="icon-[tabler--cloud] size-5 text-secondary"></span>
+                    Storage & Cloud Integrations
+                </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Coming Soon: Slack Integration -->
-                    <div class="card bg-base-100 shadow opacity-60 cursor-not-allowed">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--brand-slack] size-6 text-purple-500"></span>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Drive (Built-in) -->
+                    <a href="{{ route('drive.index') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
+                        <div class="card-body p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #3b82f620;">
+                                    <span class="icon-[tabler--cloud] size-6" style="color: #3b82f6;"></span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Slack Integration</h3>
-                                        <span class="badge badge-ghost badge-sm">Coming Soon</span>
+                                        <h3 class="font-semibold text-base-content text-sm">Drive</h3>
+                                        <span class="badge badge-success badge-xs">Active</span>
                                     </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Get notifications and updates directly in your Slack channels
+                                    <p class="text-xs text-base-content/60 line-clamp-2">
+                                        Built-in file storage and management
                                     </p>
                                 </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
-                    <!-- Coming Soon: Zapier Integration -->
-                    <div class="card bg-base-100 shadow opacity-60 cursor-not-allowed">
-                        <div class="card-body">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
-                                    <span class="icon-[tabler--plug] size-6 text-warning"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content">Zapier Integration</h3>
-                                        <span class="badge badge-ghost badge-sm">Coming Soon</span>
-                                    </div>
-                                    <p class="text-sm text-base-content/60">
-                                        Connect with thousands of apps through Zapier automation
-                                    </p>
-                                </div>
-                                <span class="icon-[tabler--chevron-right] size-5 text-base-content/40 flex-shrink-0"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Google Drive -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Google Drive',
+                        'description' => 'Connect and sync files with Google Drive',
+                        'icon' => 'tabler--brand-google-drive',
+                        'color' => '#4285f4',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- Box.com -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'Box.com',
+                        'description' => 'Enterprise content management with Box',
+                        'icon' => 'tabler--box',
+                        'color' => '#0061d5',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- iCloud Drive -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'iCloud Drive',
+                        'description' => 'Sync with Apple iCloud Drive storage',
+                        'icon' => 'tabler--brand-apple',
+                        'color' => '#555555',
+                        'status' => 'coming_soon',
+                    ])
+
+                    <!-- OneDrive -->
+                    @include('settings.partials.module-card', [
+                        'name' => 'OneDrive',
+                        'description' => 'Microsoft OneDrive cloud storage integration',
+                        'icon' => 'tabler--brand-onedrive',
+                        'color' => '#0078d4',
+                        'status' => 'coming_soon',
+                    ])
                 </div>
             </div>
 
             <!-- Info Card -->
-            <div class="card bg-base-100 shadow">
+            <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10">
                 <div class="card-body">
                     <div class="flex items-start gap-3">
-                        <span class="icon-[tabler--info-circle] size-5 text-info flex-shrink-0 mt-0.5"></span>
+                        <span class="icon-[tabler--info-circle] size-6 text-primary flex-shrink-0 mt-0.5"></span>
                         <div>
-                            <h3 class="font-semibold text-base-content mb-1">Need a custom integration?</h3>
+                            <h3 class="font-semibold text-base-content mb-1">How Modules Work</h3>
                             <p class="text-sm text-base-content/60">
-                                Contact our support team to discuss custom integrations and enterprise features for your organization.
+                                Modules can be enabled or disabled based on your plan. When a module is disabled, it will not appear in your application navigation.
+                                Contact our support team for enterprise features or custom module development.
                             </p>
                         </div>
                     </div>

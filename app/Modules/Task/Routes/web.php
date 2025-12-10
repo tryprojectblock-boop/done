@@ -18,6 +18,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
     Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
     Route::patch('tasks/{task}/assignee', [TaskController::class, 'updateAssignee'])->name('tasks.update-assignee');
+    Route::patch('tasks/{task}/priority', [TaskController::class, 'updatePriority'])->name('tasks.update-priority');
+    Route::patch('tasks/{task}/due-date', [TaskController::class, 'updateDueDate'])->name('tasks.update-due-date');
+    Route::patch('tasks/{task}/type', [TaskController::class, 'updateType'])->name('tasks.update-type');
 
     // Task comments
     Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');

@@ -44,6 +44,7 @@ class Task extends Model
         'estimated_time',
         'actual_time',
         'position',
+        'milestone_id',
         'google_event_id',
         'google_synced_at',
         'google_sync_source',
@@ -159,6 +160,11 @@ class Task extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function milestone(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Milestone::class);
     }
 
     public function status(): BelongsTo

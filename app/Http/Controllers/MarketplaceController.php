@@ -199,4 +199,90 @@ class MarketplaceController extends Controller
             'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
         ];
     }
+
+    /**
+     * Display the Milestones module detail page.
+     */
+    public function milestones(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access this feature.');
+        }
+
+        $company = $user->company;
+        $milestoneStatus = $this->getMilestoneStatus($company);
+
+        return view('marketplace.milestones', [
+            'user' => $user,
+            'company' => $company,
+            'milestoneStatus' => $milestoneStatus,
+        ]);
+    }
+
+    /**
+     * Enable Milestones module for the company.
+     */
+    public function enableMilestones(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to enable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['milestones_enabled'] = true;
+        $settings['milestones_enabled_at'] = now()->toISOString();
+        $settings['milestones_enabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.milestones')
+            ->with('success', 'Milestones module has been enabled for your organization.');
+    }
+
+    /**
+     * Disable Milestones module for the company.
+     */
+    public function disableMilestones(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to disable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['milestones_enabled'] = false;
+        $settings['milestones_disabled_at'] = now()->toISOString();
+        $settings['milestones_disabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.milestones')
+            ->with('success', 'Milestones module has been disabled for your organization.');
+    }
+
+    /**
+     * Get the Milestones module status for a company.
+     */
+    private function getMilestoneStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['milestones_enabled'] ?? true; // Enabled by default
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
 }

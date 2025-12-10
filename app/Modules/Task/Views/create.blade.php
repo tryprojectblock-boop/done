@@ -219,6 +219,24 @@
                             <p id="status-hint" class="text-xs text-base-content/50 mt-1">Select a workspace to see available statuses</p>
                         </div>
 
+                        <!-- Milestone (Dynamic based on workspace) -->
+                        @if(auth()->user()->company->isMilestonesEnabled())
+                        <div class="form-control" id="milestone-field">
+                            <label class="label" for="milestone-select">
+                                <span class="label-text font-medium">Milestone <span class="font-normal text-base-content/50">(Optional)</span></span>
+                            </label>
+                            <div class="flex gap-2">
+                                <select name="milestone_id" id="milestone-select" class="select select-bordered flex-1">
+                                    <option value="">Select workspace first</option>
+                                </select>
+                                <button type="button" id="create-milestone-btn" class="btn btn-outline btn-primary" onclick="openCreateMilestoneModal()" title="Create new milestone" disabled>
+                                    <span class="icon-[tabler--plus] size-5"></span>
+                                </button>
+                            </div>
+                            <p id="milestone-hint" class="text-xs text-base-content/50 mt-1">Select a workspace to see available milestones</p>
+                        </div>
+                        @endif
+
                         <!-- Tags (Optional) -->
                         <div class="form-control">
                             <label class="label" for="tag-input">
@@ -501,6 +519,81 @@
         </form>
     </div>
 </div>
+
+@if(auth()->user()->company->isMilestonesEnabled())
+<!-- Create Milestone Modal -->
+<div id="create-milestone-modal" class="modal">
+    <div class="modal-box max-w-lg bg-white">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
+                    <span class="icon-[tabler--flag] size-5 text-white"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Create Milestone</h3>
+                    <p class="text-xs text-base-content/50">Add a new milestone to this workspace</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCreateMilestoneModal()" class="btn btn-ghost btn-sm btn-circle">
+                <span class="icon-[tabler--x] size-5"></span>
+            </button>
+        </div>
+
+        <form id="create-milestone-form">
+            <div class="space-y-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Title <span class="text-error">*</span></span>
+                    </label>
+                    <input type="text" id="milestone-title" class="input input-bordered w-full" placeholder="Milestone title" required>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Description</span>
+                    </label>
+                    <textarea id="milestone-description" class="textarea textarea-bordered w-full" rows="3" placeholder="Describe the milestone..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Start Date</span>
+                        </label>
+                        <input type="date" id="milestone-start-date" class="input input-bordered w-full">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Due Date</span>
+                        </label>
+                        <input type="date" id="milestone-due-date" class="input input-bordered w-full">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Priority</span>
+                    </label>
+                    <select id="milestone-priority" class="select select-bordered w-full">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-action mt-6 pt-4 border-t border-base-200">
+                <button type="button" onclick="closeCreateMilestoneModal()" class="btn btn-ghost">Cancel</button>
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span class="icon-[tabler--plus] size-5"></span>
+                    Create Milestone
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="modal-backdrop" onclick="closeCreateMilestoneModal()"></div>
+</div>
+@endif
 
 <!-- Watcher Selection Modal -->
 <div id="watcher-modal" class="modal">
@@ -1123,6 +1216,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Update status dropdown
             updateStatusDropdown(statuses);
+
+            // Update milestones dropdown
+            updateMilestoneDropdown(id);
         });
     });
 
@@ -1142,6 +1238,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Reset status dropdown
         updateStatusDropdown(null);
+
+        // Reset milestone dropdown
+        updateMilestoneDropdown(null);
     };
 
     // Status dropdown
@@ -1185,12 +1284,160 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize - check for pre-selected workspace
-    const preSelectedWorkspace = '{{ old('workspace_id', $selectedWorkspace) }}';
+    // Milestone dropdown
+    const milestoneSelect = document.getElementById('milestone-select');
+    const milestoneHint = document.getElementById('milestone-hint');
+    const createMilestoneBtn = document.getElementById('create-milestone-btn');
+    let currentWorkspaceId = null;
+
+    async function updateMilestoneDropdown(workspaceId) {
+        milestoneSelect.innerHTML = '';
+        currentWorkspaceId = workspaceId;
+
+        if (!workspaceId) {
+            milestoneSelect.innerHTML = '<option value="">Select workspace first</option>';
+            milestoneHint.textContent = 'Select a workspace to see available milestones';
+            milestoneHint.classList.remove('hidden');
+            createMilestoneBtn.disabled = true;
+            return;
+        }
+
+        // Enable create button
+        createMilestoneBtn.disabled = false;
+
+        // Show loading
+        milestoneSelect.innerHTML = '<option value="">Loading milestones...</option>';
+        milestoneHint.classList.add('hidden');
+
+        try {
+            // Fetch milestones for this workspace
+            const response = await fetch(`/api/workspaces/${workspaceId}/milestones`);
+            if (!response.ok) throw new Error('Failed to fetch milestones');
+
+            const data = await response.json();
+            const milestones = data.milestones || [];
+
+            milestoneSelect.innerHTML = '<option value="">No milestone</option>';
+
+            if (milestones.length > 0) {
+                milestones.forEach(milestone => {
+                    const option = document.createElement('option');
+                    option.value = milestone.id;
+
+                    // Add status badge indicator
+                    let statusIndicator = '';
+                    switch(milestone.status) {
+                        case 'in_progress': statusIndicator = '🔄 '; break;
+                        case 'completed': statusIndicator = '✅ '; break;
+                        case 'delayed': statusIndicator = '⏰ '; break;
+                        case 'blocked': statusIndicator = '🚫 '; break;
+                        default: statusIndicator = '📋 ';
+                    }
+
+                    option.textContent = `${statusIndicator}${milestone.title} (${milestone.progress}%)`;
+                    milestoneSelect.appendChild(option);
+                });
+                milestoneHint.classList.add('hidden');
+            } else {
+                milestoneHint.textContent = 'No milestones yet. Click + to create one.';
+                milestoneHint.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error fetching milestones:', error);
+            milestoneSelect.innerHTML = '<option value="">No milestone</option>';
+            milestoneHint.textContent = 'Could not load milestones';
+            milestoneHint.classList.remove('hidden');
+        }
+    }
+
+    // Create Milestone Modal
+    const createMilestoneModal = document.getElementById('create-milestone-modal');
+    const createMilestoneForm = document.getElementById('create-milestone-form');
+
+    window.openCreateMilestoneModal = function() {
+        if (!currentWorkspaceId) {
+            alert('Please select a workspace first');
+            return;
+        }
+        createMilestoneModal.classList.add('modal-open');
+        document.body.classList.add('overflow-hidden');
+        document.getElementById('milestone-title').focus();
+    };
+
+    window.closeCreateMilestoneModal = function() {
+        createMilestoneModal.classList.remove('modal-open');
+        document.body.classList.remove('overflow-hidden');
+        createMilestoneForm.reset();
+    };
+
+    createMilestoneForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!currentWorkspaceId) return;
+
+        const formData = {
+            title: document.getElementById('milestone-title').value,
+            description: document.getElementById('milestone-description').value,
+            start_date: document.getElementById('milestone-start-date').value || null,
+            due_date: document.getElementById('milestone-due-date').value || null,
+            priority: document.getElementById('milestone-priority').value,
+        };
+
+        const submitBtn = createMilestoneForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Creating...';
+
+        try {
+            const response = await fetch(`/api/workspaces/${currentWorkspaceId}/milestones`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to create milestone');
+            }
+
+            const data = await response.json();
+
+            // Refresh milestones dropdown and select the new one
+            await updateMilestoneDropdown(currentWorkspaceId);
+            milestoneSelect.value = data.milestone.id;
+
+            closeCreateMilestoneModal();
+        } catch (error) {
+            console.error('Error creating milestone:', error);
+            alert('Failed to create milestone: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+
+    // Initialize - check for pre-selected workspace and milestone
+    const preSelectedWorkspace = '{{ old('workspace_id', $selectedWorkspace ?? '') }}';
+    const preSelectedMilestone = '{{ old('milestone_id', $selectedMilestone ?? '') }}';
+
     if (preSelectedWorkspace) {
         const preSelectedOption = document.querySelector(`.workspace-option[data-id="${preSelectedWorkspace}"]`);
         if (preSelectedOption) {
             preSelectedOption.click();
+
+            // After workspace is selected, pre-select milestone if provided
+            if (preSelectedMilestone) {
+                // Wait for milestone dropdown to load
+                setTimeout(() => {
+                    const milestoneSelect = document.getElementById('milestone-select');
+                    if (milestoneSelect) {
+                        milestoneSelect.value = preSelectedMilestone;
+                    }
+                }, 500);
+            }
         }
     }
 

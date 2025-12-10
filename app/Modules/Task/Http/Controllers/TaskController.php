@@ -92,7 +92,17 @@ class TaskController extends Controller
         $taskTypes = TaskType::cases();
         $priorities = TaskPriority::cases();
 
+        // Check for workspace by ID or UUID
         $selectedWorkspace = $request->get('workspace_id');
+        if (!$selectedWorkspace && $request->get('workspace')) {
+            // If workspace UUID is provided, find the ID
+            $workspace = Workspace::where('uuid', $request->get('workspace'))->first();
+            $selectedWorkspace = $workspace?->id;
+        }
+
+        // Check for milestone by ID
+        $selectedMilestone = $request->get('milestone');
+
         $parentTask = $request->get('parent_task_id') ? Task::find($request->get('parent_task_id')) : null;
 
         return view('task::create', compact(
@@ -102,6 +112,7 @@ class TaskController extends Controller
             'taskTypes',
             'priorities',
             'selectedWorkspace',
+            'selectedMilestone',
             'parentTask'
         ));
     }
@@ -310,5 +321,55 @@ class TaskController extends Controller
         $this->taskService->changeAssignee($task, $assigneeId ? (int) $assigneeId : null, $user);
 
         return back()->with('success', 'Assignee updated successfully.');
+    }
+
+    public function updatePriority(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to change the priority.');
+        }
+
+        $request->validate(['priority' => 'nullable|string|in:urgent,high,medium,low']);
+
+        $task->update(['priority' => $request->input('priority')]);
+
+        return back()->with('success', 'Priority updated successfully.');
+    }
+
+    public function updateDueDate(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to change the due date.');
+        }
+
+        $request->validate(['due_date' => 'nullable|date']);
+
+        $task->update(['due_date' => $request->input('due_date')]);
+
+        return back()->with('success', 'Due date updated successfully.');
+    }
+
+    public function updateType(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to change the type.');
+        }
+
+        $request->validate(['type' => 'nullable|array']);
+
+        $types = $request->input('type', []);
+        if (empty($types)) {
+            $types = ['task'];
+        }
+
+        $task->update(['type' => $types]);
+
+        return back()->with('success', 'Type updated successfully.');
     }
 }
