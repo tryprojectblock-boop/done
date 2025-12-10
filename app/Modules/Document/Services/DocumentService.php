@@ -30,6 +30,7 @@ class DocumentService implements DocumentServiceInterface
     {
         $query = Document::query()
             ->with(['workspace', 'creator', 'collaborators', 'lastEditor'])
+            ->withCount('pages')
             ->accessibleBy($user);
 
         return $this->applyFilters($query, $filters, $user)->paginate($perPage);

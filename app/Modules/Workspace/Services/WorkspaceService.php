@@ -89,6 +89,8 @@ final class WorkspaceService implements WorkspaceServiceInterface
     public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator
     {
         return Workspace::where('owner_id', $user->id)
+            ->with(['owner', 'members'])
+            ->withCount(['tasks', 'discussions'])
             ->active()
             ->latest()
             ->paginate($perPage);

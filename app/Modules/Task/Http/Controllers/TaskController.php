@@ -30,7 +30,7 @@ class TaskController extends Controller
         private readonly FileUploadInterface $fileUploadService
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
@@ -59,6 +59,17 @@ class TaskController extends Controller
 
         $viewMode = $request->get('view', session('task_view_mode', 'card'));
         session(['task_view_mode' => $viewMode]);
+
+        // Handle AJAX request for real-time search
+        if ($request->ajax() || $request->has('ajax')) {
+            $html = view('task::partials.' . ($viewMode === 'card' ? 'task-cards' : 'task-table'), compact('tasks'))->render();
+
+            return response()->json([
+                'html' => $html,
+                'total' => $tasks->total(),
+                'pagination' => $tasks->hasPages() ? $tasks->withQueryString()->links()->render() : '',
+            ]);
+        }
 
         return view('task::index', compact(
             'tasks',

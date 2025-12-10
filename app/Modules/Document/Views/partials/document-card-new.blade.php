@@ -1,86 +1,95 @@
-<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow group">
-    <a href="{{ route('documents.show', $document->uuid) }}" class="card-body p-5">
-        <!-- Document Header -->
-        <div class="flex items-start gap-3 mb-3">
+@php
+    $editorCount = $document->collaborators->where('pivot.role', 'editor')->count();
+    $readerCount = $document->collaborators->where('pivot.role', 'reader')->count();
+    $totalCollaborators = $document->collaborators->count();
+    $pageCount = $document->pages_count ?? $document->pages->count() ?? 0;
+@endphp
+<a href="{{ route('documents.show', $document->uuid) }}" class="block group">
+    <div class="bg-base-100 border border-base-200 rounded-xl px-4 py-3 hover:border-primary/30 hover:shadow-md transition-all duration-200">
+        <div class="flex items-center gap-4">
             <!-- Document Icon -->
-            <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all flex-shrink-0">
                 <span class="icon-[tabler--file-text] size-5 text-primary"></span>
             </div>
+
+            <!-- Title & Description -->
             <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-base text-base-content truncate group-hover:text-primary transition-colors">{{ $document->title }}</h3>
-                @if($document->description)
-                    <p class="text-xs text-base-content/60 line-clamp-1 mt-0.5">{{ $document->description }}</p>
-                @endif
-            </div>
-        </div>
-
-        <!-- Collaborators Info -->
-        @php
-            $editorCount = $document->collaborators->where('pivot.role', 'editor')->count();
-            $readerCount = $document->collaborators->where('pivot.role', 'reader')->count();
-            $totalCollaborators = $document->collaborators->count();
-        @endphp
-
-        @if($totalCollaborators > 0)
-            <div class="flex flex-wrap items-center gap-2 mb-3">
-                <!-- Avatar Stack -->
-                <div class="avatar-group -space-x-2">
-                    @foreach($document->collaborators->take(4) as $collaborator)
-                        <div class="avatar" title="{{ $collaborator->name }} ({{ ucfirst($collaborator->pivot->role) }})">
-                            <div class="w-6 rounded-full ring-2 ring-base-100">
-                                <img src="{{ $collaborator->avatar_url }}" alt="{{ $collaborator->name }}" />
-                            </div>
-                        </div>
-                    @endforeach
-                    @if($totalCollaborators > 4)
-                        <div class="avatar placeholder">
-                            <div class="w-6 rounded-full bg-neutral text-neutral-content text-xs ring-2 ring-base-100">
-                                <span>+{{ $totalCollaborators - 4 }}</span>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Role Counts -->
-                <div class="flex items-center gap-2 text-xs text-base-content/60">
-                    @if($editorCount > 0)
-                        <span class="flex items-center gap-1" title="{{ $editorCount }} {{ Str::plural('editor', $editorCount) }}">
-                            <span class="icon-[tabler--pencil] size-3.5 text-primary"></span>
-                            {{ $editorCount }}
-                        </span>
-                    @endif
-                    @if($readerCount > 0)
-                        <span class="flex items-center gap-1" title="{{ $readerCount }} {{ Str::plural('reader', $readerCount) }}">
-                            <span class="icon-[tabler--eye] size-3.5 text-info"></span>
-                            {{ $readerCount }}
-                        </span>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-medium text-base-content group-hover:text-primary transition-colors truncate">{{ $document->title }}</h3>
+                    @if($document->description)
+                        <span class="hidden sm:inline text-sm text-base-content/40">—</span>
+                        <span class="hidden sm:inline text-sm text-base-content/50 truncate">{{ Str::limit($document->description, 50) }}</span>
                     @endif
                 </div>
             </div>
-        @endif
 
-        <!-- Footer: Creator & Metadata -->
-        <div class="flex items-center justify-between text-xs text-base-content/60 pt-3 border-t border-base-200 mt-auto">
-            <div class="flex items-center gap-2">
-                <div class="avatar" title="{{ $document->creator->name }} (Owner)">
-                    <div class="w-5 rounded-full">
-                        <img src="{{ $document->creator->avatar_url }}" alt="{{ $document->creator->name }}" />
+            <!-- Creator & Collaborators -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <!-- Creator -->
+                <div class="flex items-center gap-2 pr-2 border-r border-base-200">
+                    <div class="avatar" title="{{ $document->creator->name }} (Owner)">
+                        <div class="w-7 h-7 rounded-full ring-2 ring-primary/50">
+                            <img src="{{ $document->creator->avatar_url }}" alt="{{ $document->creator->name }}" />
+                        </div>
                     </div>
+                    <span class="text-sm text-base-content/70 hidden md:inline">{{ $document->creator->first_name ?? explode(' ', $document->creator->name)[0] }}</span>
                 </div>
-                <span class="truncate max-w-20">{{ $document->creator->name }}</span>
-            </div>
-            <div class="flex items-center gap-3">
-                @if($document->version_count > 0)
-                    <a href="{{ route('documents.versions', $document->uuid) }}"
-                       class="flex items-center gap-1 hover:text-primary transition-colors"
-                       title="View version history"
-                       onclick="event.stopPropagation();">
-                        <span class="icon-[tabler--history] size-3.5"></span>
-                        Version {{ $document->version_count }}
-                    </a>
+
+                <!-- Collaborators -->
+                @if($totalCollaborators > 0)
+                    <div class="avatar-group -space-x-2">
+                        @foreach($document->collaborators->take(3) as $collaborator)
+                            <div class="avatar" title="{{ $collaborator->name }} ({{ ucfirst($collaborator->pivot->role) }})">
+                                <div class="w-6 h-6 rounded-full border-2 border-base-100">
+                                    <img src="{{ $collaborator->avatar_url }}" alt="{{ $collaborator->name }}" />
+                                </div>
+                            </div>
+                        @endforeach
+                        @if($totalCollaborators > 3)
+                            <div class="avatar placeholder">
+                                <div class="w-6 h-6 rounded-full bg-base-300 text-base-content/70 text-xs border-2 border-base-100">
+                                    <span>+{{ $totalCollaborators - 3 }}</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 @endif
-                <span class="flex items-center gap-1 pr-2" title="@if($document->last_edited_at)Last edited {{ $document->last_edited_at->format('M d, Y g:i A') }}@else Created {{ $document->created_at->format('M d, Y g:i A') }}@endif">
-                    <span class="icon-[tabler--clock] size-3.5"></span>
+            </div>
+
+            <!-- Metadata Badges -->
+            <div class="hidden lg:flex items-center gap-2 flex-shrink-0">
+                @if($pageCount > 0)
+                    <div class="flex items-center gap-1 px-2 py-1 rounded-md bg-base-200/50 text-xs text-base-content/60" title="{{ $pageCount }} {{ Str::plural('page', $pageCount) }}">
+                        <span class="icon-[tabler--files] size-3.5"></span>
+                        <span>{{ $pageCount }}</span>
+                    </div>
+                @endif
+
+                <div class="flex items-center gap-1 px-2 py-1 rounded-md bg-base-200/50 text-xs text-base-content/60 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                     title="Version history"
+                     onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('documents.versions', $document->uuid) }}';">
+                    <span class="icon-[tabler--history] size-3.5"></span>
+                    <span>v{{ $document->version_count ?: 1 }}</span>
+                </div>
+
+                @if($document->version_count > 0)
+                    @php
+                        $latestVersion = $document->versions()->latest('version_number')->first();
+                    @endphp
+                    @if($latestVersion)
+                        <div class="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                             title="View latest version"
+                             onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('documents.versions.view', [$document->uuid, $latestVersion->id]) }}';">
+                            <span class="icon-[tabler--eye] size-3.5"></span>
+                        </div>
+                    @endif
+                @endif
+            </div>
+
+            <!-- Time -->
+            <div class="hidden sm:flex items-center gap-1.5 text-xs text-base-content/50 flex-shrink-0 min-w-20 justify-end" title="@if($document->last_edited_at)Last edited {{ $document->last_edited_at->format('M d, Y g:i A') }}@else Created {{ $document->created_at->format('M d, Y g:i A') }}@endif">
+                <span class="icon-[tabler--clock] size-3.5"></span>
+                <span>
                     @if($document->last_edited_at)
                         {{ $document->last_edited_at->diffForHumans(null, true) }}
                     @else
@@ -88,6 +97,11 @@
                     @endif
                 </span>
             </div>
+
+            <!-- Arrow -->
+            <div class="flex-shrink-0 pl-2">
+                <span class="icon-[tabler--chevron-right] size-5 text-base-content/20 group-hover:text-primary group-hover:translate-x-0.5 transition-all"></span>
+            </div>
         </div>
-    </a>
-</div>
+    </div>
+</a>

@@ -2,37 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class MarketplaceController extends Controller
 {
     /**
-     * Display the marketplace index page.
-     * Only accessible by Admin/Owner.
+     * Redirect to settings marketplace tab.
+     * Marketplace is now part of settings.
      */
-    public function index(Request $request): View
+    public function index(Request $request): RedirectResponse
     {
-        $user = $request->user();
-
-        if (!$user->isAdminOrHigher()) {
-            abort(403, 'You do not have permission to access the marketplace.');
-        }
-
-        $company = $user->company;
-
-        // Get 2FA status for the company
-        $twoFactorStatus = $this->getTwoFactorStatus($company);
-
-        // Get Gmail Calendar Sync status
-        $gmailSyncStatus = $this->getGmailSyncStatus($company);
-
-        return view('marketplace.index', [
-            'user' => $user,
-            'company' => $company,
-            'twoFactorStatus' => $twoFactorStatus,
-            'gmailSyncStatus' => $gmailSyncStatus,
-        ]);
+        return redirect()->route('settings.index', ['tab' => 'marketplace']);
     }
 
     /**

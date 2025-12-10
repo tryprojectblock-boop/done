@@ -71,6 +71,24 @@ class CalendarController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Query tasks without due dates (unscheduled tasks)
+        $unscheduledQuery = Task::query()
+            ->with(['workspace', 'assignee', 'creator', 'status', 'tags'])
+            ->where('company_id', $companyId)
+            ->whereNull('due_date')
+            ->whereNull('closed_at'); // Only show open unscheduled tasks
+
+        // Apply same filters for unscheduled
+        if ($filters['workspace_id']) {
+            $unscheduledQuery->where('workspace_id', $filters['workspace_id']);
+        }
+
+        if ($filters['assignee_id']) {
+            $unscheduledQuery->where('assignee_id', $filters['assignee_id']);
+        }
+
+        $unscheduledTasks = $unscheduledQuery->orderBy('created_at', 'desc')->get();
+
         // Group tasks by date for list view
         $tasksByDate = $tasks->groupBy(function ($task) {
             return $task->due_date->format('Y-m-d');
@@ -87,16 +105,18 @@ class CalendarController extends Controller
 
         // Calculate stats
         $stats = [
-            'total' => $tasks->count(),
+            'total' => $tasks->count() + $unscheduledTasks->count(),
             'overdue' => $tasks->filter(fn($t) => $t->isOverdue())->count(),
             'upcoming' => $tasks->filter(fn($t) => $t->due_date->isFuture() && !$t->isClosed())->count(),
             'completed' => $tasks->filter(fn($t) => $t->isClosed())->count(),
+            'unscheduled' => $unscheduledTasks->count(),
         ];
 
         return view('calendar::index', compact(
             'view',
             'tasks',
             'tasksByDate',
+            'unscheduledTasks',
             'workspaces',
             'teamMembers',
             'filters',
@@ -215,7 +235,7 @@ class CalendarController extends Controller
             'status' => $task->status ? [
                 'id' => $task->status->id,
                 'name' => $task->status->name,
-                'color' => $task->status->color,
+                'color' => $task->status->background_color,
             ] : null,
             'tags' => $task->tags->map(fn($tag) => [
                 'id' => $tag->id,

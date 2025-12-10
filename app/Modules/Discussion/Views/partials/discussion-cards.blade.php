@@ -29,12 +29,10 @@
             </h3>
 
             <!-- Workspace -->
-            @if($discussion->workspace)
-                <div class="text-xs text-base-content/50 mt-1">
-                    <span class="icon-[tabler--briefcase] size-3 inline"></span>
-                    {{ $discussion->workspace->name }}
-                </div>
-            @endif
+            <div class="text-xs text-base-content/50 mt-1">
+                <span class="icon-[tabler--briefcase] size-3 inline"></span>
+                {{ $discussion->workspace?->name ?? 'General' }}
+            </div>
 
             <!-- Footer: Creator, Last Activity, Participants -->
             <div class="flex items-center justify-between mt-auto pt-3 border-t border-base-200">

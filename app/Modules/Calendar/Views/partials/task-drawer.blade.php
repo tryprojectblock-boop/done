@@ -226,6 +226,8 @@ function populateDrawer(task) {
         statusBadge.textContent = task.status.name;
         statusBadge.style.backgroundColor = task.status.color + '20';
         statusBadge.style.color = task.status.color;
+        statusBadge.style.borderColor = task.status.color + '40';
+        statusBadge.className = 'badge border';
         statusBadge.classList.remove('hidden');
     } else {
         statusBadge.classList.add('hidden');
@@ -235,7 +237,10 @@ function populateDrawer(task) {
     const priorityBadge = document.getElementById('drawer-task-priority');
     if (task.priority_label) {
         priorityBadge.textContent = task.priority_label;
+        priorityBadge.style.backgroundColor = task.priority_color + '20';
         priorityBadge.style.color = task.priority_color;
+        priorityBadge.style.borderColor = task.priority_color + '40';
+        priorityBadge.className = 'badge border';
         priorityBadge.classList.remove('hidden');
     } else {
         priorityBadge.classList.add('hidden');
@@ -309,7 +314,7 @@ function populateDrawer(task) {
     const tagsContainer = document.getElementById('drawer-tags');
     if (task.tags && task.tags.length > 0) {
         tagsContainer.innerHTML = task.tags.map(tag => `
-            <span class="badge" style="background-color: ${tag.color}20; color: ${tag.color}">
+            <span class="badge border" style="background-color: ${tag.color}20; color: ${tag.color}; border-color: ${tag.color}40;">
                 ${tag.name}
             </span>
         `).join('');

@@ -238,10 +238,17 @@
                 <!-- Participants Card -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
+                        @php
+                            // Count unique participants: if creator is not in participants list, add 1 for creator
+                            $creatorInParticipants = $discussion->participants->contains('id', $discussion->created_by);
+                            $totalParticipants = $creatorInParticipants
+                                ? $discussion->participants->count()
+                                : $discussion->participants->count() + 1;
+                        @endphp
                         <h2 class="card-title text-lg">
                             <span class="icon-[tabler--users] size-5"></span>
                             Participants
-                            <span class="badge badge-sm">{{ $discussion->participants->count() + 1 }}</span>
+                            <span class="badge badge-sm">{{ $totalParticipants }}</span>
                         </h2>
 
                         <div class="space-y-2">

@@ -119,6 +119,9 @@ class DocumentController extends Controller
 
         $canEdit = $document->canEdit($user);
 
+        // Load document pages
+        $document->load('pages');
+
         return view('document::show', compact('document', 'user', 'canEdit'));
     }
 
@@ -221,6 +224,9 @@ class DocumentController extends Controller
         if (!$version) {
             abort(404, 'Version not found');
         }
+
+        // Load document pages
+        $document->load('pages');
 
         // Get previous and next versions for navigation
         $previousVersion = $document->versions()

@@ -26,12 +26,23 @@
                         @endif
                     </p>
                 </div>
-                @if(!$isGuestOnly)
-                    <a href="{{ route('workspace.create') }}" class="btn btn-primary">
-                        <span class="icon-[tabler--plus] size-5"></span>
-                        Add Workspace
-                    </a>
-                @endif
+                <div class="flex items-center gap-3">
+                    <!-- Search -->
+                    <div class="relative">
+                        <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
+                        <input type="text"
+                               id="workspace-search"
+                               placeholder="Search workspaces..."
+                               class="input input-bordered input-sm w-48 pl-9"
+                               autocomplete="off" />
+                    </div>
+                    @if(!$isGuestOnly)
+                        <a href="{{ route('workspace.create') }}" class="btn btn-primary">
+                            <span class="icon-[tabler--plus] size-5"></span>
+                            Add Workspace
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -64,7 +75,25 @@
             </div>
         @endif
 
-        <!-- Workspaces Grid -->
+        <!-- Count & View Toggle -->
+        @php
+            $totalCount = $workspaces->count() + $guestWorkspaces->count();
+        @endphp
+        <div class="flex items-center justify-between mb-4">
+            <div id="workspace-count" class="text-sm text-base-content/60">
+                {{ $totalCount }} {{ Str::plural('workspace', $totalCount) }}
+            </div>
+            <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1">
+                <button type="button" id="view-grid" class="btn btn-sm btn-ghost" title="Grid view">
+                    <span class="icon-[tabler--layout-grid] size-4"></span>
+                </button>
+                <button type="button" id="view-list" class="btn btn-sm btn-ghost" title="List view">
+                    <span class="icon-[tabler--list] size-4"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Workspaces List -->
         @if($workspaces->isEmpty() && $guestWorkspaces->isEmpty())
             <div class="card bg-base-100 shadow">
                 <div class="card-body text-center py-12">
@@ -95,58 +124,26 @@
             </div>
         @else
             @if($workspaces->isNotEmpty())
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach($workspaces as $workspace)
-                <a href="{{ route('workspace.show', $workspace) }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow group">
-                    <div class="card-body">
-                        <!-- Workspace Header -->
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <!-- Workspace Icon/Color -->
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white" style="background-color: {{ $workspace->color ?? '#3b82f6' }}">
-                                    <span class="icon-[{{ $workspace->type->icon() }}] size-6"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-lg text-base-content truncate group-hover:text-primary transition-colors">{{ $workspace->name }}</h3>
-                                    <span class="badge badge-ghost badge-sm">{{ $workspace->type->label() }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        @if($workspace->description)
-                            <p class="text-sm text-base-content/60 line-clamp-2 mb-3">{{ $workspace->description }}</p>
-                        @endif
-
-                        <!-- Stats -->
-                        <div class="flex items-center gap-4 text-sm text-base-content/60 mt-auto pt-3 border-t border-base-200">
-                            <span class="flex items-center gap-1">
-                                <span class="icon-[tabler--users] size-4"></span>
-                                {{ $workspace->members->count() }} {{ Str::plural('member', $workspace->members->count()) }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <span class="icon-[tabler--calendar] size-4"></span>
-                                {{ $workspace->created_at->format('M d, Y') }}
-                            </span>
-                        </div>
-
-                        <!-- Status Badge -->
-                        @if($workspace->status->value !== 'active')
-                            <div class="absolute top-2 right-2">
-                                <span class="badge badge-{{ $workspace->status->color() }} badge-sm">{{ $workspace->status->label() }}</span>
-                            </div>
-                        @endif
-                    </div>
-                </a>
-                @endforeach
-            </div>
-
-            <!-- Pagination -->
-            @if($workspaces->hasPages())
-                <div class="mt-6">
-                    {{ $workspaces->links() }}
+                <!-- Grid View -->
+                <div id="workspaces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($workspaces as $workspace)
+                        @include('workspace::partials.workspace-grid-card', ['workspace' => $workspace, 'isGuest' => false])
+                    @endforeach
                 </div>
-            @endif
+
+                <!-- List View -->
+                <div id="workspaces-list" class="space-y-3 hidden">
+                    @foreach($workspaces as $workspace)
+                        @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => false])
+                    @endforeach
+                </div>
+
+                <!-- Pagination -->
+                @if($workspaces->hasPages())
+                    <div class="mt-6">
+                        {{ $workspaces->links() }}
+                    </div>
+                @endif
             @endif
         @endif
 
@@ -160,51 +157,120 @@
                 </div>
                 <p class="text-base-content/60 mb-4">Workspaces you've been invited to as a guest</p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Grid View -->
+                <div id="guest-workspaces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($guestWorkspaces as $workspace)
-                    <a href="{{ route('workspace.guest-view', $workspace) }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow group border-2 border-warning/20">
-                        <div class="card-body">
-                            <!-- Guest Badge -->
-                            <div class="absolute top-2 right-2">
-                                <span class="badge badge-warning badge-sm">Guest</span>
-                            </div>
+                        @include('workspace::partials.workspace-grid-card', ['workspace' => $workspace, 'isGuest' => true])
+                    @endforeach
+                </div>
 
-                            <!-- Workspace Header -->
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <!-- Workspace Icon/Color -->
-                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-warning text-warning-content">
-                                        <span class="icon-[tabler--briefcase] size-6"></span>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="font-semibold text-lg text-base-content truncate group-hover:text-warning transition-colors">{{ $workspace->name }}</h3>
-                                        <span class="text-sm text-base-content/60">by {{ $workspace->owner->name }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Description -->
-                            @if($workspace->description)
-                                <p class="text-sm text-base-content/60 line-clamp-2 mb-3">{{ $workspace->description }}</p>
-                            @endif
-
-                            <!-- Stats -->
-                            <div class="flex items-center gap-4 text-sm text-base-content/60 mt-auto pt-3 border-t border-base-200">
-                                <span class="flex items-center gap-1">
-                                    <span class="icon-[tabler--users] size-4"></span>
-                                    {{ $workspace->members->count() }} {{ Str::plural('member', $workspace->members->count()) }}
-                                </span>
-                                <span class="flex items-center gap-1">
-                                    <span class="icon-[tabler--eye] size-4"></span>
-                                    View Only
-                                </span>
-                            </div>
-                        </div>
-                    </a>
+                <!-- List View -->
+                <div id="guest-workspaces-list" class="space-y-3 hidden">
+                    @foreach($guestWorkspaces as $workspace)
+                        @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => true])
                     @endforeach
                 </div>
             </div>
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewGridBtn = document.getElementById('view-grid');
+    const viewListBtn = document.getElementById('view-list');
+    const workspacesGrid = document.getElementById('workspaces-grid');
+    const workspacesList = document.getElementById('workspaces-list');
+    const guestGrid = document.getElementById('guest-workspaces-grid');
+    const guestList = document.getElementById('guest-workspaces-list');
+    const searchInput = document.getElementById('workspace-search');
+    const workspaceCount = document.getElementById('workspace-count');
+
+    // Get saved view preference, default to 'grid'
+    const savedView = localStorage.getItem('workspaces-view') || 'grid';
+    setView(savedView);
+
+    viewGridBtn.addEventListener('click', () => setView('grid'));
+    viewListBtn.addEventListener('click', () => setView('list'));
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        filterWorkspaces(query);
+    });
+
+    function filterWorkspaces(query) {
+        let visibleCount = 0;
+
+        // Filter grid view items
+        if (workspacesGrid) {
+            workspacesGrid.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const match = name.includes(query);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+        }
+
+        // Filter list view items
+        if (workspacesList) {
+            workspacesList.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Filter guest grid view items
+        if (guestGrid) {
+            guestGrid.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const match = name.includes(query);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+        }
+
+        // Filter guest list view items
+        if (guestList) {
+            guestList.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Update count
+        if (workspaceCount) {
+            workspaceCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'workspace' : 'workspaces'}`;
+        }
+    }
+
+    function setView(view) {
+        localStorage.setItem('workspaces-view', view);
+
+        if (view === 'grid') {
+            viewGridBtn.classList.add('btn-active', 'btn-primary');
+            viewGridBtn.classList.remove('btn-ghost');
+            viewListBtn.classList.remove('btn-active', 'btn-primary');
+            viewListBtn.classList.add('btn-ghost');
+
+            if (workspacesGrid) workspacesGrid.classList.remove('hidden');
+            if (workspacesList) workspacesList.classList.add('hidden');
+            if (guestGrid) guestGrid.classList.remove('hidden');
+            if (guestList) guestList.classList.add('hidden');
+        } else {
+            viewListBtn.classList.add('btn-active', 'btn-primary');
+            viewListBtn.classList.remove('btn-ghost');
+            viewGridBtn.classList.remove('btn-active', 'btn-primary');
+            viewGridBtn.classList.add('btn-ghost');
+
+            if (workspacesGrid) workspacesGrid.classList.add('hidden');
+            if (workspacesList) workspacesList.classList.remove('hidden');
+            if (guestGrid) guestGrid.classList.add('hidden');
+            if (guestList) guestList.classList.remove('hidden');
+        }
+    }
+});
+</script>
+@endpush
 @endsection

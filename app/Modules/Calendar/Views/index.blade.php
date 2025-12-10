@@ -48,7 +48,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="card bg-base-100 shadow">
                 <div class="card-body p-4">
                     <div class="flex items-center gap-3">
@@ -58,6 +58,19 @@
                         <div>
                             <div class="text-2xl font-bold">{{ $stats['total'] }}</div>
                             <div class="text-xs text-base-content/60">Total Tasks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow">
+                <div class="card-body p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                            <span class="icon-[tabler--calendar-off] size-5 text-warning"></span>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-warning">{{ $stats['unscheduled'] ?? 0 }}</div>
+                            <div class="text-xs text-base-content/60">No Date</div>
                         </div>
                     </div>
                 </div>
@@ -78,8 +91,8 @@
             <div class="card bg-base-100 shadow">
                 <div class="card-body p-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                            <span class="icon-[tabler--clock] size-5 text-warning"></span>
+                        <div class="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                            <span class="icon-[tabler--clock] size-5 text-info"></span>
                         </div>
                         <div>
                             <div class="text-2xl font-bold">{{ $stats['upcoming'] }}</div>

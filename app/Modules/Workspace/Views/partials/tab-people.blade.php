@@ -60,9 +60,9 @@
                         <tr>
                             <td>
                                 <div class="flex items-center gap-3">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-primary text-primary-content rounded-full w-10">
-                                            <span>{{ substr($member->name, 0, 1) }}</span>
+                                    <div class="avatar">
+                                        <div class="w-10 rounded-full">
+                                            <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
                                         </div>
                                     </div>
                                     <div>
@@ -227,9 +227,9 @@
                         <tr>
                             <td>
                                 <div class="flex items-center gap-3">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-warning text-warning-content rounded-full w-10">
-                                            <span>{{ $guest->initials }}</span>
+                                    <div class="avatar">
+                                        <div class="w-10 rounded-full">
+                                            <img src="{{ $guest->avatar_url }}" alt="{{ $guest->full_name }}" />
                                         </div>
                                     </div>
                                     <div>

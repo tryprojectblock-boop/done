@@ -70,13 +70,17 @@
                class="tab tab-lg {{ request('tab') === 'tasks' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--list-check] size-5 mr-2"></span>
                 Tasks
-                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+                @if($tasks->count() > 0)
+                    <span class="badge badge-ghost badge-xs ml-2">{{ $tasks->count() }}</span>
+                @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'discussions']) }}"
                class="tab tab-lg {{ request('tab') === 'discussions' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--messages] size-5 mr-2"></span>
                 Discussions
-                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+                @if($discussions->count() > 0)
+                    <span class="badge badge-ghost badge-xs ml-2">{{ $discussions->count() }}</span>
+                @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'milestones']) }}"
                class="tab tab-lg {{ request('tab') === 'milestones' ? 'tab-active' : '' }}">
@@ -108,9 +112,9 @@
         @if(!request()->has('tab') || request('tab') === 'overview')
             @include('workspace::partials.tab-overview')
         @elseif(request('tab') === 'tasks')
-            @include('workspace::partials.tab-coming-soon', ['title' => 'Tasks', 'icon' => 'tabler--list-check', 'description' => 'Manage tasks with workflows, assignments, and progress tracking.'])
+            @include('workspace::partials.tab-tasks')
         @elseif(request('tab') === 'discussions')
-            @include('workspace::partials.tab-coming-soon', ['title' => 'Discussions', 'icon' => 'tabler--messages', 'description' => 'Team discussions and message boards for collaboration.'])
+            @include('workspace::partials.tab-discussions')
         @elseif(request('tab') === 'milestones')
             @include('workspace::partials.tab-coming-soon', ['title' => 'Milestones', 'icon' => 'tabler--flag', 'description' => 'Track project milestones and key deliverables.'])
         @elseif(request('tab') === 'files')

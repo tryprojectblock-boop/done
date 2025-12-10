@@ -45,9 +45,16 @@
             <div class="card-body">
                 <h2 class="card-title text-lg mb-4">Workspace Info</h2>
                 <div class="space-y-3">
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-center">
                         <span class="text-base-content/60">Owner</span>
-                        <span class="font-medium">{{ $workspace->owner->name }}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="avatar">
+                                <div class="w-6 rounded-full">
+                                    <img src="{{ $workspace->owner->avatar_url }}" alt="{{ $workspace->owner->name }}" />
+                                </div>
+                            </div>
+                            <span class="font-medium">{{ $workspace->owner->name }}</span>
+                        </div>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-base-content/60">Created</span>
@@ -85,9 +92,9 @@
                 <div class="space-y-3">
                     @foreach($workspace->members->take(5) as $member)
                     <div class="flex items-center gap-3">
-                        <div class="avatar placeholder">
-                            <div class="bg-primary text-primary-content rounded-full w-8">
-                                <span class="text-xs">{{ substr($member->name, 0, 1) }}</span>
+                        <div class="avatar">
+                            <div class="w-8 rounded-full">
+                                <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -120,9 +127,9 @@
                 <div class="space-y-3">
                     @foreach($workspace->guests->take(5) as $guest)
                     <div class="flex items-center gap-3">
-                        <div class="avatar placeholder">
-                            <div class="bg-warning text-warning-content rounded-full w-8">
-                                <span class="text-xs">{{ $guest->initials }}</span>
+                        <div class="avatar">
+                            <div class="w-8 rounded-full">
+                                <img src="{{ $guest->avatar_url }}" alt="{{ $guest->full_name }}" />
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">

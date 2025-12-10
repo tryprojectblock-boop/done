@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Document\Http\Controllers\Api\DocumentContentController;
+use App\Modules\Document\Http\Controllers\Api\DocumentPageController;
 use App\Modules\Document\Http\Controllers\DocumentCommentController;
 use App\Modules\Document\Http\Controllers\DocumentController;
 use Illuminate\Support\Facades\Route;
@@ -55,5 +56,21 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
             ->name('collaborators.update');
         Route::delete('{document}/collaborators/{user}', [DocumentContentController::class, 'removeCollaborator'])
             ->name('collaborators.remove');
+
+        // Document Pages
+        Route::get('{document}/pages', [DocumentPageController::class, 'index'])
+            ->name('pages.index');
+        Route::post('{document}/pages', [DocumentPageController::class, 'store'])
+            ->name('pages.store');
+        Route::get('{document}/pages/{page}', [DocumentPageController::class, 'show'])
+            ->name('pages.show');
+        Route::patch('{document}/pages/{page}', [DocumentPageController::class, 'update'])
+            ->name('pages.update');
+        Route::post('{document}/pages/{page}/content', [DocumentPageController::class, 'saveContent'])
+            ->name('pages.content');
+        Route::delete('{document}/pages/{page}', [DocumentPageController::class, 'destroy'])
+            ->name('pages.destroy');
+        Route::post('{document}/pages/reorder', [DocumentPageController::class, 'reorder'])
+            ->name('pages.reorder');
     });
 });

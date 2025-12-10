@@ -11,9 +11,9 @@
                     <a href="{{ route('documents.index') }}" class="btn btn-ghost btn-sm btn-circle" title="Back to Documents">
                         <span class="icon-[tabler--arrow-left] size-5"></span>
                     </a>
-                    <button type="button" id="toggle-sections-btn" class="btn btn-ghost btn-sm gap-1" title="Toggle Sections">
-                        <span class="icon-[tabler--list] size-4"></span>
-                        <span class="hidden sm:inline text-xs">Sections</span>
+                    <button type="button" id="toggle-sections-btn" class="btn btn-ghost btn-sm gap-1" title="Toggle Pages">
+                        <span class="icon-[tabler--files] size-4"></span>
+                        <span class="hidden sm:inline text-xs">Pages</span>
                     </button>
                     <span id="save-status" class="text-sm text-base-content/50 flex items-center gap-1">
                         <span class="icon-[tabler--check] size-4"></span>
@@ -106,18 +106,18 @@
 
     <!-- Main Content Area -->
     <div class="flex h-[calc(100vh-57px)]">
-        <!-- Left Sidebar: Document Sections/Pages -->
+        <!-- Left Sidebar: Document Pages/Tabs -->
         <div id="pages-sidebar" class="w-56 bg-base-100 border-r border-base-300 h-full overflow-hidden flex flex-col transition-all duration-300">
             <!-- Sidebar Header -->
             <div class="p-3 border-b border-base-300">
                 <div class="flex items-center justify-between">
                     <h3 class="font-semibold text-sm flex items-center gap-2">
-                        <span class="icon-[tabler--list] size-4"></span>
-                        Sections
+                        <span class="icon-[tabler--files] size-4"></span>
+                        Pages
                     </h3>
                     <div class="flex items-center gap-1">
                         @if($canEdit)
-                        <button type="button" id="add-section-btn" class="btn btn-ghost btn-xs btn-circle" title="Add Section">
+                        <button type="button" id="add-page-btn" class="btn btn-ghost btn-xs btn-circle" title="Add Page">
                             <span class="icon-[tabler--plus] size-4"></span>
                         </button>
                         @endif
@@ -127,34 +127,21 @@
                     </div>
                 </div>
             </div>
-            <!-- Sections/Pages List -->
-            <div id="sections-list" class="flex-1 overflow-y-auto py-2">
-                <!-- Sections will be dynamically generated -->
-                <div class="px-3 py-4 text-center text-base-content/50 text-sm" id="no-sections">
+            <!-- Pages List -->
+            <div id="pages-list" class="flex-1 overflow-y-auto py-2">
+                <!-- Pages will be dynamically generated -->
+                <div class="px-3 py-4 text-center text-base-content/50 text-sm" id="no-pages">
                     <span class="icon-[tabler--file-text] size-8 block mx-auto mb-2 opacity-50"></span>
-                    <p>No sections yet</p>
-                    <p class="text-xs mt-1">Add headings to create sections</p>
+                    <p>Loading pages...</p>
                 </div>
             </div>
-            <!-- Current Position Indicator -->
-            <div id="current-position" class="p-3 border-t border-base-300 bg-base-200/50">
-                <div class="flex items-center justify-between text-xs mb-2">
-                    <span class="flex items-center gap-1 text-base-content/60">
-                        <span class="icon-[tabler--file-text] size-4"></span>
-                        Page
-                    </span>
-                    <span class="font-bold text-primary" id="current-page-num">1</span>
+            <!-- Current Page Info -->
+            <div id="current-page-info" class="p-3 border-t border-base-300 bg-base-200/50">
+                <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-base-content/60">Current Page</span>
+                    <span class="font-bold text-primary" id="current-page-number">1 / 1</span>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-base-content/60 mb-2">
-                    <span class="icon-[tabler--map-pin] size-3"></span>
-                    <span class="truncate"><strong id="current-section-name" class="text-base-content">Top</strong></span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="flex-1 bg-base-300 rounded-full h-1.5">
-                        <div id="scroll-progress" class="bg-primary rounded-full h-1.5 transition-all" style="width: 0%"></div>
-                    </div>
-                    <span id="scroll-percent" class="text-xs text-base-content/50">0%</span>
-                </div>
+                <div class="text-xs text-base-content/60 truncate" id="current-page-title">-</div>
             </div>
         </div>
 
@@ -195,9 +182,11 @@
                      data-content-url="{{ route('api.documents.content.get', $document->uuid) }}"
                      data-save-url="{{ route('api.documents.content.save', $document->uuid) }}"
                      data-autosave-url="{{ route('api.documents.content.autosave', $document->uuid) }}"
+                     data-pages-url="{{ route('api.documents.pages.index', $document->uuid) }}"
                      data-upload-url="{{ route('upload.image') }}"
                      data-csrf="{{ csrf_token() }}"
-                     data-initial-content="{{ json_encode($document->content ?? '') }}">
+                     data-initial-content="{{ json_encode($document->content ?? '') }}"
+                     data-has-pages="{{ $document->pages->count() > 0 ? 'true' : 'false' }}">
                 </div>
             </div>
 
@@ -592,24 +581,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelCommentBtn = document.getElementById('cancel-comment');
     const commentsList = document.getElementById('comments-list');
 
-    // ==================== SECTIONS/PAGES SIDEBAR ELEMENTS ====================
+    // ==================== PAGES SIDEBAR ELEMENTS ====================
     const pagesSidebar = document.getElementById('pages-sidebar');
     const togglePagesSidebarBtn = document.getElementById('toggle-pages-sidebar');
     const showPagesSidebarBtn = document.getElementById('show-pages-sidebar');
-    const sectionsList = document.getElementById('sections-list');
-    const noSections = document.getElementById('no-sections');
-    const currentSectionName = document.getElementById('current-section-name');
-    const scrollProgress = document.getElementById('scroll-progress');
-    const scrollPercent = document.getElementById('scroll-percent');
-    const addSectionBtn = document.getElementById('add-section-btn');
+    const pagesList = document.getElementById('pages-list');
+    const noPages = document.getElementById('no-pages');
+    const addPageBtn = document.getElementById('add-page-btn');
     const toggleSectionsBtn = document.getElementById('toggle-sections-btn');
-    const currentPageNum = document.getElementById('current-page-num');
+    const currentPageNumber = document.getElementById('current-page-number');
+    const currentPageTitle = document.getElementById('current-page-title');
+    const pagesUrl = editorEl.dataset.pagesUrl;
+    const hasPages = editorEl.dataset.hasPages === 'true';
 
-    // Page height constant (A4 at 96dpi = 1056px, minus padding)
-    const PAGE_HEIGHT = 936; // 1056 - 120 (top+bottom padding)
-
-    let sections = [];
-    let activeSection = null;
+    // Pages state
+    let pages = [];
+    let currentPage = null;
+    let pendingPageSave = false;
 
     // Toggle pages sidebar functions
     function hideSidebar() {
@@ -698,165 +686,362 @@ document.addEventListener('DOMContentLoaded', function() {
         quill.root.innerHTML = initialContent;
     }
 
-    // ==================== SECTIONS FUNCTIONALITY (after Quill init) ====================
+    // ==================== PAGES FUNCTIONALITY (after Quill init) ====================
 
-    // Extract sections from headings in document
-    function extractSections() {
-        if (!quill || !quill.root) return;
-
-        const editor = quill.root;
-        const headings = editor.querySelectorAll('h1, h2, h3');
-        sections = [];
-
-        headings.forEach((heading, index) => {
-            const text = heading.textContent.trim();
-            if (text) {
-                // Add unique ID if not present
-                if (!heading.id) {
-                    heading.id = `section-${index}`;
+    // Load pages from server
+    async function loadPages() {
+        try {
+            const response = await fetch(pagesUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
                 }
-                sections.push({
-                    id: heading.id,
-                    text: text,
-                    level: heading.tagName.toLowerCase(),
-                    element: heading,
-                    top: heading.offsetTop
-                });
-            }
-        });
+            });
+            const result = await response.json();
 
-        renderSections();
+            if (result.success) {
+                pages = result.pages;
+
+                // If no pages exist but document has content, migrate to pages
+                if (pages.length === 0 && initialContent) {
+                    // Create default page with existing content
+                    await createPage('Page 1', initialContent);
+                } else if (pages.length === 0) {
+                    // Create empty first page
+                    await createPage('Page 1', '');
+                } else {
+                    renderPages();
+                    // Load first page content
+                    if (pages.length > 0) {
+                        await switchToPage(pages[0].uuid);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load pages:', error);
+            noPages.innerHTML = `
+                <span class="icon-[tabler--alert-circle] size-8 block mx-auto mb-2 text-error"></span>
+                <p class="text-error">Failed to load pages</p>
+            `;
+        }
     }
 
-    // Render sections in sidebar
-    function renderSections() {
-        if (!sectionsList || !noSections) return;
+    // Render pages list in sidebar
+    function renderPages() {
+        if (!pagesList) return;
 
-        if (sections.length === 0) {
-            noSections.classList.remove('hidden');
-            sectionsList.innerHTML = '';
-            sectionsList.appendChild(noSections);
+        pagesList.innerHTML = '';
+
+        if (pages.length === 0) {
+            pagesList.appendChild(noPages);
             return;
         }
 
-        noSections.classList.add('hidden');
-        sectionsList.innerHTML = '';
-
-        sections.forEach((section, index) => {
+        pages.forEach((page, index) => {
             const item = document.createElement('div');
-            item.className = `section-item ${section.level}`;
-            item.dataset.sectionId = section.id;
+            item.className = 'page-item';
+            item.dataset.pageUuid = page.uuid;
 
-            const icon = section.level === 'h1' ? 'file-text' :
-                        section.level === 'h2' ? 'hash' : 'point';
-
-            item.innerHTML = `
-                <span class="section-icon icon-[tabler--${icon}] size-4"></span>
-                <span class="section-title" title="${section.text}">${section.text}</span>
-                <span class="section-page">${index + 1}</span>
-            `;
-
-            item.addEventListener('click', () => scrollToSection(section.id));
-            sectionsList.appendChild(item);
-        });
-    }
-
-    // Scroll to section
-    function scrollToSection(sectionId) {
-        const section = sections.find(s => s.id === sectionId);
-        if (section && section.element) {
-            section.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            updateActiveSection(sectionId);
-        }
-    }
-
-    // Update active section highlight
-    function updateActiveSection(sectionId) {
-        document.querySelectorAll('.section-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.dataset.sectionId === sectionId) {
+            if (currentPage && currentPage.uuid === page.uuid) {
                 item.classList.add('active');
             }
+
+            item.innerHTML = `
+                <span class="page-icon icon-[tabler--file-text] size-4"></span>
+                <span class="page-title" title="${page.title}">${page.title}</span>
+                <span class="page-number">${index + 1}</span>
+            `;
+
+            item.addEventListener('click', () => switchToPage(page.uuid));
+
+            // Context menu for rename/delete
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showPageContextMenu(e, page);
+            });
+
+            pagesList.appendChild(item);
         });
 
-        const section = sections.find(s => s.id === sectionId);
-        if (section && currentSectionName) {
-            currentSectionName.textContent = section.text;
-            activeSection = sectionId;
+        updatePageInfo();
+    }
+
+    // Switch to a different page
+    async function switchToPage(pageUuid) {
+        // Save current page content first
+        if (currentPage && pendingPageSave) {
+            await savePageContent();
+        }
+
+        try {
+            const response = await fetch(`${pagesUrl}/${pageUuid}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                currentPage = result.page;
+                quill.root.innerHTML = currentPage.content || '';
+                lastSavedContent = currentPage.content || '';
+
+                // Update UI
+                renderPages();
+                updatePageInfo();
+                updateSaveStatus('saved');
+            }
+        } catch (error) {
+            console.error('Failed to load page:', error);
         }
     }
 
-    // Track scroll position and update active section
-    function handleScroll() {
-        if (!editorContainer) return;
+    // Update page info display
+    function updatePageInfo() {
+        if (currentPageNumber && pages.length > 0) {
+            const pageIndex = pages.findIndex(p => currentPage && p.uuid === currentPage.uuid);
+            currentPageNumber.textContent = `${pageIndex + 1} / ${pages.length}`;
+        }
+        if (currentPageTitle && currentPage) {
+            currentPageTitle.textContent = currentPage.title;
+        }
+    }
 
-        const scrollTop = editorContainer.scrollTop;
-        const scrollHeight = editorContainer.scrollHeight - editorContainer.clientHeight;
-        const percent = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
+    // Create a new page
+    async function createPage(title, content = '') {
+        try {
+            const response = await fetch(pagesUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ title, content })
+            });
+            const result = await response.json();
 
-        if (scrollProgress) scrollProgress.style.width = `${percent}%`;
-        if (scrollPercent) scrollPercent.textContent = `${percent}%`;
+            if (result.success) {
+                pages.push(result.page);
+                renderPages();
+                await switchToPage(result.page.uuid);
+                return result.page;
+            }
+        } catch (error) {
+            console.error('Failed to create page:', error);
+        }
+        return null;
+    }
 
-        // Calculate current page based on scroll position
-        const currentPage = Math.max(1, Math.ceil((scrollTop + 100) / PAGE_HEIGHT));
-        if (currentPageNum) currentPageNum.textContent = currentPage;
+    // Save current page content
+    async function savePageContent(createVersion = false) {
+        if (!currentPage || !canEdit) return;
 
-        // Find current section based on scroll position
-        let currentSection = null;
-        for (let i = sections.length - 1; i >= 0; i--) {
-            const section = sections[i];
-            if (section.element) {
-                const rect = section.element.getBoundingClientRect();
-                const containerRect = editorContainer.getBoundingClientRect();
-                if (rect.top <= containerRect.top + 100) {
-                    currentSection = section;
-                    break;
+        const content = quill.root.innerHTML;
+
+        if (content === lastSavedContent && !createVersion) {
+            pendingPageSave = false;
+            return;
+        }
+
+        updateSaveStatus('saving');
+
+        try {
+            const response = await fetch(`${pagesUrl}/${currentPage.uuid}/content`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                lastSavedContent = content;
+                currentPage.content = content;
+                pendingPageSave = false;
+                updateSaveStatus('saved');
+            } else {
+                updateSaveStatus('error');
+            }
+        } catch (error) {
+            console.error('Failed to save page:', error);
+            updateSaveStatus('error');
+        }
+    }
+
+    // Delete a page
+    async function deletePage(pageUuid) {
+        if (pages.length <= 1) {
+            alert('Cannot delete the last page.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this page?')) return;
+
+        try {
+            const response = await fetch(`${pagesUrl}/${pageUuid}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                const deletedIndex = pages.findIndex(p => p.uuid === pageUuid);
+                pages = pages.filter(p => p.uuid !== pageUuid);
+
+                // Switch to adjacent page
+                if (currentPage && currentPage.uuid === pageUuid) {
+                    const newIndex = Math.min(deletedIndex, pages.length - 1);
+                    await switchToPage(pages[newIndex].uuid);
+                } else {
+                    renderPages();
                 }
             }
-        }
-
-        if (currentSection && currentSection.id !== activeSection) {
-            updateActiveSection(currentSection.id);
-        } else if (!currentSection && sections.length > 0) {
-            // At the top, before first section
-            if (currentSectionName) currentSectionName.textContent = 'Top';
-            document.querySelectorAll('.section-item').forEach(item => item.classList.remove('active'));
-            activeSection = null;
+        } catch (error) {
+            console.error('Failed to delete page:', error);
         }
     }
 
-    // Debounce scroll handler
-    let scrollTimeout;
-    editorContainer?.addEventListener('scroll', function() {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(handleScroll, 50);
-    });
+    // Rename a page
+    async function renamePage(pageUuid, newTitle) {
+        try {
+            const response = await fetch(`${pagesUrl}/${pageUuid}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ title: newTitle })
+            });
+            const result = await response.json();
 
-    // Add section button - inserts a heading at cursor
-    addSectionBtn?.addEventListener('click', function() {
-        const range = quill.getSelection();
-        if (range) {
-            quill.insertText(range.index, '\n');
-            quill.formatLine(range.index + 1, 1, 'header', 2);
-            quill.setSelection(range.index + 1, 0);
-            quill.focus();
-
-            // Re-extract sections after a short delay
-            setTimeout(extractSections, 100);
+            if (result.success) {
+                const page = pages.find(p => p.uuid === pageUuid);
+                if (page) {
+                    page.title = newTitle;
+                }
+                if (currentPage && currentPage.uuid === pageUuid) {
+                    currentPage.title = newTitle;
+                }
+                renderPages();
+            }
+        } catch (error) {
+            console.error('Failed to rename page:', error);
         }
+    }
+
+    // Show context menu for page actions
+    function showPageContextMenu(e, page) {
+        // Remove existing context menu
+        document.querySelector('.page-context-menu')?.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'page-context-menu dropdown-menu show';
+        menu.style.cssText = `position: fixed; left: ${e.clientX}px; top: ${e.clientY}px; z-index: 9999;`;
+
+        menu.innerHTML = `
+            <button class="dropdown-item" data-action="rename">
+                <span class="icon-[tabler--edit] size-4"></span>
+                Rename
+            </button>
+            <button class="dropdown-item text-error" data-action="delete" ${pages.length <= 1 ? 'disabled' : ''}>
+                <span class="icon-[tabler--trash] size-4"></span>
+                Delete
+            </button>
+        `;
+
+        menu.querySelector('[data-action="rename"]').addEventListener('click', () => {
+            menu.remove();
+            openRenamePageModal(page);
+        });
+
+        menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
+            menu.remove();
+            deletePage(page.uuid);
+        });
+
+        document.body.appendChild(menu);
+
+        // Close on click outside
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }, { once: true });
+        }, 0);
+    }
+
+    // Add page button - opens modal
+    const addPageModal = document.getElementById('add-page-modal');
+    const addPageForm = document.getElementById('add-page-form');
+    const pageTitleInput = document.getElementById('page-title-input');
+
+    window.openAddPageModal = function() {
+        if (pageTitleInput) pageTitleInput.value = '';
+        addPageModal?.classList.add('open');
+        setTimeout(() => pageTitleInput?.focus(), 100);
+    };
+
+    window.closeAddPageModal = function() {
+        addPageModal?.classList.remove('open');
+    };
+
+    addPageBtn?.addEventListener('click', openAddPageModal);
+
+    addPageForm?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const title = pageTitleInput.value.trim();
+        if (!title) return;
+
+        await createPage(title);
+        closeAddPageModal();
     });
 
-    // Re-extract sections when content changes
+    // Rename page modal
+    const renamePageModal = document.getElementById('rename-page-modal');
+    const renamePageForm = document.getElementById('rename-page-form');
+    const renamePageInput = document.getElementById('rename-page-input');
+    let renamePageUuid = null;
+
+    window.openRenamePageModal = function(page) {
+        renamePageUuid = page.uuid;
+        if (renamePageInput) renamePageInput.value = page.title;
+        renamePageModal?.classList.add('open');
+        setTimeout(() => renamePageInput?.focus(), 100);
+    };
+
+    window.closeRenamePageModal = function() {
+        renamePageModal?.classList.remove('open');
+        renamePageUuid = null;
+    };
+
+    renamePageForm?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const newTitle = renamePageInput.value.trim();
+        if (!newTitle || !renamePageUuid) return;
+
+        await renamePage(renamePageUuid, newTitle);
+        closeRenamePageModal();
+    });
+
+    // Track content changes for auto-save
     quill.on('text-change', function() {
-        clearTimeout(window.sectionExtractTimeout);
-        window.sectionExtractTimeout = setTimeout(extractSections, 500);
+        pendingPageSave = true;
+        updateSaveStatus('saving');
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => savePageContent(false), 2000);
     });
 
-    // Initial extraction after content loads
-    setTimeout(() => {
-        extractSections();
-        handleScroll();
-    }, 200);
+    // Initialize pages
+    loadPages();
 
     // ==================== SAVE FUNCTIONALITY ====================
 
@@ -874,70 +1059,15 @@ document.addEventListener('DOMContentLoaded', function() {
         saveStatus.innerHTML = icons[status] + ' <span class="ml-1">' + texts[status] + '</span>';
     }
 
-    async function saveDocument(createVersion = false) {
-        if (!canEdit) return;
-
-        const content = quill.root.innerHTML;
-        const title = titleInput?.value?.trim() || 'Untitled Document';
-
-        if (content === lastSavedContent && title === lastSavedTitle && !createVersion) return;
-
-        updateSaveStatus('saving');
-
-        try {
-            const url = createVersion ? saveUrl : autosaveUrl;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    content: content,
-                    title: title
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                lastSavedContent = content;
-                lastSavedTitle = title;
-                updateSaveStatus('saved');
-            } else {
-                updateSaveStatus('error');
-                console.error('Save failed:', result.error);
-            }
-        } catch (error) {
-            updateSaveStatus('error');
-            console.error('Save error:', error);
-        }
+    // Manual save button - saves current page
+    if (canEdit && saveBtn) {
+        saveBtn.addEventListener('click', () => savePageContent(true));
     }
 
-    // Auto-save on content change (2 second debounce)
+    // Save before leaving
     if (canEdit) {
-        quill.on('text-change', function() {
-            updateSaveStatus('saving');
-            clearTimeout(autoSaveTimer);
-            autoSaveTimer = setTimeout(() => saveDocument(false), 2000);
-        });
-
-        // Title change triggers auto-save
-        titleInput?.addEventListener('input', function() {
-            updateSaveStatus('saving');
-            clearTimeout(autoSaveTimer);
-            autoSaveTimer = setTimeout(() => saveDocument(false), 2000);
-        });
-
-        // Manual save button
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => saveDocument(true));
-        }
-
-        // Save before leaving
         window.addEventListener('beforeunload', function(e) {
-            if (quill.root.innerHTML !== lastSavedContent || (titleInput && titleInput.value !== lastSavedTitle)) {
+            if (pendingPageSave) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -1427,6 +1557,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             closeCollaboratorsModal();
             closeInviteModal();
+            if (typeof closeAddPageModal === 'function') closeAddPageModal();
+            if (typeof closeRenamePageModal === 'function') closeRenamePageModal();
         }
     });
 
@@ -1651,6 +1783,157 @@ document.addEventListener('DOMContentLoaded', function() {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
+}
+</style>
+
+<!-- Add Page Modal -->
+@if($canEdit)
+<div id="add-page-modal" class="custom-modal">
+    <div class="custom-modal-backdrop" onclick="closeAddPageModal()"></div>
+    <div class="custom-modal-box bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+        <div class="p-4 border-b border-base-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--file-plus] size-5 text-primary"></span>
+                    Add Page
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm btn-circle" onclick="closeAddPageModal()">
+                    <span class="icon-[tabler--x] size-5"></span>
+                </button>
+            </div>
+        </div>
+        <form id="add-page-form" class="p-4 space-y-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Page Title</span>
+                </label>
+                <input type="text" id="page-title-input" class="input input-bordered w-full" placeholder="e.g., Introduction, Guide, Appendix..." required autofocus>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" class="btn btn-ghost" onclick="closeAddPageModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="icon-[tabler--plus] size-4"></span>
+                    Add Page
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rename Page Modal -->
+<div id="rename-page-modal" class="custom-modal">
+    <div class="custom-modal-backdrop" onclick="closeRenamePageModal()"></div>
+    <div class="custom-modal-box bg-base-100 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+        <div class="p-4 border-b border-base-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <span class="icon-[tabler--edit] size-5 text-primary"></span>
+                    Rename Page
+                </h3>
+                <button type="button" class="btn btn-ghost btn-sm btn-circle" onclick="closeRenamePageModal()">
+                    <span class="icon-[tabler--x] size-5"></span>
+                </button>
+            </div>
+        </div>
+        <form id="rename-page-form" class="p-4 space-y-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Page Title</span>
+                </label>
+                <input type="text" id="rename-page-input" class="input input-bordered w-full" placeholder="Enter new page title..." required autofocus>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" class="btn btn-ghost" onclick="closeRenamePageModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="icon-[tabler--check] size-4"></span>
+                    Rename
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+<style>
+/* Page item styles */
+.page-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 2px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.875rem;
+}
+
+.page-item:hover {
+    background: oklch(var(--b2));
+}
+
+.page-item.active {
+    background: oklch(var(--p) / 0.15);
+    color: oklch(var(--p));
+    font-weight: 500;
+}
+
+.page-item.active .page-icon {
+    color: oklch(var(--p));
+}
+
+.page-icon {
+    flex-shrink: 0;
+    color: oklch(var(--bc) / 0.5);
+}
+
+.page-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page-number {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: oklch(var(--bc) / 0.4);
+    font-weight: 500;
+}
+
+/* Context menu styles */
+.page-context-menu {
+    background: oklch(var(--b1));
+    border: 1px solid oklch(var(--bc) / 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 140px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.page-context-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.page-context-menu .dropdown-item:hover {
+    background: oklch(var(--b2));
+}
+
+.page-context-menu .dropdown-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-context-menu .dropdown-item.text-error:hover {
+    background: oklch(var(--er) / 0.1);
 }
 </style>
 

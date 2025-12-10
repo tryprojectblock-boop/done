@@ -101,6 +101,12 @@ class Document extends Model
             ->orderBy('version_number', 'desc');
     }
 
+    public function pages(): HasMany
+    {
+        return $this->hasMany(DocumentPage::class)
+            ->orderBy('sort_order');
+    }
+
     // ==================== SCOPES ====================
 
     public function scopeForCompany($query, int $companyId)

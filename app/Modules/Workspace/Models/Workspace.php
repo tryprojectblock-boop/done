@@ -7,6 +7,8 @@ namespace App\Modules\Workspace\Models;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Modules\Core\Support\BaseModel;
+use App\Modules\Discussion\Models\Discussion;
+use App\Modules\Task\Models\Task;
 use App\Modules\Core\Traits\BelongsToTenant;
 use App\Modules\Core\Traits\HasUuid;
 use App\Modules\Workspace\Enums\WorkspaceRole;
@@ -96,6 +98,16 @@ class Workspace extends BaseModel
         return $this->belongsToMany(User::class, 'workspace_guests')
             ->withPivot('invited_by')
             ->withTimestamps();
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    public function discussions(): HasMany
+    {
+        return $this->hasMany(Discussion::class);
     }
 
     /**

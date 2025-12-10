@@ -38,7 +38,10 @@ class WorkspaceController extends Controller
         $workspaces = $this->workspaceService->getForUser($user);
 
         // Get workspaces where user is added as a guest
-        $guestWorkspaces = $user->guestWorkspaces()->with(['owner'])->get();
+        $guestWorkspaces = $user->guestWorkspaces()
+            ->with(['owner', 'members'])
+            ->withCount(['tasks', 'discussions'])
+            ->get();
 
         return view('workspace::index', [
             'workspaces' => $workspaces,
@@ -218,8 +221,24 @@ class WorkspaceController extends Controller
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
 
+        // Load tasks for this workspace
+        $tasks = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
+            ->with(['assignee', 'creator', 'status'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        // Load discussions for this workspace
+        $discussions = \App\Modules\Discussion\Models\Discussion::where('workspace_id', $workspace->id)
+            ->with(['creator', 'participants'])
+            ->orderBy('last_activity_at', 'desc')
+            ->limit(20)
+            ->get();
+
         return view('workspace::show', [
             'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow', 'guests']),
+            'tasks' => $tasks,
+            'discussions' => $discussions,
         ]);
     }
 

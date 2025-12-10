@@ -33,12 +33,13 @@
         <!-- Filters & Search -->
         <div class="card bg-base-100 shadow mb-6">
             <div class="card-body p-4">
-                <form action="{{ route('tasks.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+                <form id="task-filter-form" action="{{ route('tasks.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
                     <!-- Search -->
                     <div class="flex-1">
                         <div class="relative">
                             <span class="icon-[tabler--search] size-5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
-                            <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search tasks..." class="input input-bordered w-full pl-10" />
+                            <input type="text" name="search" id="search-input" value="{{ $filters['search'] ?? '' }}" placeholder="Search tasks..." class="input input-bordered w-full pl-10" autocomplete="off" />
+                            <span id="search-loading" class="loading loading-spinner loading-sm absolute right-3 top-1/2 -translate-y-1/2 hidden"></span>
                         </div>
                     </div>
                     <!-- Workspace Filter -->
@@ -90,7 +91,7 @@
 
         <!-- View Toggle -->
         <div class="flex items-center justify-between mb-4">
-            <div class="text-sm text-base-content/60">
+            <div id="tasks-count" class="text-sm text-base-content/60">
                 {{ $tasks->total() }} {{ Str::plural('task', $tasks->total()) }} found
             </div>
             <div class="flex items-center gap-1 border border-base-300 rounded-lg p-1 bg-base-100">
@@ -106,45 +107,138 @@
         </div>
 
         <!-- Tasks Content -->
-        @if($tasks->isEmpty())
-            <div class="card bg-base-100 shadow">
-                <div class="card-body text-center py-12">
-                    <div class="text-base-content/50">
-                        <span class="icon-[tabler--checkbox] size-12 block mx-auto mb-4"></span>
-                        <p class="text-lg font-medium">No tasks found</p>
-                        <p class="text-sm">
+        <div id="tasks-content">
+            @if($tasks->isEmpty())
+                <div class="card bg-base-100 shadow">
+                    <div class="card-body text-center py-12">
+                        <div class="text-base-content/50">
+                            <span class="icon-[tabler--checkbox] size-12 block mx-auto mb-4"></span>
+                            <p class="text-lg font-medium">No tasks found</p>
+                            <p class="text-sm">
+                                @if(!empty(array_filter($filters ?? [])))
+                                    Try adjusting your search or filters
+                                @else
+                                    Create your first task to get started
+                                @endif
+                            </p>
+                        </div>
+                        <div class="mt-4 flex justify-center gap-2">
                             @if(!empty(array_filter($filters ?? [])))
-                                Try adjusting your search or filters
-                            @else
-                                Create your first task to get started
+                                <a href="{{ route('tasks.index') }}" class="btn btn-ghost">Clear Filters</a>
                             @endif
-                        </p>
-                    </div>
-                    <div class="mt-4 flex justify-center gap-2">
-                        @if(!empty(array_filter($filters ?? [])))
-                            <a href="{{ route('tasks.index') }}" class="btn btn-ghost">Clear Filters</a>
-                        @endif
-                        <a href="{{ route('tasks.create') }}" class="btn btn-primary">
-                            <span class="icon-[tabler--plus] size-5"></span>
-                            Create Task
-                        </a>
+                            <a href="{{ route('tasks.create') }}" class="btn btn-primary">
+                                <span class="icon-[tabler--plus] size-5"></span>
+                                Create Task
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        @else
-            @if($viewMode === 'card')
-                @include('task::partials.task-cards', ['tasks' => $tasks])
             @else
-                @include('task::partials.task-table', ['tasks' => $tasks])
+                @if($viewMode === 'card')
+                    @include('task::partials.task-cards', ['tasks' => $tasks])
+                @else
+                    @include('task::partials.task-table', ['tasks' => $tasks])
+                @endif
             @endif
+        </div>
 
-            <!-- Pagination -->
+        <!-- Pagination -->
+        <div id="tasks-pagination" class="mt-6">
             @if($tasks->hasPages())
-                <div class="mt-6">
-                    {{ $tasks->withQueryString()->links() }}
-                </div>
+                {{ $tasks->withQueryString()->links() }}
             @endif
-        @endif
+        </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const searchLoading = document.getElementById('search-loading');
+    const tasksContent = document.getElementById('tasks-content');
+    const tasksCount = document.getElementById('tasks-count');
+    const tasksPagination = document.getElementById('tasks-pagination');
+    const filterForm = document.getElementById('task-filter-form');
+
+    let searchTimeout = null;
+    let currentSearch = searchInput.value;
+
+    // Real-time search
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        searchTimeout = setTimeout(() => {
+            if (query !== currentSearch) {
+                currentSearch = query;
+                performSearch();
+            }
+        }, 300);
+    });
+
+    // Prevent form submission on Enter, use AJAX instead
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimeout);
+            currentSearch = this.value.trim();
+            performSearch();
+        }
+    });
+
+    async function performSearch() {
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData);
+        params.set('ajax', '1');
+
+        searchLoading.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`{{ route('tasks.index') }}?${params.toString()}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            // Update tasks content
+            tasksContent.innerHTML = data.html || `
+                <div class="card bg-base-100 shadow">
+                    <div class="card-body text-center py-12">
+                        <div class="text-base-content/50">
+                            <span class="icon-[tabler--checkbox] size-12 block mx-auto mb-4"></span>
+                            <p class="text-lg font-medium">No tasks found</p>
+                            <p class="text-sm">Try adjusting your search or filters</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update count
+            tasksCount.textContent = `${data.total} ${data.total === 1 ? 'task' : 'tasks'} found`;
+
+            // Update pagination
+            tasksPagination.innerHTML = data.pagination || '';
+
+            // Update URL without reload
+            const url = new URL(window.location);
+            if (currentSearch) {
+                url.searchParams.set('search', currentSearch);
+            } else {
+                url.searchParams.delete('search');
+            }
+            window.history.replaceState({}, '', url);
+
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            searchLoading.classList.add('hidden');
+        }
+    }
+});
+</script>
+@endpush
 @endsection

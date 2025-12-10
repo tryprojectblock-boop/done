@@ -21,11 +21,60 @@ class SettingsController extends Controller
     {
         $user = $request->user();
         $company = $user->company;
+        $tab = $request->get('tab', 'general');
+
+        // Get marketplace data if admin
+        $twoFactorStatus = null;
+        $gmailSyncStatus = null;
+
+        if ($user->isAdminOrHigher()) {
+            $twoFactorStatus = $this->getTwoFactorStatus($company);
+            $gmailSyncStatus = $this->getGmailSyncStatus($company);
+        }
 
         return view('settings.index', [
             'user' => $user,
             'company' => $company,
+            'tab' => $tab,
+            'twoFactorStatus' => $twoFactorStatus,
+            'gmailSyncStatus' => $gmailSyncStatus,
         ]);
+    }
+
+    /**
+     * Get the Two-Factor Authentication status for a company.
+     */
+    private function getTwoFactorStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['two_factor_enabled'] ?? false;
+        $isInstalled = true;
+
+        return [
+            'installed' => $isInstalled,
+            'enabled' => $isEnabled,
+            'status' => !$isInstalled ? 'not_installed' : ($isEnabled ? 'enabled' : 'disabled'),
+            'status_label' => !$isInstalled ? 'Not Installed' : ($isEnabled ? 'Enabled' : 'Disabled'),
+            'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
+        ];
+    }
+
+    /**
+     * Get the Gmail Calendar Sync status for a company.
+     */
+    private function getGmailSyncStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['gmail_sync_enabled'] ?? false;
+        $isInstalled = !empty($settings['google_client_id']) && !empty($settings['google_client_secret']);
+
+        return [
+            'installed' => $isInstalled,
+            'enabled' => $isEnabled,
+            'status' => !$isInstalled ? 'not_installed' : ($isEnabled ? 'enabled' : 'disabled'),
+            'status_label' => !$isInstalled ? 'Not Configured' : ($isEnabled ? 'Enabled' : 'Disabled'),
+            'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
+        ];
     }
 
     /**

@@ -88,7 +88,8 @@
                     </div>
                 </div>
             @else
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Documents List -->
+                <div class="space-y-3">
                     @foreach($documents as $document)
                         @include('document::partials.document-card-new', ['document' => $document])
                     @endforeach

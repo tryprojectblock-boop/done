@@ -64,14 +64,60 @@
             </a>
         </div>
 
-        <!-- Version Content -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <div class="prose prose-sm max-w-none">
-                    {!! $version->content !!}
+        <!-- Document Pages -->
+        @if($document->pages->count() > 0)
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span class="icon-[tabler--files] size-5"></span>
+                    Document Pages ({{ $document->pages->count() }})
+                </h2>
+                <div class="tabs tabs-boxed bg-base-200 mb-4">
+                    @foreach($document->pages as $index => $page)
+                        <button type="button"
+                                class="tab page-tab {{ $index === 0 ? 'tab-active' : '' }}"
+                                data-page-index="{{ $index }}">
+                            {{ $page->title }}
+                        </button>
+                    @endforeach
+                </div>
+                @foreach($document->pages as $index => $page)
+                    <div class="page-content card bg-base-100 shadow {{ $index === 0 ? '' : 'hidden' }}" data-page-index="{{ $index }}">
+                        <div class="card-body">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-200">
+                                <h3 class="font-semibold text-lg">{{ $page->title }}</h3>
+                                <span class="text-sm text-base-content/60">
+                                    Page {{ $index + 1 }} of {{ $document->pages->count() }}
+                                </span>
+                            </div>
+                            <div class="prose prose-sm max-w-none">
+                                {!! $page->content !!}
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- Version Content (Legacy/Fallback) -->
+        @if($version->content)
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    @if($document->pages->count() > 0)
+                        <h3 class="font-semibold mb-3 text-base-content/60">Version Snapshot Content</h3>
+                    @endif
+                    <div class="prose prose-sm max-w-none">
+                        {!! $version->content !!}
+                    </div>
                 </div>
             </div>
-        </div>
+        @elseif($document->pages->count() === 0)
+            <div class="card bg-base-100 shadow">
+                <div class="card-body text-center py-12">
+                    <span class="icon-[tabler--file-off] size-12 text-base-content/30 mx-auto mb-3"></span>
+                    <p class="text-base-content/60">No content in this version</p>
+                </div>
+            </div>
+        @endif
 
         <!-- Version Navigation -->
         <div class="flex items-center justify-between mt-6">
@@ -101,3 +147,32 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Page tab switching
+    const pageTabs = document.querySelectorAll('.page-tab');
+    const pageContents = document.querySelectorAll('.page-content');
+
+    pageTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const pageIndex = this.dataset.pageIndex;
+
+            // Update active tab
+            pageTabs.forEach(t => t.classList.remove('tab-active'));
+            this.classList.add('tab-active');
+
+            // Show corresponding content
+            pageContents.forEach(content => {
+                if (content.dataset.pageIndex === pageIndex) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        });
+    });
+});
+</script>
+@endpush
