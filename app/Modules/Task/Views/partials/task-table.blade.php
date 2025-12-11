@@ -238,7 +238,7 @@
                             @endif
                         @elseif($task->canEdit(auth()->user()))
                             <div class="relative inline-block">
-                                <label class="cursor-pointer" onclick="openDueDatePicker('{{ $task->id }}', '{{ $task->due_date?->format('Y-m-d') }}')">
+                                <label class="cursor-pointer" onclick="openDueDatePicker('{{ $task->id }}', '{{ $task->due_date?->format('Y-m-d') }}', event)">
                                     @if($task->due_date)
                                         <span class="flex items-center gap-1 hover:opacity-80 transition-opacity {{ $task->isOverdue() ? 'text-error font-medium' : 'text-base-content/60' }}">
                                             <span class="icon-[tabler--calendar] size-4"></span>
@@ -252,7 +252,7 @@
                                     @endif
                                 </label>
                                 <!-- Calendar Dropdown -->
-                                <div id="due-date-picker-{{ $task->id }}" class="hidden absolute right-0 top-full mt-2 z-50 p-4 bg-base-100 border border-base-300 rounded-xl shadow-xl w-80">
+                                <div id="due-date-picker-{{ $task->id }}" class="hidden fixed z-[9999] p-4 bg-base-100 border border-base-300 rounded-xl shadow-2xl w-80">
                                     <form action="{{ route('tasks.update-due-date', $task) }}" method="POST" id="due-date-form-{{ $task->id }}">
                                         @csrf
                                         @method('PATCH')
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Calendar state per task
 const taskCalendarState = {};
 
-function openDueDatePicker(taskId, currentDate) {
+function openDueDatePicker(taskId, currentDate, event) {
     // Close all other pickers
     document.querySelectorAll('[id^="due-date-picker-"]').forEach(picker => {
         picker.classList.add('hidden');
@@ -500,6 +500,30 @@ function openDueDatePicker(taskId, currentDate) {
     }
 
     renderTaskCalendar(taskId);
+
+    // Position the picker using fixed positioning
+    const label = event ? event.currentTarget : document.querySelector(`label[onclick*="openDueDatePicker('${taskId}'"]`);
+    if (label) {
+        const rect = label.getBoundingClientRect();
+        const pickerHeight = 420; // Approximate height of picker
+        const viewportHeight = window.innerHeight;
+
+        // Check if there's enough space below
+        if (rect.bottom + pickerHeight > viewportHeight) {
+            // Position above
+            picker.style.top = (rect.top - pickerHeight - 8) + 'px';
+        } else {
+            // Position below
+            picker.style.top = (rect.bottom + 8) + 'px';
+        }
+
+        // Position horizontally - align to right edge
+        const pickerWidth = 320;
+        let leftPos = rect.right - pickerWidth;
+        if (leftPos < 10) leftPos = 10;
+        picker.style.left = leftPos + 'px';
+    }
+
     picker.classList.remove('hidden');
 }
 
