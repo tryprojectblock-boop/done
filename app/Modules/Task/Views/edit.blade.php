@@ -575,20 +575,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Tags event listeners
-    tagInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            addTag(this.value.trim());
-            this.value = '';
-        }
-        if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
-            removeTag(tags.length - 1);
-        }
-    });
+    if (tagInput) {
+        tagInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addTag(this.value.trim());
+                this.value = '';
+            }
+            if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+                removeTag(tags.length - 1);
+            }
+        });
+    }
 
-    tagsContainer.addEventListener('click', function() {
-        tagInput.focus();
-    });
+    if (tagsContainer) {
+        tagsContainer.addEventListener('click', function() {
+            if (tagInput) tagInput.focus();
+        });
+    }
 
     function addTag(tag) {
         if (tag && !tags.includes(tag)) {
@@ -670,85 +674,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showTasktypeDropdown() {
-        tasktypeDropdown.classList.remove('hidden');
-        tasktypeSelect.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        if (tasktypeDropdown) tasktypeDropdown.classList.remove('hidden');
+        if (tasktypeSelect) tasktypeSelect.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
         tasktypeHighlightIndex = -1;
         updateTasktypeHighlight();
     }
 
     function hideTasktypeDropdown() {
-        tasktypeDropdown.classList.add('hidden');
-        tasktypeSelect.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+        if (tasktypeDropdown) tasktypeDropdown.classList.add('hidden');
+        if (tasktypeSelect) tasktypeSelect.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
         tasktypeHighlightIndex = -1;
-        tasktypeSearch.value = '';
+        if (tasktypeSearch) tasktypeSearch.value = '';
         tasktypeOptions.forEach(option => option.classList.remove('hidden'));
-        noTasktypeResults.classList.add('hidden');
+        if (noTasktypeResults) noTasktypeResults.classList.add('hidden');
     }
 
-    tasktypeSelect.addEventListener('click', function(e) {
-        if (e.target.closest('button')) return;
-        if (tasktypeDropdown.classList.contains('hidden')) {
-            showTasktypeDropdown();
-        }
-        tasktypeSearch.focus();
-    });
+    if (tasktypeSelect) {
+        tasktypeSelect.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                showTasktypeDropdown();
+            }
+            if (tasktypeSearch) tasktypeSearch.focus();
+        });
+    }
 
-    tasktypeSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
+    if (tasktypeSearch) {
+        tasktypeSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        tasktypeOptions.forEach(option => {
-            const searchText = option.dataset.search;
-            if (searchText.includes(searchTerm)) {
-                option.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                option.classList.add('hidden');
+            tasktypeOptions.forEach(option => {
+                const searchText = option.dataset.search;
+                if (searchText.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (noTasktypeResults) noTasktypeResults.classList.toggle('hidden', visibleCount > 0);
+            tasktypeHighlightIndex = -1;
+            updateTasktypeHighlight();
+
+            if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                showTasktypeDropdown();
             }
         });
 
-        noTasktypeResults.classList.toggle('hidden', visibleCount > 0);
-        tasktypeHighlightIndex = -1;
-        updateTasktypeHighlight();
+        tasktypeSearch.addEventListener('keydown', function(e) {
+            const visibleOptions = getVisibleTasktypeOptions();
 
-        if (tasktypeDropdown.classList.contains('hidden')) {
-            showTasktypeDropdown();
-        }
-    });
-
-    tasktypeSearch.addEventListener('keydown', function(e) {
-        const visibleOptions = getVisibleTasktypeOptions();
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (tasktypeDropdown.classList.contains('hidden')) {
-                showTasktypeDropdown();
-            } else {
-                tasktypeHighlightIndex = Math.min(tasktypeHighlightIndex + 1, visibleOptions.length - 1);
-                updateTasktypeHighlight();
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                    showTasktypeDropdown();
+                } else {
+                    tasktypeHighlightIndex = Math.min(tasktypeHighlightIndex + 1, visibleOptions.length - 1);
+                    updateTasktypeHighlight();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (tasktypeDropdown && !tasktypeDropdown.classList.contains('hidden')) {
+                    tasktypeHighlightIndex = Math.max(tasktypeHighlightIndex - 1, 0);
+                    updateTasktypeHighlight();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (tasktypeHighlightIndex >= 0 && visibleOptions[tasktypeHighlightIndex]) {
+                    visibleOptions[tasktypeHighlightIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideTasktypeDropdown();
+                tasktypeSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideTasktypeDropdown();
             }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!tasktypeDropdown.classList.contains('hidden')) {
-                tasktypeHighlightIndex = Math.max(tasktypeHighlightIndex - 1, 0);
-                updateTasktypeHighlight();
-            }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (tasktypeHighlightIndex >= 0 && visibleOptions[tasktypeHighlightIndex]) {
-                visibleOptions[tasktypeHighlightIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            hideTasktypeDropdown();
-            tasktypeSearch.blur();
-        } else if (e.key === 'Tab') {
-            hideTasktypeDropdown();
-        }
-    });
+        });
+    }
 
     document.addEventListener('click', function(e) {
-        if (!tasktypeSelect.contains(e.target) && !tasktypeDropdown.contains(e.target)) {
+        if (tasktypeSelect && tasktypeDropdown && !tasktypeSelect.contains(e.target) && !tasktypeDropdown.contains(e.target)) {
             hideTasktypeDropdown();
         }
     });
@@ -1232,7 +1240,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-info', 'bg-success', 'bg-warning'];
 
     window.openWatcherModal = function() {
-        notifySelectedRadio.checked = true;
+        if (!watcherModal) return;
+
+        if (notifySelectedRadio) notifySelectedRadio.checked = true;
         watcherModal.classList.add('modal-open');
 
         watcherModalItems.forEach(item => {
@@ -1241,14 +1251,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = item.dataset.id;
             const isSelected = selectedWatchers.some(w => w.id === id);
 
-            checkbox.checked = isSelected;
+            if (checkbox) checkbox.checked = isSelected;
             if (isSelected) {
-                checkIcon.classList.remove('opacity-0');
-                checkIcon.classList.add('opacity-100');
+                if (checkIcon) {
+                    checkIcon.classList.remove('opacity-0');
+                    checkIcon.classList.add('opacity-100');
+                }
                 item.classList.add('bg-primary/5', 'border-primary/20');
             } else {
-                checkIcon.classList.add('opacity-0');
-                checkIcon.classList.remove('opacity-100');
+                if (checkIcon) {
+                    checkIcon.classList.add('opacity-0');
+                    checkIcon.classList.remove('opacity-100');
+                }
                 item.classList.remove('bg-primary/5', 'border-primary/20');
             }
         });
@@ -1257,10 +1271,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.closeWatcherModal = function() {
-        watcherModal.classList.remove('modal-open');
-        watcherModalSearch.value = '';
+        if (watcherModal) watcherModal.classList.remove('modal-open');
+        if (watcherModalSearch) watcherModalSearch.value = '';
         watcherModalItems.forEach(item => item.classList.remove('hidden'));
-        watcherModalEmpty.classList.add('hidden');
+        if (watcherModalEmpty) watcherModalEmpty.classList.add('hidden');
     };
 
     window.applyWatcherSelection = function() {

@@ -426,13 +426,9 @@ function insertEmoji(quill, emoji, picker) {
 
     // quill-mention 6.x auto-registers itself, but let's verify
     if (typeof window.Mention !== 'undefined') {
-        console.log('Mention module detected:', window.Mention);
+        // Mention module loaded
     } else if (typeof QuillMention !== 'undefined') {
-        console.log('QuillMention detected, registering...');
         Quill.register('modules/mention', QuillMention.default || QuillMention, true);
-    } else {
-        console.log('Looking for mention module in Quill.imports...');
-        console.log('Quill imports:', Object.keys(Quill.imports || {}));
     }
 })();
 

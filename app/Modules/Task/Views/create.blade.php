@@ -786,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Populate year dropdown (current year + next 10 years)
     function populateYears() {
+        if (!dueDateYear) return;
         const currentYear = new Date().getFullYear();
         dueDateYear.innerHTML = '';
         for (let year = currentYear; year <= currentYear + 10; year++) {
@@ -799,6 +800,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Render calendar grid
     function renderCalendar() {
+        if (!dueDateDays) return;
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -806,8 +809,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = currentViewMonth;
 
         // Update selects
-        dueDateYear.value = year;
-        dueDateMonth.value = month;
+        if (dueDateYear) dueDateYear.value = year;
+        if (dueDateMonth) dueDateMonth.value = month;
 
         // First day of the month
         const firstDay = new Date(year, month, 1);
@@ -885,9 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectDay(day) {
-        console.log('selectDay called with day:', day, 'year:', currentViewYear, 'month:', currentViewMonth);
         selectedDate = new Date(currentViewYear, currentViewMonth, day);
-        console.log('selectedDate set to:', selectedDate);
         renderCalendar();
     }
 
@@ -923,19 +924,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Close date picker
     window.closeDueDatePicker = function() {
-        dueDatePickerDropdown.classList.add('hidden');
+        if (dueDatePickerDropdown) dueDatePickerDropdown.classList.add('hidden');
     };
 
     // Clear due date
     window.clearDueDate = function() {
         selectedDate = null;
-        dueDateDisplay.value = '';
-        dueDateValue.value = '';
-        dueDateHour.value = '12';
-        dueDateMinute.value = '00';
-        dueDateAmpm.value = 'AM';
-        // Remove visual indicator
-        dueDateDisplay.classList.remove('input-primary', 'border-primary');
+        if (dueDateDisplay) {
+            dueDateDisplay.value = '';
+            dueDateDisplay.classList.remove('input-primary', 'border-primary');
+        }
+        if (dueDateValue) dueDateValue.value = '';
+        if (dueDateHour) dueDateHour.value = '12';
+        if (dueDateMinute) dueDateMinute.value = '00';
+        if (dueDateAmpm) dueDateAmpm.value = 'AM';
         renderCalendar();
         closeDueDatePicker();
     };
@@ -948,9 +950,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Get time values
-        let hours = parseInt(dueDateHour.value) || 12;
-        const minutes = parseInt(dueDateMinute.value) || 0;
-        const ampm = dueDateAmpm.value;
+        let hours = parseInt(dueDateHour?.value) || 12;
+        const minutes = parseInt(dueDateMinute?.value) || 0;
+        const ampm = dueDateAmpm?.value || 'AM';
 
         // Validate hour
         if (hours < 1) hours = 1;
@@ -975,7 +977,10 @@ document.addEventListener('DOMContentLoaded', function() {
             minute: '2-digit',
             hour12: true
         };
-        dueDateDisplay.value = selectedDate.toLocaleDateString('en-US', options);
+        if (dueDateDisplay) {
+            dueDateDisplay.value = selectedDate.toLocaleDateString('en-US', options);
+            dueDateDisplay.classList.add('input-primary', 'border-primary');
+        }
 
         // Format for form submission: "YYYY-MM-DD HH:MM"
         const year = selectedDate.getFullYear();
@@ -983,38 +988,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const day = String(selectedDate.getDate()).padStart(2, '0');
         const hour24 = String(selectedDate.getHours()).padStart(2, '0');
         const min = String(selectedDate.getMinutes()).padStart(2, '0');
-        dueDateValue.value = `${year}-${month}-${day} ${hour24}:${min}`;
-
-        // Add visual indicator that date is selected
-        dueDateDisplay.classList.add('input-primary', 'border-primary');
+        if (dueDateValue) dueDateValue.value = `${year}-${month}-${day} ${hour24}:${min}`;
 
         closeDueDatePicker();
     };
 
     // Year/Month change handlers
-    dueDateYear.addEventListener('change', function() {
-        currentViewYear = parseInt(this.value);
-        renderCalendar();
-    });
+    if (dueDateYear) {
+        dueDateYear.addEventListener('change', function() {
+            currentViewYear = parseInt(this.value);
+            renderCalendar();
+        });
+    }
 
-    dueDateMonth.addEventListener('change', function() {
-        currentViewMonth = parseInt(this.value);
-        renderCalendar();
-    });
+    if (dueDateMonth) {
+        dueDateMonth.addEventListener('change', function() {
+            currentViewMonth = parseInt(this.value);
+            renderCalendar();
+        });
+    }
 
     // Close picker when clicking outside
     document.addEventListener('click', function(e) {
         // Don't close if clicking inside the picker or on the display input
-        if (dueDatePickerDropdown.contains(e.target) || dueDateDisplay.contains(e.target)) {
+        if (dueDatePickerDropdown && dueDateDisplay && (dueDatePickerDropdown.contains(e.target) || dueDateDisplay.contains(e.target))) {
             return;
         }
-        if (!dueDatePickerDropdown.classList.contains('hidden')) {
+        if (dueDatePickerDropdown && !dueDatePickerDropdown.classList.contains('hidden')) {
             closeDueDatePicker();
         }
     });
 
     // Initialize with existing value
-    if (dueDateValue.value) {
+    if (dueDateValue && dueDateValue.value) {
         const parsed = new Date(dueDateValue.value);
         if (!isNaN(parsed)) {
             selectedDate = parsed;
@@ -1486,9 +1492,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Open watcher modal
     window.openWatcherModal = function() {
-        console.log('Opening watcher modal', watcherModal);
         if (!watcherModal) {
-            console.error('Watcher modal not found!');
             return;
         }
 
@@ -2108,7 +2112,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tags.length > 0) {
                 const tagsJson = JSON.stringify(tags.map(tag => ({ value: tag })));
                 tagsHidden.value = tagsJson;
-                console.log('Tags JSON:', tagsJson);
             }
         });
     }
