@@ -1030,10 +1030,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set time fields
             let hours = parsed.getHours();
             const minutes = parsed.getMinutes();
-            dueDateAmpm.value = hours >= 12 ? 'PM' : 'AM';
+            if (dueDateAmpm) dueDateAmpm.value = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12 || 12;
-            dueDateHour.value = hours;
-            dueDateMinute.value = String(minutes).padStart(2, '0');
+            if (dueDateHour) dueDateHour.value = hours;
+            if (dueDateMinute) dueDateMinute.value = String(minutes).padStart(2, '0');
 
             const options = {
                 year: 'numeric',
@@ -1043,9 +1043,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit',
                 hour12: true
             };
-            dueDateDisplay.value = parsed.toLocaleDateString('en-US', options);
-            // Add visual indicator
-            dueDateDisplay.classList.add('input-primary', 'border-primary');
+            if (dueDateDisplay) {
+                dueDateDisplay.value = parsed.toLocaleDateString('en-US', options);
+                dueDateDisplay.classList.add('input-primary', 'border-primary');
+            }
         }
     }
 
@@ -1062,26 +1063,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show dropdown
     function showWorkspaceDropdown() {
-        workspaceDropdown.classList.remove('hidden');
-        workspaceSelectContainer.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        if (workspaceDropdown) workspaceDropdown.classList.remove('hidden');
+        if (workspaceSelectContainer) workspaceSelectContainer.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
         workspaceHighlightIndex = -1;
         updateWorkspaceHighlight();
     }
 
     // Hide dropdown
     function hideWorkspaceDropdown() {
-        workspaceDropdown.classList.add('hidden');
-        workspaceSelectContainer.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+        if (workspaceDropdown) workspaceDropdown.classList.add('hidden');
+        if (workspaceSelectContainer) workspaceSelectContainer.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
         workspaceHighlightIndex = -1;
         // Restore selected workspace name if exists
-        if (selectedWorkspace) {
+        if (selectedWorkspace && workspaceSearch) {
             workspaceSearch.value = selectedWorkspace.name;
         }
     }
 
     // Toggle dropdown
     function toggleWorkspaceDropdown() {
-        if (workspaceDropdown.classList.contains('hidden')) {
+        if (workspaceDropdown && workspaceDropdown.classList.contains('hidden')) {
             showWorkspaceDropdown();
         } else {
             hideWorkspaceDropdown();
@@ -1107,88 +1108,92 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Click on container (but not input) opens dropdown and focuses input
-    workspaceSelectContainer.addEventListener('click', function(e) {
-        if (e.target === workspaceSearch) {
-            // Click was on the input itself, just show dropdown
-            if (workspaceDropdown.classList.contains('hidden')) {
-                showWorkspaceDropdown();
+    if (workspaceSelectContainer) {
+        workspaceSelectContainer.addEventListener('click', function(e) {
+            if (e.target === workspaceSearch) {
+                // Click was on the input itself, just show dropdown
+                if (workspaceDropdown && workspaceDropdown.classList.contains('hidden')) {
+                    showWorkspaceDropdown();
+                }
+            } else if (e.target.id !== 'workspace-clear' && !e.target.closest('#workspace-clear')) {
+                // Click was on container or other elements (not clear button)
+                toggleWorkspaceDropdown();
+                if (workspaceSearch) workspaceSearch.focus();
             }
-        } else if (e.target.id !== 'workspace-clear' && !e.target.closest('#workspace-clear')) {
-            // Click was on container or other elements (not clear button)
-            toggleWorkspaceDropdown();
-            workspaceSearch.focus();
-        }
-    });
+        });
+    }
 
     // Focus on input shows dropdown
-    workspaceSearch.addEventListener('focus', function() {
-        if (workspaceDropdown.classList.contains('hidden')) {
-            showWorkspaceDropdown();
-        }
-    });
-
-    // Hide dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!workspaceSelectContainer.contains(e.target) && !workspaceDropdown.contains(e.target)) {
-            hideWorkspaceDropdown();
-        }
-    });
-
-    // Search functionality
-    workspaceSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
-
-        workspaceOptions.forEach(option => {
-            const name = option.dataset.search;
-            if (name.includes(searchTerm)) {
-                option.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                option.classList.add('hidden');
+    if (workspaceSearch) {
+        workspaceSearch.addEventListener('focus', function() {
+            if (workspaceDropdown && workspaceDropdown.classList.contains('hidden')) {
+                showWorkspaceDropdown();
             }
         });
 
-        noWorkspaceResults.classList.toggle('hidden', visibleCount > 0);
+        // Search functionality
+        workspaceSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        // Reset highlight when searching
-        workspaceHighlightIndex = -1;
-        updateWorkspaceHighlight();
+            workspaceOptions.forEach(option => {
+                const name = option.dataset.search;
+                if (name.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
 
-        // Show dropdown if hidden while typing
-        if (workspaceDropdown.classList.contains('hidden')) {
-            showWorkspaceDropdown();
-        }
-    });
+            if (noWorkspaceResults) noWorkspaceResults.classList.toggle('hidden', visibleCount > 0);
 
-    // Keyboard navigation for workspace
-    workspaceSearch.addEventListener('keydown', function(e) {
-        const visibleOptions = getVisibleWorkspaceOptions();
+            // Reset highlight when searching
+            workspaceHighlightIndex = -1;
+            updateWorkspaceHighlight();
 
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (workspaceDropdown.classList.contains('hidden')) {
+            // Show dropdown if hidden while typing
+            if (workspaceDropdown && workspaceDropdown.classList.contains('hidden')) {
                 showWorkspaceDropdown();
-            } else {
-                workspaceHighlightIndex = Math.min(workspaceHighlightIndex + 1, visibleOptions.length - 1);
-                updateWorkspaceHighlight();
             }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!workspaceDropdown.classList.contains('hidden')) {
-                workspaceHighlightIndex = Math.max(workspaceHighlightIndex - 1, 0);
-                updateWorkspaceHighlight();
+        });
+
+        // Keyboard navigation for workspace
+        workspaceSearch.addEventListener('keydown', function(e) {
+            const visibleOptions = getVisibleWorkspaceOptions();
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (workspaceDropdown && workspaceDropdown.classList.contains('hidden')) {
+                    showWorkspaceDropdown();
+                } else {
+                    workspaceHighlightIndex = Math.min(workspaceHighlightIndex + 1, visibleOptions.length - 1);
+                    updateWorkspaceHighlight();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (workspaceDropdown && !workspaceDropdown.classList.contains('hidden')) {
+                    workspaceHighlightIndex = Math.max(workspaceHighlightIndex - 1, 0);
+                    updateWorkspaceHighlight();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (workspaceHighlightIndex >= 0 && visibleOptions[workspaceHighlightIndex]) {
+                    visibleOptions[workspaceHighlightIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideWorkspaceDropdown();
+                workspaceSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideWorkspaceDropdown();
             }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (workspaceHighlightIndex >= 0 && visibleOptions[workspaceHighlightIndex]) {
-                visibleOptions[workspaceHighlightIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            hideWorkspaceDropdown();
-            workspaceSearch.blur();
-        } else if (e.key === 'Tab') {
+        });
+    }
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (workspaceSelectContainer && workspaceDropdown && !workspaceSelectContainer.contains(e.target) && !workspaceDropdown.contains(e.target)) {
             hideWorkspaceDropdown();
         }
     });
@@ -1213,9 +1218,9 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('bg-primary/10');
 
             selectedWorkspace = { id, name, statuses };
-            workspaceSearch.value = name;
-            workspaceHiddenInput.value = id;
-            workspaceClear.classList.remove('hidden');
+            if (workspaceSearch) workspaceSearch.value = name;
+            if (workspaceHiddenInput) workspaceHiddenInput.value = id;
+            if (workspaceClear) workspaceClear.classList.remove('hidden');
 
             // Close dropdown
             hideWorkspaceDropdown();
@@ -1232,13 +1237,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.clearWorkspace = function(event) {
         event.stopPropagation();
         selectedWorkspace = null;
-        workspaceSearch.value = '';
-        workspaceHiddenInput.value = '';
-        workspaceClear.classList.add('hidden');
+        if (workspaceSearch) workspaceSearch.value = '';
+        if (workspaceHiddenInput) workspaceHiddenInput.value = '';
+        if (workspaceClear) workspaceClear.classList.add('hidden');
 
         // Deselect all options
         workspaceOptions.forEach(opt => {
-            opt.querySelector('.workspace-check').classList.add('hidden');
+            const check = opt.querySelector('.workspace-check');
+            if (check) check.classList.add('hidden');
             opt.classList.remove('bg-primary/10');
         });
 
@@ -1254,13 +1260,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusHint = document.getElementById('status-hint');
 
     function updateStatusDropdown(statusesJson) {
+        if (!statusSelect) return;
+
         // Clear current options
         statusSelect.innerHTML = '';
 
         if (!statusesJson) {
             statusSelect.innerHTML = '<option value="">Select workspace first</option>';
-            statusHint.textContent = 'Select a workspace to see available statuses';
-            statusHint.classList.remove('hidden');
+            if (statusHint) {
+                statusHint.textContent = 'Select a workspace to see available statuses';
+                statusHint.classList.remove('hidden');
+            }
             return;
         }
 
@@ -1282,11 +1292,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (index === 0) option.selected = true;
                 statusSelect.appendChild(option);
             });
-            statusHint.classList.add('hidden');
+            if (statusHint) statusHint.classList.add('hidden');
         } else {
             statusSelect.innerHTML = '<option value="">No statuses available</option>';
-            statusHint.textContent = 'This workspace has no statuses configured';
-            statusHint.classList.remove('hidden');
+            if (statusHint) {
+                statusHint.textContent = 'This workspace has no statuses configured';
+                statusHint.classList.remove('hidden');
+            }
         }
     }
 
@@ -1297,23 +1309,27 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentWorkspaceId = null;
 
     async function updateMilestoneDropdown(workspaceId) {
+        if (!milestoneSelect) return;
+
         milestoneSelect.innerHTML = '';
         currentWorkspaceId = workspaceId;
 
         if (!workspaceId) {
             milestoneSelect.innerHTML = '<option value="">Select workspace first</option>';
-            milestoneHint.textContent = 'Select a workspace to see available milestones';
-            milestoneHint.classList.remove('hidden');
-            createMilestoneBtn.disabled = true;
+            if (milestoneHint) {
+                milestoneHint.textContent = 'Select a workspace to see available milestones';
+                milestoneHint.classList.remove('hidden');
+            }
+            if (createMilestoneBtn) createMilestoneBtn.disabled = true;
             return;
         }
 
         // Enable create button
-        createMilestoneBtn.disabled = false;
+        if (createMilestoneBtn) createMilestoneBtn.disabled = false;
 
         // Show loading
         milestoneSelect.innerHTML = '<option value="">Loading milestones...</option>';
-        milestoneHint.classList.add('hidden');
+        if (milestoneHint) milestoneHint.classList.add('hidden');
 
         try {
             // Fetch milestones for this workspace
@@ -1343,16 +1359,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     option.textContent = `${statusIndicator}${milestone.title} (${milestone.progress}%)`;
                     milestoneSelect.appendChild(option);
                 });
-                milestoneHint.classList.add('hidden');
+                if (milestoneHint) milestoneHint.classList.add('hidden');
             } else {
-                milestoneHint.textContent = 'No milestones yet. Click + to create one.';
-                milestoneHint.classList.remove('hidden');
+                if (milestoneHint) {
+                    milestoneHint.textContent = 'No milestones yet. Click + to create one.';
+                    milestoneHint.classList.remove('hidden');
+                }
             }
         } catch (error) {
-            console.error('Error fetching milestones:', error);
             milestoneSelect.innerHTML = '<option value="">No milestone</option>';
-            milestoneHint.textContent = 'Could not load milestones';
-            milestoneHint.classList.remove('hidden');
+            if (milestoneHint) {
+                milestoneHint.textContent = 'Could not load milestones';
+                milestoneHint.classList.remove('hidden');
+            }
         }
     }
 
@@ -1365,65 +1384,80 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select a workspace first');
             return;
         }
-        createMilestoneModal.classList.add('modal-open');
-        document.body.classList.add('overflow-hidden');
-        document.getElementById('milestone-title').focus();
+        if (createMilestoneModal) {
+            createMilestoneModal.classList.add('modal-open');
+            document.body.classList.add('overflow-hidden');
+            const titleInput = document.getElementById('milestone-title');
+            if (titleInput) titleInput.focus();
+        }
     };
 
     window.closeCreateMilestoneModal = function() {
-        createMilestoneModal.classList.remove('modal-open');
-        document.body.classList.remove('overflow-hidden');
-        createMilestoneForm.reset();
+        if (createMilestoneModal) {
+            createMilestoneModal.classList.remove('modal-open');
+            document.body.classList.remove('overflow-hidden');
+        }
+        if (createMilestoneForm) createMilestoneForm.reset();
     };
 
-    createMilestoneForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+    if (createMilestoneForm) {
+        createMilestoneForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        if (!currentWorkspaceId) return;
+            if (!currentWorkspaceId) return;
 
-        const formData = {
-            title: document.getElementById('milestone-title').value,
-            description: document.getElementById('milestone-description').value,
-            start_date: document.getElementById('milestone-start-date').value || null,
-            due_date: document.getElementById('milestone-due-date').value || null,
-            priority: document.getElementById('milestone-priority').value,
-        };
+            const titleEl = document.getElementById('milestone-title');
+            const descEl = document.getElementById('milestone-description');
+            const startDateEl = document.getElementById('milestone-start-date');
+            const dueDateEl = document.getElementById('milestone-due-date');
+            const priorityEl = document.getElementById('milestone-priority');
 
-        const submitBtn = createMilestoneForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Creating...';
+            const formData = {
+                title: titleEl ? titleEl.value : '',
+                description: descEl ? descEl.value : '',
+                start_date: startDateEl ? startDateEl.value || null : null,
+                due_date: dueDateEl ? dueDateEl.value || null : null,
+                priority: priorityEl ? priorityEl.value : 'medium',
+            };
 
-        try {
-            const response = await fetch(`/api/workspaces/${currentWorkspaceId}/milestones`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify(formData),
-            });
+            const submitBtn = createMilestoneForm.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to create milestone');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Creating...';
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                const response = await fetch(`/api/workspaces/${currentWorkspaceId}/milestones`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken ? csrfToken.content : '',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create milestone');
+                }
+
+                const data = await response.json();
+
+                // Refresh milestones dropdown and select the new one
+                await updateMilestoneDropdown(currentWorkspaceId);
+                if (milestoneSelect) milestoneSelect.value = data.milestone.id;
+
+                closeCreateMilestoneModal();
+            } catch (error) {
+                alert('Failed to create milestone: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
-
-            const data = await response.json();
-
-            // Refresh milestones dropdown and select the new one
-            await updateMilestoneDropdown(currentWorkspaceId);
-            milestoneSelect.value = data.milestone.id;
-
-            closeCreateMilestoneModal();
-        } catch (error) {
-            console.error('Error creating milestone:', error);
-            alert('Failed to create milestone: ' + error.message);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-        }
-    });
+        });
+    }
 
     // Initialize - check for pre-selected workspace and milestone
     const preSelectedWorkspace = '{{ old('workspace_id', $selectedWorkspace ?? '') }}';
