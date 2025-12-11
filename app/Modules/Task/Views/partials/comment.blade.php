@@ -22,7 +22,7 @@
                 </div>
             </div>
 
-            <div class="prose prose-sm max-w-none" id="comment-content-{{ $comment->id }}">
+            <div class="prose prose-sm max-w-none comment-content" id="comment-content-{{ $comment->id }}">
                 {!! $comment->content !!}
             </div>
 

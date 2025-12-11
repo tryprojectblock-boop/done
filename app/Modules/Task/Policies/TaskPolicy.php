@@ -36,6 +36,11 @@ class TaskPolicy
             return true;
         }
 
+        // Workspace members can view tasks in their workspace
+        if ($task->workspace && $task->workspace->hasMember($user)) {
+            return true;
+        }
+
         return false;
     }
 

@@ -294,6 +294,17 @@ class UsersController extends Controller
                     'timezone' => 'UTC',
                 ]);
 
+                // Add user to company_user pivot table
+                \DB::table('company_user')->insert([
+                    'company_id' => $currentUser->company_id,
+                    'user_id' => $user->id,
+                    'role' => $memberData['role'],
+                    'is_primary' => true,
+                    'joined_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
                 // Send invitation email for new user
                 Mail::to($user->email)->send(new UserInvitationMail($user, $currentUser, $invitationToken));
 

@@ -9,6 +9,8 @@ use App\Modules\Core\Contracts\FileUploadInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Http;
 
 class ImageUploadController extends Controller
 {
@@ -65,5 +67,75 @@ class ImageUploadController extends Controller
             'success' => false,
             'message' => 'Failed to upload image',
         ], 500);
+    }
+
+    /**
+     * Download an image by proxying through the server.
+     * This bypasses CORS restrictions for cross-origin images.
+     */
+    public function download(Request $request): Response|JsonResponse
+    {
+        $request->validate([
+            'url' => 'required|url',
+        ]);
+
+        $url = $request->input('url');
+
+        // Security: Only allow downloads from our DigitalOcean Spaces domain
+        $allowedDomains = [
+            'projectblock.atl1.digitaloceanspaces.com',
+            'projectblock.nyc3.digitaloceanspaces.com',
+        ];
+
+        $parsedUrl = parse_url($url);
+        $host = $parsedUrl['host'] ?? '';
+
+        if (!in_array($host, $allowedDomains)) {
+            return response()->json(['error' => 'Invalid image domain'], 403);
+        }
+
+        try {
+            // Fetch the image from the remote server
+            $response = Http::timeout(30)->get($url);
+
+            if (!$response->successful()) {
+                return response()->json(['error' => 'Failed to fetch image'], 500);
+            }
+
+            // Get content type and determine filename
+            $contentType = $response->header('Content-Type') ?? 'image/png';
+            $pathParts = explode('/', $parsedUrl['path'] ?? '');
+            $filename = end($pathParts);
+            // Remove query string from filename
+            $filename = explode('?', $filename)[0];
+            if (empty($filename)) {
+                $filename = 'image.' . $this->getExtensionFromMimeType($contentType);
+            }
+
+            // Return the image with download headers
+            return response($response->body())
+                ->header('Content-Type', $contentType)
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Content-Length', strlen($response->body()));
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Download failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get file extension from MIME type.
+     */
+    private function getExtensionFromMimeType(string $mimeType): string
+    {
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
+        ];
+
+        return $map[$mimeType] ?? 'png';
     }
 }

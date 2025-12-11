@@ -265,19 +265,49 @@ class Task extends Model
     public function canChangeStatus(User $user): bool
     {
         // Assignee and owner can change status
-        return $this->isOwner($user) || $this->isAssignee($user) || $user->isAdminOrHigher();
+        if ($this->isOwner($user) || $this->isAssignee($user) || $user->isAdminOrHigher()) {
+            return true;
+        }
+
+        // Workspace members can change status
+        if ($this->workspace && $this->workspace->hasMember($user)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function canClose(User $user): bool
     {
-        // Only owner can close the task
-        return $this->isOwner($user) || $user->isAdminOrHigher();
+        // Only owner or admin can close the task
+        if ($this->isOwner($user) || $user->isAdminOrHigher()) {
+            return true;
+        }
+
+        // Workspace admins/owners can close tasks
+        if ($this->workspace && $this->workspace->hasMember($user)) {
+            $role = $this->workspace->getMemberRole($user);
+            if ($role && ($role->isOwner() || $role->isAdmin())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function canEdit(User $user): bool
     {
         // Owner, assignee, or admin can edit
-        return $this->isOwner($user) || $this->isAssignee($user) || $user->isAdminOrHigher();
+        if ($this->isOwner($user) || $this->isAssignee($user) || $user->isAdminOrHigher()) {
+            return true;
+        }
+
+        // Workspace members can edit tasks in their workspace
+        if ($this->workspace && $this->workspace->hasMember($user)) {
+            return true;
+        }
+
+        return false;
     }
 
     // ==================== SCOPES ====================

@@ -725,8 +725,99 @@
     </div>
 </div>
 
+<!-- Image Lightbox Modal -->
+<div id="image-lightbox" class="fixed inset-0 z-[9999] hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="closeLightbox()"></div>
+
+    <!-- Content -->
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <!-- Close button -->
+        <button onclick="closeLightbox()" class="absolute top-4 right-4 btn btn-circle btn-ghost text-white hover:bg-white/20 z-10">
+            <span class="icon-[tabler--x] size-6"></span>
+        </button>
+
+        <!-- Download button -->
+        <button id="lightbox-download" onclick="downloadLightboxImage()" class="absolute top-4 right-20 btn btn-circle btn-ghost text-white hover:bg-white/20 z-10" title="Download image">
+            <span class="icon-[tabler--download] size-6"></span>
+        </button>
+
+        <!-- Zoom controls -->
+        <div class="absolute top-4 left-4 flex gap-2 z-10">
+            <button onclick="zoomImage(-0.25)" class="btn btn-circle btn-ghost text-white hover:bg-white/20" title="Zoom out">
+                <span class="icon-[tabler--zoom-out] size-6"></span>
+            </button>
+            <button onclick="resetZoom()" class="btn btn-ghost text-white hover:bg-white/20 px-3" title="Reset zoom">
+                <span id="zoom-level">100%</span>
+            </button>
+            <button onclick="zoomImage(0.25)" class="btn btn-circle btn-ghost text-white hover:bg-white/20" title="Zoom in">
+                <span class="icon-[tabler--zoom-in] size-6"></span>
+            </button>
+        </div>
+
+        <!-- Image container -->
+        <div id="lightbox-image-container" class="relative max-w-full max-h-full overflow-auto cursor-grab active:cursor-grabbing">
+            <img id="lightbox-image" src="" alt="Preview" class="max-w-none transition-transform duration-200" style="transform-origin: center center;">
+        </div>
+    </div>
+
+    <!-- Navigation hint -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-sm">
+        <span class="icon-[tabler--mouse] size-4 inline-block mr-1"></span>
+        Scroll to zoom • Drag to pan • Click outside or press ESC to close
+    </div>
+</div>
+
 @push('scripts')
 <style>
+    /* Image lightbox styles */
+    #image-lightbox img {
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
+    /* Make images in prose/description clickable */
+    .prose img,
+    .comment-content img,
+    [data-zoomable-image] {
+        cursor: zoom-in;
+        transition: opacity 0.2s;
+    }
+
+    .prose img:hover,
+    .comment-content img:hover,
+    [data-zoomable-image]:hover {
+        opacity: 0.9;
+    }
+
+    /* Zoom icon overlay on images */
+    .image-zoom-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-zoom-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        background: rgba(0,0,0,0.6);
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.2s;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 16px;
+        pointer-events: none;
+    }
+
+    .image-zoom-wrapper:hover::after {
+        opacity: 1;
+    }
+
     /* Edit button - hidden by default, show on hover */
     .edit-btn {
         opacity: 0 !important;
@@ -1051,6 +1142,189 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ==================== IMAGE LIGHTBOX ====================
+let currentZoom = 1;
+let isDragging = false;
+let startX, startY, scrollLeft, scrollTop;
+let currentImageSrc = '';
+let currentImageFilename = 'image.png';
+
+// Initialize lightbox for all images in prose/comments
+document.addEventListener('DOMContentLoaded', function() {
+    initImageLightbox();
+});
+
+function initImageLightbox() {
+    // Find all images in prose (description) and comments
+    const images = document.querySelectorAll('.prose img, .comment-content img, [data-zoomable-image]');
+
+    images.forEach(img => {
+        // Skip if already initialized
+        if (img.dataset.lightboxInitialized) return;
+        img.dataset.lightboxInitialized = 'true';
+
+        // Make image clickable
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openLightbox(this.src);
+        });
+    });
+}
+
+function openLightbox(imageSrc) {
+    const lightbox = document.getElementById('image-lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const container = document.getElementById('lightbox-image-container');
+
+    if (!lightbox || !lightboxImage) return;
+
+    // Store current image for download
+    currentImageSrc = imageSrc;
+    currentImageFilename = imageSrc.split('/').pop().split('?')[0] || 'image.png';
+
+    // Set image source
+    lightboxImage.src = imageSrc;
+
+    // Reset zoom
+    currentZoom = 1;
+    updateZoom();
+
+    // Show lightbox
+    lightbox.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Setup drag to pan
+    setupDragToPan(container);
+
+    // Setup scroll to zoom
+    container.addEventListener('wheel', handleWheelZoom, { passive: false });
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('image-lightbox');
+    if (lightbox) {
+        lightbox.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function downloadLightboxImage() {
+    if (!currentImageSrc) return;
+
+    const downloadBtn = document.getElementById('lightbox-download');
+    const originalContent = downloadBtn.innerHTML;
+
+    // Show loading state
+    downloadBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span>';
+    downloadBtn.disabled = true;
+
+    // Use server-side proxy to download the image (bypasses CORS)
+    const downloadUrl = '{{ route("images.download") }}?url=' + encodeURIComponent(currentImageSrc);
+
+    // Create a hidden iframe to trigger the download
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = downloadUrl;
+    document.body.appendChild(iframe);
+
+    // Restore button state after a short delay
+    setTimeout(() => {
+        downloadBtn.innerHTML = originalContent;
+        downloadBtn.disabled = false;
+        // Clean up iframe after download starts
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 5000);
+    }, 1000);
+}
+
+function zoomImage(delta) {
+    currentZoom = Math.max(0.25, Math.min(5, currentZoom + delta));
+    updateZoom();
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    updateZoom();
+}
+
+function updateZoom() {
+    const lightboxImage = document.getElementById('lightbox-image');
+    const zoomLevel = document.getElementById('zoom-level');
+
+    if (lightboxImage) {
+        lightboxImage.style.transform = `scale(${currentZoom})`;
+    }
+
+    if (zoomLevel) {
+        zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
+    }
+}
+
+function handleWheelZoom(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    currentZoom = Math.max(0.25, Math.min(5, currentZoom + delta));
+    updateZoom();
+}
+
+function setupDragToPan(container) {
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        container.style.cursor = 'grabbing';
+        startX = e.pageX - container.offsetLeft;
+        startY = e.pageY - container.offsetTop;
+        scrollLeft = container.scrollLeft;
+        scrollTop = container.scrollTop;
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const y = e.pageY - container.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        container.scrollLeft = scrollLeft - walkX;
+        container.scrollTop = scrollTop - walkY;
+    });
+}
+
+// Close lightbox on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    }
+});
+
+// Re-initialize lightbox when new content is added (e.g., after AJAX)
+if (typeof MutationObserver !== 'undefined') {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+                initImageLightbox();
+            }
+        });
+    });
+
+    const proseContainers = document.querySelectorAll('.prose, .comment-content');
+    proseContainers.forEach(container => {
+        observer.observe(container, { childList: true, subtree: true });
+    });
+}
 </script>
 @endpush
 @endsection

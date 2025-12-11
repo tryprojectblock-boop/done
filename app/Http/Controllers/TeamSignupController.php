@@ -105,6 +105,24 @@ class TeamSignupController extends Controller
             'last_login_ip' => $request->ip(),
         ]);
 
+        // Ensure user is in company_user pivot table
+        $existsInPivot = \DB::table('company_user')
+            ->where('company_id', $user->company_id)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if (!$existsInPivot && $user->company_id) {
+            \DB::table('company_user')->insert([
+                'company_id' => $user->company_id,
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'is_primary' => true,
+                'joined_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         // Log the user in
         Auth::login($user);
 
