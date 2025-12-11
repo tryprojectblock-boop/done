@@ -200,6 +200,7 @@ Route::middleware(['auth'])->prefix('files')->name('files.')->group(function () 
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->post('/upload/image', [ImageUploadController::class, 'store'])->name('upload.image');
+Route::middleware(['auth'])->get('/images/{path}', [ImageUploadController::class, 'serve'])->name('images.serve')->where('path', '.*');
 
 /*
 |--------------------------------------------------------------------------
