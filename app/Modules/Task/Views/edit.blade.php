@@ -419,7 +419,7 @@
                                 <input type="hidden" name="due_date" id="due-date-value" value="{{ old('due_date', $task->due_date?->format('Y-m-d H:i')) }}">
 
                                 <!-- Absolute Positioned Date Picker Dropdown -->
-                                <div id="due-date-picker-dropdown" class="hidden absolute z-50 left-0 top-full mt-2 p-4 bg-white border border-base-300 rounded-xl shadow-xl w-80">
+                                <div id="due-date-picker-dropdown" class="hidden absolute z-50 left-0 bottom-full mb-2 p-4 bg-white border border-base-300 rounded-xl shadow-xl w-80">
                                     <!-- Year and Month Selectors -->
                                     <div class="flex gap-2 mb-4">
                                         <select id="due-date-year" class="select select-bordered select-sm flex-1">
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
             // Ensure tags are in JSON format
-            if (tags.length > 0) {
+            if (tags.length > 0 && tagsHidden) {
                 const tagsJson = JSON.stringify(tags.map(tag => ({ value: tag })));
                 tagsHidden.value = tagsJson;
             }
@@ -615,6 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function renderTags() {
+        if (!tagsContainer) return;
         const tagElements = tagsContainer.querySelectorAll('.tag-item');
         tagElements.forEach(el => el.remove());
 
@@ -628,7 +629,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="icon-[tabler--x] size-3"></span>
                 </button>
             `;
-            tagsContainer.insertBefore(tagEl, tagInput);
+            if (tagInput) {
+                tagsContainer.insertBefore(tagEl, tagInput);
+            } else {
+                tagsContainer.appendChild(tagEl);
+            }
         });
     }
 
@@ -772,36 +777,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const index = selectedTasktypes.findIndex(t => t.value === value);
             if (index > -1) {
                 selectedTasktypes.splice(index, 1);
-                checkIcon.classList.add('hidden');
+                if (checkIcon) checkIcon.classList.add('hidden');
                 this.classList.remove('bg-primary/10');
             } else {
                 selectedTasktypes.push({ value, label, icon });
-                checkIcon.classList.remove('hidden');
+                if (checkIcon) checkIcon.classList.remove('hidden');
                 this.classList.add('bg-primary/10');
             }
 
             this.classList.remove('bg-base-200');
             updateSelectedTasktypes();
-            tasktypeSearch.focus();
+            if (tasktypeSearch) tasktypeSearch.focus();
         });
     });
 
     function updateSelectedTasktypes() {
-        selectedTasktypesContainer.innerHTML = selectedTasktypes.map(t => `
-            <span class="badge badge-primary gap-1" data-value="${t.value}">
-                <span class="icon-[${t.icon}] size-3"></span>
-                ${t.label}
-                <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeTasktype('${t.value}', event)">
-                    <span class="icon-[tabler--x] size-3"></span>
-                </button>
-            </span>
-        `).join('');
+        if (selectedTasktypesContainer) {
+            selectedTasktypesContainer.innerHTML = selectedTasktypes.map(t => `
+                <span class="badge badge-primary gap-1" data-value="${t.value}">
+                    <span class="icon-[${t.icon}] size-3"></span>
+                    ${t.label}
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeTasktype('${t.value}', event)">
+                        <span class="icon-[tabler--x] size-3"></span>
+                    </button>
+                </span>
+            `).join('');
+        }
 
-        tasktypeHiddenInputs.innerHTML = selectedTasktypes.map(t =>
-            `<input type="hidden" name="type[]" value="${t.value}">`
-        ).join('');
+        if (tasktypeHiddenInputs) {
+            tasktypeHiddenInputs.innerHTML = selectedTasktypes.map(t =>
+                `<input type="hidden" name="type[]" value="${t.value}">`
+            ).join('');
+        }
 
-        tasktypeSearch.placeholder = selectedTasktypes.length > 0 ? 'Add more types...' : 'Search task types...';
+        if (tasktypeSearch) tasktypeSearch.placeholder = selectedTasktypes.length > 0 ? 'Add more types...' : 'Search task types...';
     }
 
     window.removeTasktype = function(value, event) {
@@ -811,7 +820,8 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedTasktypes.splice(index, 1);
             const option = document.querySelector(`.tasktype-option[data-value="${value}"]`);
             if (option) {
-                option.querySelector('.tasktype-check').classList.add('hidden');
+                const check = option.querySelector('.tasktype-check');
+                if (check) check.classList.add('hidden');
                 option.classList.remove('bg-primary/10');
             }
             updateSelectedTasktypes();
@@ -859,85 +869,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAssigneeDropdown() {
-        assigneeDropdown.classList.remove('hidden');
-        assigneeSelect.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        if (assigneeDropdown) assigneeDropdown.classList.remove('hidden');
+        if (assigneeSelect) assigneeSelect.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
         assigneeHighlightIndex = -1;
         updateAssigneeHighlight();
     }
 
     function hideAssigneeDropdown() {
-        assigneeDropdown.classList.add('hidden');
-        assigneeSelect.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+        if (assigneeDropdown) assigneeDropdown.classList.add('hidden');
+        if (assigneeSelect) assigneeSelect.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
         assigneeHighlightIndex = -1;
-        assigneeSearch.value = '';
+        if (assigneeSearch) assigneeSearch.value = '';
         assigneeOptions.forEach(option => option.classList.remove('hidden'));
-        noAssigneeResults.classList.add('hidden');
+        if (noAssigneeResults) noAssigneeResults.classList.add('hidden');
     }
 
-    assigneeSelect.addEventListener('click', function(e) {
-        if (e.target.closest('button')) return;
-        if (assigneeDropdown.classList.contains('hidden')) {
-            showAssigneeDropdown();
-        }
-        assigneeSearch.focus();
-    });
+    if (assigneeSelect) {
+        assigneeSelect.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                showAssigneeDropdown();
+            }
+            if (assigneeSearch) assigneeSearch.focus();
+        });
+    }
 
-    assigneeSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
+    if (assigneeSearch) {
+        assigneeSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        assigneeOptions.forEach(option => {
-            const name = option.dataset.search;
-            if (name.includes(searchTerm)) {
-                option.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                option.classList.add('hidden');
+            assigneeOptions.forEach(option => {
+                const name = option.dataset.search;
+                if (name.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (noAssigneeResults) noAssigneeResults.classList.toggle('hidden', visibleCount > 0);
+            assigneeHighlightIndex = -1;
+            updateAssigneeHighlight();
+
+            if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                showAssigneeDropdown();
             }
         });
 
-        noAssigneeResults.classList.toggle('hidden', visibleCount > 0);
-        assigneeHighlightIndex = -1;
-        updateAssigneeHighlight();
+        assigneeSearch.addEventListener('keydown', function(e) {
+            const visibleOptions = getVisibleAssigneeOptions();
 
-        if (assigneeDropdown.classList.contains('hidden')) {
-            showAssigneeDropdown();
-        }
-    });
-
-    assigneeSearch.addEventListener('keydown', function(e) {
-        const visibleOptions = getVisibleAssigneeOptions();
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (assigneeDropdown.classList.contains('hidden')) {
-                showAssigneeDropdown();
-            } else {
-                assigneeHighlightIndex = Math.min(assigneeHighlightIndex + 1, visibleOptions.length - 1);
-                updateAssigneeHighlight();
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                    showAssigneeDropdown();
+                } else {
+                    assigneeHighlightIndex = Math.min(assigneeHighlightIndex + 1, visibleOptions.length - 1);
+                    updateAssigneeHighlight();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (assigneeDropdown && !assigneeDropdown.classList.contains('hidden')) {
+                    assigneeHighlightIndex = Math.max(assigneeHighlightIndex - 1, 0);
+                    updateAssigneeHighlight();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (assigneeHighlightIndex >= 0 && visibleOptions[assigneeHighlightIndex]) {
+                    visibleOptions[assigneeHighlightIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideAssigneeDropdown();
+                assigneeSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideAssigneeDropdown();
             }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!assigneeDropdown.classList.contains('hidden')) {
-                assigneeHighlightIndex = Math.max(assigneeHighlightIndex - 1, 0);
-                updateAssigneeHighlight();
-            }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (assigneeHighlightIndex >= 0 && visibleOptions[assigneeHighlightIndex]) {
-                visibleOptions[assigneeHighlightIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            hideAssigneeDropdown();
-            assigneeSearch.blur();
-        } else if (e.key === 'Tab') {
-            hideAssigneeDropdown();
-        }
-    });
+        });
+    }
 
     document.addEventListener('click', function(e) {
-        if (!assigneeSelect.contains(e.target) && !assigneeDropdown.contains(e.target)) {
+        if (assigneeSelect && assigneeDropdown && !assigneeSelect.contains(e.target) && !assigneeDropdown.contains(e.target)) {
             hideAssigneeDropdown();
         }
     });
@@ -951,7 +965,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Clear previous selections (single select)
             assigneeOptions.forEach(opt => {
-                opt.querySelector('.assignee-check').classList.add('hidden');
+                const check = opt.querySelector('.assignee-check');
+                if (check) check.classList.add('hidden');
                 opt.classList.remove('bg-primary/10');
             });
 
@@ -962,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Select (replace existing)
                 selectedAssignees = [{ id, name }];
-                checkIcon.classList.remove('hidden');
+                if (checkIcon) checkIcon.classList.remove('hidden');
                 this.classList.add('bg-primary/10');
             }
 
@@ -973,21 +988,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function updateSelectedAssignees() {
-        selectedAssigneesContainer.innerHTML = selectedAssignees.map(a => `
-            <span class="badge badge-primary gap-1" data-id="${a.id}">
-                <span class="text-xs">${a.name.charAt(0)}</span>
-                ${a.name}
-                <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeAssignee('${a.id}', event)">
-                    <span class="icon-[tabler--x] size-3"></span>
-                </button>
-            </span>
-        `).join('');
+        if (selectedAssigneesContainer) {
+            selectedAssigneesContainer.innerHTML = selectedAssignees.map(a => `
+                <span class="badge badge-primary gap-1" data-id="${a.id}">
+                    <span class="text-xs">${a.name.charAt(0)}</span>
+                    ${a.name}
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeAssignee('${a.id}', event)">
+                        <span class="icon-[tabler--x] size-3"></span>
+                    </button>
+                </span>
+            `).join('');
+        }
 
-        assigneeHiddenInputs.innerHTML = selectedAssignees.map(a =>
-            `<input type="hidden" name="assignee_ids[]" value="${a.id}">`
-        ).join('');
+        if (assigneeHiddenInputs) {
+            assigneeHiddenInputs.innerHTML = selectedAssignees.map(a =>
+                `<input type="hidden" name="assignee_ids[]" value="${a.id}">`
+            ).join('');
+        }
 
-        assigneeSearch.placeholder = selectedAssignees.length > 0 ? 'Change assignee...' : 'Search and select assignee...';
+        if (assigneeSearch) assigneeSearch.placeholder = selectedAssignees.length > 0 ? 'Change assignee...' : 'Search and select assignee...';
     }
 
     window.removeAssignee = function(id, event) {
@@ -995,7 +1014,8 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedAssignees = [];
         const option = document.querySelector(`.assignee-option[data-id="${id}"]`);
         if (option) {
-            option.querySelector('.assignee-check').classList.add('hidden');
+            const check = option.querySelector('.assignee-check');
+            if (check) check.classList.add('hidden');
             option.classList.remove('bg-primary/10');
         }
         updateSelectedAssignees();
@@ -1018,19 +1038,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Populate year dropdown
     const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y <= currentYear + 10; y++) {
-        const option = document.createElement('option');
-        option.value = y;
-        option.textContent = y;
-        dueDateYear.appendChild(option);
+    if (dueDateYear) {
+        for (let y = currentYear; y <= currentYear + 10; y++) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = y;
+            dueDateYear.appendChild(option);
+        }
     }
 
     function renderCalendar() {
+        if (!dueDateDays) return;
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        dueDateYear.value = currentViewYear;
-        dueDateMonth.value = currentViewMonth;
+        if (dueDateYear) dueDateYear.value = currentViewYear;
+        if (dueDateMonth) dueDateMonth.value = currentViewMonth;
 
         const year = currentViewYear;
         const month = currentViewMonth;
@@ -1086,17 +1110,22 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.type = 'button';
         btn.textContent = day;
 
-        let classes = 'w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ';
+        let classes = 'w-9 h-9 flex items-center justify-center rounded-lg transition-all border-2 ';
 
-        if (isSelected) {
-            classes += 'bg-primary text-white shadow-lg shadow-primary/40';
+        if (isToday && isSelected) {
+            // Today AND selected - green background
+            classes += 'bg-success text-success-content border-success shadow-lg shadow-success/40 font-bold text-[15px]';
         } else if (isToday) {
-            classes += 'border-2 border-primary bg-primary/5';
+            // Today only - amber/orange filled background, bold
+            classes += 'bg-amber-500 text-white border-amber-500 font-extrabold text-[15px] shadow-md shadow-amber-500/40';
+        } else if (isSelected) {
+            // Selected only - green background
+            classes += 'bg-success text-success-content border-success shadow-lg shadow-success/40 font-bold';
         } else if (isOtherMonth || isPast) {
-            classes += 'text-base-content/30';
+            classes += 'text-base-content/30 border-transparent font-medium';
             if (isPast && !isOtherMonth) classes += ' cursor-not-allowed';
         } else {
-            classes += 'hover:bg-primary/10';
+            classes += 'hover:bg-primary/10 border-transparent font-medium text-sm';
         }
 
         btn.className = classes;
@@ -1109,6 +1138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.toggleDueDatePicker = function() {
+        if (!dueDatePickerDropdown) return;
         if (dueDatePickerDropdown.classList.contains('hidden')) {
             dueDatePickerDropdown.classList.remove('hidden');
             renderCalendar();
@@ -1118,17 +1148,19 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.closeDueDatePicker = function() {
-        dueDatePickerDropdown.classList.add('hidden');
+        if (dueDatePickerDropdown) dueDatePickerDropdown.classList.add('hidden');
     };
 
     window.clearDueDate = function() {
         selectedDate = null;
-        dueDateDisplay.value = '';
-        dueDateValue.value = '';
-        dueDateHour.value = '12';
-        dueDateMinute.value = '00';
-        dueDateAmpm.value = 'AM';
-        dueDateDisplay.classList.remove('input-primary', 'border-primary');
+        if (dueDateDisplay) {
+            dueDateDisplay.value = '';
+            dueDateDisplay.classList.remove('input-primary', 'border-primary');
+        }
+        if (dueDateValue) dueDateValue.value = '';
+        if (dueDateHour) dueDateHour.value = '12';
+        if (dueDateMinute) dueDateMinute.value = '00';
+        if (dueDateAmpm) dueDateAmpm.value = 'AM';
         renderCalendar();
         closeDueDatePicker();
     };
@@ -1139,9 +1171,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        let hours = parseInt(dueDateHour.value) || 12;
-        const minutes = parseInt(dueDateMinute.value) || 0;
-        const ampm = dueDateAmpm.value;
+        let hours = parseInt(dueDateHour?.value) || 12;
+        const minutes = parseInt(dueDateMinute?.value) || 0;
+        const ampm = dueDateAmpm?.value || 'AM';
 
         if (hours < 1) hours = 1;
         if (hours > 12) hours = 12;
@@ -1162,40 +1194,46 @@ document.addEventListener('DOMContentLoaded', function() {
             minute: '2-digit',
             hour12: true
         };
-        dueDateDisplay.value = selectedDate.toLocaleDateString('en-US', options);
+        if (dueDateDisplay) {
+            dueDateDisplay.value = selectedDate.toLocaleDateString('en-US', options);
+            dueDateDisplay.classList.add('input-primary', 'border-primary');
+        }
 
         const year = selectedDate.getFullYear();
         const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
         const day = String(selectedDate.getDate()).padStart(2, '0');
         const hour24 = String(selectedDate.getHours()).padStart(2, '0');
         const min = String(selectedDate.getMinutes()).padStart(2, '0');
-        dueDateValue.value = `${year}-${month}-${day} ${hour24}:${min}`;
+        if (dueDateValue) dueDateValue.value = `${year}-${month}-${day} ${hour24}:${min}`;
 
-        dueDateDisplay.classList.add('input-primary', 'border-primary');
         closeDueDatePicker();
     };
 
-    dueDateYear.addEventListener('change', function() {
-        currentViewYear = parseInt(this.value);
-        renderCalendar();
-    });
+    if (dueDateYear) {
+        dueDateYear.addEventListener('change', function() {
+            currentViewYear = parseInt(this.value);
+            renderCalendar();
+        });
+    }
 
-    dueDateMonth.addEventListener('change', function() {
-        currentViewMonth = parseInt(this.value);
-        renderCalendar();
-    });
+    if (dueDateMonth) {
+        dueDateMonth.addEventListener('change', function() {
+            currentViewMonth = parseInt(this.value);
+            renderCalendar();
+        });
+    }
 
     document.addEventListener('click', function(e) {
-        if (dueDatePickerDropdown.contains(e.target) || dueDateDisplay.contains(e.target)) {
+        if (dueDatePickerDropdown && dueDateDisplay && (dueDatePickerDropdown.contains(e.target) || dueDateDisplay.contains(e.target))) {
             return;
         }
-        if (!dueDatePickerDropdown.classList.contains('hidden')) {
+        if (dueDatePickerDropdown && !dueDatePickerDropdown.classList.contains('hidden')) {
             closeDueDatePicker();
         }
     });
 
     // Initialize with existing value
-    if (dueDateValue.value) {
+    if (dueDateValue && dueDateValue.value) {
         const parsed = new Date(dueDateValue.value);
         if (!isNaN(parsed)) {
             selectedDate = parsed;
@@ -1204,10 +1242,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let hours = parsed.getHours();
             const minutes = parsed.getMinutes();
-            dueDateAmpm.value = hours >= 12 ? 'PM' : 'AM';
+            if (dueDateAmpm) dueDateAmpm.value = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12 || 12;
-            dueDateHour.value = hours;
-            dueDateMinute.value = String(minutes).padStart(2, '0');
+            if (dueDateHour) dueDateHour.value = hours;
+            if (dueDateMinute) dueDateMinute.value = String(minutes).padStart(2, '0');
 
             const options = {
                 year: 'numeric',
@@ -1217,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit',
                 hour12: true
             };
-            dueDateDisplay.value = parsed.toLocaleDateString('en-US', options);
+            if (dueDateDisplay) dueDateDisplay.value = parsed.toLocaleDateString('en-US', options);
         }
     }
 
@@ -1281,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedWatchers = [];
         watcherModalItems.forEach(item => {
             const checkbox = item.querySelector('.watcher-modal-checkbox');
-            if (checkbox.checked) {
+            if (checkbox && checkbox.checked) {
                 selectedWatchers.push({
                     id: item.dataset.id,
                     name: item.dataset.name
@@ -1294,76 +1332,86 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function updateWatcherPreview() {
-        watcherHiddenInputs.innerHTML = selectedWatchers.map(w =>
-            `<input type="hidden" name="watcher_ids[]" value="${w.id}">`
-        ).join('');
+        if (watcherHiddenInputs) {
+            watcherHiddenInputs.innerHTML = selectedWatchers.map(w =>
+                `<input type="hidden" name="watcher_ids[]" value="${w.id}">`
+            ).join('');
+        }
 
         if (selectedWatchers.length > 0) {
-            selectedWatchersPreview.classList.remove('hidden');
-            selectPeopleBtn.classList.add('hidden');
+            if (selectedWatchersPreview) selectedWatchersPreview.classList.remove('hidden');
+            if (selectPeopleBtn) selectPeopleBtn.classList.add('hidden');
 
-            selectedAvatarsContainer.innerHTML = selectedWatchers.slice(0, 5).map((w, i) => `
-                <div class="avatar placeholder">
-                    <div class="${avatarColors[i % avatarColors.length]} text-white w-8 rounded-full ring-2 ring-white">
-                        <span class="text-xs">${w.name.charAt(0).toUpperCase()}</span>
-                    </div>
-                </div>
-            `).join('');
-
-            if (selectedWatchers.length > 5) {
-                selectedAvatarsContainer.innerHTML += `
+            if (selectedAvatarsContainer) {
+                selectedAvatarsContainer.innerHTML = selectedWatchers.slice(0, 5).map((w, i) => `
                     <div class="avatar placeholder">
-                        <div class="bg-base-300 text-base-content w-8 rounded-full ring-2 ring-white">
-                            <span class="text-xs">+${selectedWatchers.length - 5}</span>
+                        <div class="${avatarColors[i % avatarColors.length]} text-white w-8 rounded-full ring-2 ring-white">
+                            <span class="text-xs">${w.name.charAt(0).toUpperCase()}</span>
                         </div>
                     </div>
-                `;
+                `).join('');
+
+                if (selectedWatchers.length > 5) {
+                    selectedAvatarsContainer.innerHTML += `
+                        <div class="avatar placeholder">
+                            <div class="bg-base-300 text-base-content w-8 rounded-full ring-2 ring-white">
+                                <span class="text-xs">+${selectedWatchers.length - 5}</span>
+                            </div>
+                        </div>
+                    `;
+                }
             }
         } else {
-            selectedWatchersPreview.classList.add('hidden');
-            selectPeopleBtn.classList.remove('hidden');
+            if (selectedWatchersPreview) selectedWatchersPreview.classList.add('hidden');
+            if (selectPeopleBtn) selectPeopleBtn.classList.remove('hidden');
         }
     }
 
     function updateModalSelectedCount() {
         const count = document.querySelectorAll('.watcher-modal-checkbox:checked').length;
-        modalSelectedCount.textContent = count;
+        if (modalSelectedCount) modalSelectedCount.textContent = count;
     }
 
-    watcherModalSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
+    if (watcherModalSearch) {
+        watcherModalSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        watcherModalItems.forEach(item => {
-            const name = item.dataset.search;
-            if (name.includes(searchTerm)) {
-                item.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                item.classList.add('hidden');
-            }
+            watcherModalItems.forEach(item => {
+                const name = item.dataset.search;
+                if (name.includes(searchTerm)) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            if (watcherModalEmpty) watcherModalEmpty.classList.toggle('hidden', visibleCount > 0);
         });
-
-        watcherModalEmpty.classList.toggle('hidden', visibleCount > 0);
-    });
+    }
 
     watcherModalItems.forEach(item => {
         item.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
                 const checkbox = this.querySelector('.watcher-modal-checkbox');
-                checkbox.checked = !checkbox.checked;
+                if (checkbox) checkbox.checked = !checkbox.checked;
             }
 
             const checkbox = this.querySelector('.watcher-modal-checkbox');
             const checkIcon = this.querySelector('.watcher-check-icon');
 
-            if (checkbox.checked) {
-                checkIcon.classList.remove('opacity-0');
-                checkIcon.classList.add('opacity-100');
+            if (checkbox && checkbox.checked) {
+                if (checkIcon) {
+                    checkIcon.classList.remove('opacity-0');
+                    checkIcon.classList.add('opacity-100');
+                }
                 this.classList.add('bg-primary/5', 'border-primary/20');
             } else {
-                checkIcon.classList.add('opacity-0');
-                checkIcon.classList.remove('opacity-100');
+                if (checkIcon) {
+                    checkIcon.classList.add('opacity-0');
+                    checkIcon.classList.remove('opacity-100');
+                }
                 this.classList.remove('bg-primary/5', 'border-primary/20');
             }
 
@@ -1371,31 +1419,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    modalSelectAll.addEventListener('click', function() {
-        watcherModalItems.forEach(item => {
-            if (!item.classList.contains('hidden')) {
+    if (modalSelectAll) {
+        modalSelectAll.addEventListener('click', function() {
+            watcherModalItems.forEach(item => {
+                if (!item.classList.contains('hidden')) {
+                    const checkbox = item.querySelector('.watcher-modal-checkbox');
+                    const checkIcon = item.querySelector('.watcher-check-icon');
+                    if (checkbox) checkbox.checked = true;
+                    if (checkIcon) {
+                        checkIcon.classList.remove('opacity-0');
+                        checkIcon.classList.add('opacity-100');
+                    }
+                    item.classList.add('bg-primary/5', 'border-primary/20');
+                }
+            });
+            updateModalSelectedCount();
+        });
+    }
+
+    if (modalClearAll) {
+        modalClearAll.addEventListener('click', function() {
+            watcherModalItems.forEach(item => {
                 const checkbox = item.querySelector('.watcher-modal-checkbox');
                 const checkIcon = item.querySelector('.watcher-check-icon');
-                checkbox.checked = true;
-                checkIcon.classList.remove('opacity-0');
-                checkIcon.classList.add('opacity-100');
-                item.classList.add('bg-primary/5', 'border-primary/20');
-            }
+                if (checkbox) checkbox.checked = false;
+                if (checkIcon) {
+                    checkIcon.classList.add('opacity-0');
+                    checkIcon.classList.remove('opacity-100');
+                }
+                item.classList.remove('bg-primary/5', 'border-primary/20');
+            });
+            updateModalSelectedCount();
         });
-        updateModalSelectedCount();
-    });
-
-    modalClearAll.addEventListener('click', function() {
-        watcherModalItems.forEach(item => {
-            const checkbox = item.querySelector('.watcher-modal-checkbox');
-            const checkIcon = item.querySelector('.watcher-check-icon');
-            checkbox.checked = false;
-            checkIcon.classList.add('opacity-0');
-            checkIcon.classList.remove('opacity-100');
-            item.classList.remove('bg-primary/5', 'border-primary/20');
-        });
-        updateModalSelectedCount();
-    });
+    }
 
     // Initialize calendar
     renderCalendar();

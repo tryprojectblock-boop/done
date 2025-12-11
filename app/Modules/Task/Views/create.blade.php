@@ -315,9 +315,9 @@
                                         <div class="flex items-center gap-1">
                                             <div class="avatar-group -space-x-3">
                                                 @foreach($users->take(8) as $user)
-                                                    <div class="avatar placeholder border-2 border-base-100" title="{{ $user->name }}">
-                                                        <div class="bg-primary text-primary-content w-8 rounded-full">
-                                                            <span class="text-xs">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                                    <div class="avatar border-2 border-base-100" title="{{ $user->name }}">
+                                                        <div class="w-8 rounded-full">
+                                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -419,7 +419,7 @@
                                 <input type="hidden" name="due_date" id="due-date-value" value="{{ old('due_date') }}">
 
                                 <!-- Absolute Positioned Date Picker Dropdown -->
-                                <div id="due-date-picker-dropdown" class="hidden absolute z-50 left-0 top-full mt-2 p-4 bg-white border border-base-300 rounded-xl shadow-xl w-80">
+                                <div id="due-date-picker-dropdown" class="hidden absolute z-50 left-0 bottom-full mb-2 p-4 bg-white border border-base-300 rounded-xl shadow-xl w-80">
                                 <!-- Year and Month Selectors -->
                                 <div class="flex gap-2 mb-4">
                                     <select id="due-date-year" class="select select-bordered select-sm flex-1">
@@ -743,21 +743,35 @@
         font-weight: 500;
         transition: all 0.15s ease;
         cursor: pointer;
-        border: none;
+        border: 2px solid transparent;
         background: transparent;
         color: #374151;
     }
-    .date-day-btn:hover:not(:disabled):not(.selected) {
+    .date-day-btn:hover:not(:disabled):not(.selected):not(.today) {
         background: hsl(var(--p) / 0.1);
     }
     .date-day-btn.selected {
-        background: hsl(var(--p));
-        color: white;
-        box-shadow: 0 4px 12px hsl(var(--p) / 0.4);
+        background: hsl(var(--su));
+        color: hsl(var(--suc));
+        border-color: hsl(var(--su));
+        box-shadow: 0 4px 12px hsl(var(--su) / 0.4);
+        font-weight: 700;
     }
-    .date-day-btn.today:not(.selected) {
-        border: 2px solid hsl(var(--p));
-        background: hsl(var(--p) / 0.05);
+    .date-day-btn.today {
+        border: 3px solid #f59e0b;
+        background: #f59e0b;
+        color: #fff;
+        font-weight: 800;
+        font-size: 15px;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    }
+    .date-day-btn.today:hover:not(.selected) {
+        background: #d97706;
+    }
+    .date-day-btn.today.selected {
+        background: hsl(var(--su));
+        color: hsl(var(--suc));
+        border-color: hsl(var(--su));
     }
     .date-day-btn:disabled {
         color: #d1d5db;

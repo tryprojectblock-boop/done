@@ -331,7 +331,7 @@ class TaskController extends Controller
             return back()->with('error', 'You do not have permission to change the priority.');
         }
 
-        $request->validate(['priority' => 'nullable|string|in:urgent,high,medium,low']);
+        $request->validate(['priority' => 'nullable|string|in:lowest,low,medium,high,highest']);
 
         $task->update(['priority' => $request->input('priority')]);
 

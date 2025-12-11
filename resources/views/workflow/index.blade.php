@@ -156,12 +156,6 @@
                                     @endif
                                 </ul>
                             </div>
-                            @if($canManage)
-                            <a href="{{ route('workflows.edit', $workflow) }}" class="btn btn-ghost btn-sm">
-                                <span class="icon-[tabler--edit] size-4"></span>
-                                Edit
-                            </a>
-                            @endif
                         </div>
                     </div>
                 </div>

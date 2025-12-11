@@ -759,14 +759,24 @@
         background-color: oklch(var(--b2));
     }
     #calendar-days .btn.calendar-day.is-today {
-        border: 2px solid oklch(var(--p));
-        background-color: oklch(var(--p) / 0.1);
+        border: 3px solid #f59e0b;
+        background-color: #f59e0b;
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
     }
     #calendar-days .btn.calendar-day.is-selected {
-        background-color: oklch(var(--p));
-        color: oklch(var(--pc));
+        background-color: oklch(var(--su));
+        color: oklch(var(--suc));
         font-weight: 700;
-        box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+        border: 2px solid oklch(var(--su));
+        box-shadow: 0 4px 12px oklch(var(--su) / 0.4);
+    }
+    #calendar-days .btn.calendar-day.is-today.is-selected {
+        background-color: oklch(var(--su));
+        color: oklch(var(--suc));
+        border: 3px solid oklch(var(--su));
     }
 </style>
 <script>
