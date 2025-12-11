@@ -77,7 +77,7 @@
 
         <!-- Count & View Toggle -->
         @php
-            $totalCount = $workspaces->count() + $guestWorkspaces->count();
+            $totalCount = $workspaces->count() + $otherCompanyWorkspaces->count() + $guestWorkspaces->count();
         @endphp
         <div class="flex items-center justify-between mb-4">
             <div id="workspace-count" class="text-sm text-base-content/60">
@@ -94,7 +94,7 @@
         </div>
 
         <!-- Workspaces List -->
-        @if($workspaces->isEmpty() && $guestWorkspaces->isEmpty())
+        @if($workspaces->isEmpty() && $otherCompanyWorkspaces->isEmpty() && $guestWorkspaces->isEmpty())
             <div class="card bg-base-100 shadow">
                 <div class="card-body text-center py-12">
                     <div class="flex justify-center mb-4">
@@ -147,6 +147,32 @@
             @endif
         @endif
 
+        <!-- Other Company Workspaces Section -->
+        @if($otherCompanyWorkspaces->isNotEmpty())
+            <div class="mt-8">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="icon-[tabler--building] size-5 text-info"></span>
+                    <h2 class="text-xl font-bold text-base-content">Other Teams</h2>
+                    <span class="badge badge-info">{{ $otherCompanyWorkspaces->count() }}</span>
+                </div>
+                <p class="text-base-content/60 mb-4">Workspaces from other companies you've joined</p>
+
+                <!-- Grid View -->
+                <div id="other-company-workspaces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($otherCompanyWorkspaces as $workspace)
+                        @include('workspace::partials.workspace-grid-card', ['workspace' => $workspace, 'isGuest' => false, 'isOtherCompany' => true])
+                    @endforeach
+                </div>
+
+                <!-- List View -->
+                <div id="other-company-workspaces-list" class="space-y-3 hidden">
+                    @foreach($otherCompanyWorkspaces as $workspace)
+                        @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => false, 'isOtherCompany' => true])
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- Guest Workspaces Section -->
         @if($guestWorkspaces->isNotEmpty())
             <div class="mt-8">
@@ -182,6 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const viewListBtn = document.getElementById('view-list');
     const workspacesGrid = document.getElementById('workspaces-grid');
     const workspacesList = document.getElementById('workspaces-list');
+    const otherCompanyGrid = document.getElementById('other-company-workspaces-grid');
+    const otherCompanyList = document.getElementById('other-company-workspaces-list');
     const guestGrid = document.getElementById('guest-workspaces-grid');
     const guestList = document.getElementById('guest-workspaces-list');
     const searchInput = document.getElementById('workspace-search');
@@ -216,6 +244,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Filter list view items
         if (workspacesList) {
             workspacesList.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Filter other company grid view items
+        if (otherCompanyGrid) {
+            otherCompanyGrid.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const match = name.includes(query);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+        }
+
+        // Filter other company list view items
+        if (otherCompanyList) {
+            otherCompanyList.querySelectorAll(':scope > a').forEach(card => {
                 const name = card.querySelector('h3').textContent.toLowerCase();
                 card.style.display = name.includes(query) ? '' : 'none';
             });
@@ -256,6 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (workspacesGrid) workspacesGrid.classList.remove('hidden');
             if (workspacesList) workspacesList.classList.add('hidden');
+            if (otherCompanyGrid) otherCompanyGrid.classList.remove('hidden');
+            if (otherCompanyList) otherCompanyList.classList.add('hidden');
             if (guestGrid) guestGrid.classList.remove('hidden');
             if (guestList) guestList.classList.add('hidden');
         } else {
@@ -266,6 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (workspacesGrid) workspacesGrid.classList.add('hidden');
             if (workspacesList) workspacesList.classList.remove('hidden');
+            if (otherCompanyGrid) otherCompanyGrid.classList.add('hidden');
+            if (otherCompanyList) otherCompanyList.classList.remove('hidden');
             if (guestGrid) guestGrid.classList.add('hidden');
             if (guestList) guestList.classList.remove('hidden');
         }

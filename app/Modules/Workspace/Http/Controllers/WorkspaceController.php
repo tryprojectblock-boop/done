@@ -35,16 +35,22 @@ class WorkspaceController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+
+        // Get workspaces from user's own company
         $workspaces = $this->workspaceService->getForUser($user);
+
+        // Get workspaces from other companies where user is a member
+        $otherCompanyWorkspaces = $this->workspaceService->getOtherCompanyWorkspaces($user);
 
         // Get workspaces where user is added as a guest
         $guestWorkspaces = $user->guestWorkspaces()
-            ->with(['owner', 'members'])
+            ->with(['owner.company', 'members'])
             ->withCount(['tasks', 'discussions'])
             ->get();
 
         return view('workspace::index', [
             'workspaces' => $workspaces,
+            'otherCompanyWorkspaces' => $otherCompanyWorkspaces,
             'guestWorkspaces' => $guestWorkspaces,
         ]);
     }

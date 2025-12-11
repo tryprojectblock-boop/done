@@ -26,11 +26,17 @@ class SettingsController extends Controller
         // Get marketplace data if admin
         $twoFactorStatus = null;
         $gmailSyncStatus = null;
+        $googleDriveStatus = null;
+        $milestonesStatus = null;
+        $moduleSettings = [];
         $defaultWorkspace = null;
 
         if ($user->isAdminOrHigher()) {
             $twoFactorStatus = $this->getTwoFactorStatus($company);
             $gmailSyncStatus = $this->getGmailSyncStatus($company);
+            $googleDriveStatus = $this->getGoogleDriveStatus($company);
+            $milestonesStatus = $this->getMilestonesStatus($company);
+            $moduleSettings = $this->getModuleSettings($company);
             // Get first workspace for module links
             $defaultWorkspace = Workspace::first();
         }
@@ -41,6 +47,9 @@ class SettingsController extends Controller
             'tab' => $tab,
             'twoFactorStatus' => $twoFactorStatus,
             'gmailSyncStatus' => $gmailSyncStatus,
+            'googleDriveStatus' => $googleDriveStatus,
+            'milestonesStatus' => $milestonesStatus,
+            'moduleSettings' => $moduleSettings,
             'defaultWorkspace' => $defaultWorkspace,
         ]);
     }
@@ -78,6 +87,57 @@ class SettingsController extends Controller
             'status' => !$isInstalled ? 'not_installed' : ($isEnabled ? 'enabled' : 'disabled'),
             'status_label' => !$isInstalled ? 'Not Configured' : ($isEnabled ? 'Enabled' : 'Disabled'),
             'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
+        ];
+    }
+
+    /**
+     * Get the Google Drive integration status for a company.
+     */
+    private function getGoogleDriveStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['google_drive_enabled'] ?? false;
+        $isInstalled = !empty($settings['google_client_id']) && !empty($settings['google_client_secret']);
+
+        return [
+            'installed' => $isInstalled,
+            'enabled' => $isEnabled,
+            'status' => !$isInstalled ? 'not_installed' : ($isEnabled ? 'enabled' : 'disabled'),
+            'status_label' => !$isInstalled ? 'Not Configured' : ($isEnabled ? 'Enabled' : 'Disabled'),
+            'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
+        ];
+    }
+
+    /**
+     * Get the Milestones module status for a company.
+     */
+    private function getMilestonesStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['milestones_enabled'] ?? true; // Enabled by default
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
+
+    /**
+     * Get all module settings for a company.
+     */
+    private function getModuleSettings($company): array
+    {
+        $settings = $company->settings ?? [];
+
+        return [
+            'crm_enabled' => $settings['crm_enabled'] ?? true,
+            'milestones_enabled' => $settings['milestones_enabled'] ?? true,
+            'two_factor_enabled' => $settings['two_factor_enabled'] ?? false,
+            'gmail_sync_enabled' => $settings['gmail_sync_enabled'] ?? false,
+            'google_drive_enabled' => $settings['google_drive_enabled'] ?? false,
         ];
     }
 

@@ -154,10 +154,10 @@
                 <span class="icon-[tabler--settings] size-5"></span>
             </a>
 
-            <!-- App Marketplace (only for team members) -->
-            <a href="/marketplace" class="btn btn-ghost btn-circle btn-sm hidden sm:flex">
-                <span class="icon-[tabler--apps] size-5"></span>
-            </a>
+            <!-- Store -->
+            <button type="button" class="btn btn-ghost btn-circle btn-sm hidden sm:flex" title="Store">
+                <span class="icon-[tabler--building-store] size-5"></span>
+            </button>
 
             <!-- Notifications -->
             <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationDropdown()" x-init="init()">

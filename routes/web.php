@@ -14,6 +14,7 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamSignupController;
+use App\Http\Controllers\TeamInvitationController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorkflowController;
@@ -41,6 +42,15 @@ Route::get('/demo-theme', function () {
 */
 Route::get('/two-factor/challenge', [TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
 Route::post('/two-factor/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
+
+/*
+|--------------------------------------------------------------------------
+| Team Invitation Routes (Public - for existing users)
+|--------------------------------------------------------------------------
+*/
+Route::get('/team/invitation/{token}', [TeamInvitationController::class, 'show'])->name('team.invitation.show');
+Route::post('/team/invitation/{token}/accept', [TeamInvitationController::class, 'accept'])->name('team.invitation.accept');
+Route::post('/team/invitation/{token}/reject', [TeamInvitationController::class, 'reject'])->name('team.invitation.reject');
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +111,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/marketplace/milestones', [MarketplaceController::class, 'milestones'])->name('marketplace.milestones');
     Route::post('/marketplace/milestones/enable', [MarketplaceController::class, 'enableMilestones'])->name('marketplace.milestones.enable');
     Route::post('/marketplace/milestones/disable', [MarketplaceController::class, 'disableMilestones'])->name('marketplace.milestones.disable');
+    Route::get('/marketplace/google-drive', [MarketplaceController::class, 'googleDrive'])->name('marketplace.google-drive');
+    Route::post('/marketplace/google-drive/enable', [MarketplaceController::class, 'enableGoogleDrive'])->name('marketplace.google-drive.enable');
+    Route::post('/marketplace/google-drive/disable', [MarketplaceController::class, 'disableGoogleDrive'])->name('marketplace.google-drive.disable');
 
     // Google Calendar OAuth routes
     Route::get('/auth/google/connect', [GoogleCalendarController::class, 'connect'])->name('google.connect');

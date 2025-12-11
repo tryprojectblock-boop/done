@@ -198,7 +198,15 @@ class Workspace extends BaseModel
             return null;
         }
 
-        return WorkspaceRole::from($member->pivot->role);
+        $role = $member->pivot->role;
+
+        // If already a WorkspaceRole enum, return it directly
+        if ($role instanceof WorkspaceRole) {
+            return $role;
+        }
+
+        // Otherwise, convert from string
+        return WorkspaceRole::from($role);
     }
 
     public function addMember(User $user, WorkspaceRole $role = WorkspaceRole::MEMBER, ?User $invitedBy = null): void

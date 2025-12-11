@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
+use App\Mail\TeamInvitationMail;
 use App\Models\User;
+use App\Models\TeamInvitation;
 use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,35 +27,41 @@ class UsersController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = User::query()
-            ->where('company_id', $request->user()->company_id)
-            ->orderByRaw("FIELD(role, 'owner', 'admin', 'member', 'guest')")
-            ->orderBy('first_name');
+        $companyId = $request->user()->company_id;
 
-        // Filter by role
+        // Query users from the company_user pivot table
+        $query = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $companyId)
+            ->select('users.*', 'company_user.role as company_role', 'company_user.joined_at as company_joined_at')
+            ->orderByRaw("FIELD(company_user.role, 'owner', 'admin', 'member', 'guest')")
+            ->orderBy('users.first_name');
+
+        // Filter by role (from pivot table)
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $query->where('company_user.role', $request->role);
         }
 
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('users.status', $request->status);
         }
 
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                $q->where('users.first_name', 'like', "%{$search}%")
+                    ->orWhere('users.last_name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
             });
         }
 
         $users = $query->paginate(20)->withQueryString();
 
-        // Get counts by role
-        $roleCounts = User::where('company_id', $request->user()->company_id)
+        // Get counts by role from pivot table
+        $roleCounts = \DB::table('company_user')
+            ->where('company_id', $companyId)
             ->selectRaw('role, count(*) as count')
             ->groupBy('role')
             ->pluck('count', 'role')
@@ -91,10 +99,27 @@ class UsersController extends Controller
      */
     public function show(Request $request, User $user): JsonResponse
     {
-        // Ensure user belongs to same company
-        if ($user->company_id !== $request->user()->company_id) {
+        $companyId = $request->user()->company_id;
+
+        // Check if user belongs to this company via pivot table
+        $membership = \DB::table('company_user')
+            ->where('company_id', $companyId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$membership) {
             return response()->json(['error' => self::USER_NOT_FOUND], 404);
         }
+
+        // Get the role for this company from the pivot table
+        $companyRole = $membership->role;
+        $roleData = User::ROLES[$companyRole] ?? null;
+        $roleLabel = $roleData['label'] ?? ucfirst($companyRole);
+        $roleColor = $roleData['color'] ?? 'neutral';
+
+        // Check if user is the owner of THIS company (not their own company)
+        $currentUserCompany = $request->user()->company;
+        $isOwnerOfThisCompany = $currentUserCompany && $currentUserCompany->owner_id === $user->id;
 
         return response()->json([
             'user' => [
@@ -104,9 +129,9 @@ class UsersController extends Controller
                 'last_name' => $user->last_name,
                 'full_name' => $user->full_name,
                 'email' => $user->email,
-                'role' => $user->role,
-                'role_label' => $user->role_label,
-                'role_color' => $user->role_color,
+                'role' => $companyRole,
+                'role_label' => $roleLabel,
+                'role_color' => $roleColor,
                 'status' => $user->status,
                 'description' => $user->description,
                 'timezone' => $user->timezone,
@@ -115,8 +140,8 @@ class UsersController extends Controller
                 'created_at' => $user->created_at->format('M d, Y'),
                 'last_login_at' => $user->last_login_at?->format('M d, Y h:i A'),
                 'can_edit' => $request->user()->canManage($user),
-                'can_delete' => $request->user()->canRemoveRole($user->role) && $user->id !== $request->user()->id && $user->canBeDeleted(),
-                'is_company_owner' => $user->isCompanyOwner(),
+                'can_delete' => $request->user()->canRemoveRole($companyRole) && $user->id !== $request->user()->id && !$isOwnerOfThisCompany,
+                'is_company_owner' => $isOwnerOfThisCompany,
             ],
         ]);
     }
@@ -214,12 +239,6 @@ class UsersController extends Controller
         $errors = [];
 
         foreach ($validated['members'] as $index => $memberData) {
-            // Check if email already exists
-            if (User::where('email', $memberData['email'])->exists()) {
-                $errors["members.{$index}.email"] = ["The email {$memberData['email']} is already registered."];
-                continue;
-            }
-
             // Check if user can invite this role
             if (!$currentUser->canInviteRole($memberData['role'])) {
                 $roleLabel = User::ROLES[$memberData['role']]['label'] ?? $memberData['role'];
@@ -227,29 +246,59 @@ class UsersController extends Controller
                 continue;
             }
 
-            // Generate invitation token
-            $invitationToken = Str::random(64);
+            // Check if email already exists
+            $existingUser = User::where('email', $memberData['email'])->first();
 
-            $user = User::create([
-                'first_name' => $memberData['first_name'],
-                'last_name' => '',
-                'name' => $memberData['first_name'],
-                'email' => $memberData['email'],
-                'password' => '',
-                'company_id' => $currentUser->company_id,
-                'role' => $memberData['role'],
-                'status' => User::STATUS_INVITED,
-                'invited_by' => $currentUser->id,
-                'invited_at' => now(),
-                'invitation_token' => $invitationToken,
-                'invitation_expires_at' => now()->addDays(7),
-                'timezone' => 'UTC',
-            ]);
+            if ($existingUser) {
+                // User exists - check if already in this company
+                if ($existingUser->company_id === $currentUser->company_id) {
+                    $errors["members.{$index}.email"] = ["This user is already a member of your team."];
+                    continue;
+                }
 
-            // Send invitation email
-            Mail::to($user->email)->send(new UserInvitationMail($user, $currentUser, $invitationToken));
+                // Check if there's already a pending invitation for this user to this company
+                if (TeamInvitation::hasPendingInvitation($currentUser->company_id, $existingUser->id)) {
+                    $errors["members.{$index}.email"] = ["An invitation has already been sent to this user."];
+                    continue;
+                }
 
-            $invitedCount++;
+                // Create team invitation for existing user
+                $invitation = TeamInvitation::create([
+                    'company_id' => $currentUser->company_id,
+                    'user_id' => $existingUser->id,
+                    'invited_by' => $currentUser->id,
+                    'role' => $memberData['role'],
+                ]);
+
+                // Send team invitation email (different from new user invitation)
+                Mail::to($existingUser->email)->send(new TeamInvitationMail($invitation, $currentUser));
+
+                $invitedCount++;
+            } else {
+                // New user - create user record with invited status
+                $invitationToken = Str::random(64);
+
+                $user = User::create([
+                    'first_name' => $memberData['first_name'],
+                    'last_name' => '',
+                    'name' => $memberData['first_name'],
+                    'email' => $memberData['email'],
+                    'password' => '',
+                    'company_id' => $currentUser->company_id,
+                    'role' => $memberData['role'],
+                    'status' => User::STATUS_INVITED,
+                    'invited_by' => $currentUser->id,
+                    'invited_at' => now(),
+                    'invitation_token' => $invitationToken,
+                    'invitation_expires_at' => now()->addDays(7),
+                    'timezone' => 'UTC',
+                ]);
+
+                // Send invitation email for new user
+                Mail::to($user->email)->send(new UserInvitationMail($user, $currentUser, $invitationToken));
+
+                $invitedCount++;
+            }
         }
 
         if (!empty($errors)) {

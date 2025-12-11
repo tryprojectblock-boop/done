@@ -1,13 +1,15 @@
 @php
     $isGuest = $isGuest ?? false;
+    $isOtherCompany = $isOtherCompany ?? false;
     $route = $isGuest ? route('workspace.guest-view', $workspace) : route('workspace.show', $workspace);
-    $hoverColor = $isGuest ? 'warning' : 'primary';
+    $hoverColor = $isGuest ? 'warning' : ($isOtherCompany ? 'info' : 'primary');
     $taskCount = $workspace->tasks_count ?? 0;
     $discussionCount = $workspace->discussions_count ?? 0;
     $membersExcludingOwner = $workspace->members->where('id', '!=', $workspace->owner_id);
+    $borderClass = $isGuest ? 'border-l-4 border-l-warning' : ($isOtherCompany ? 'border-l-4 border-l-info' : '');
 @endphp
 <a href="{{ $route }}" class="block group">
-    <div class="bg-base-100 border border-base-200 rounded-xl px-4 py-3 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 {{ $isGuest ? 'border-l-4 border-l-warning' : '' }}">
+    <div class="bg-base-100 border border-base-200 rounded-xl px-4 py-3 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 {{ $borderClass }}">
         <div class="flex items-center gap-4">
             <!-- Workspace Icon -->
             <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : '#3b82f6') }}">
@@ -26,9 +28,18 @@
                         <span class="badge badge-{{ $workspace->status->color() }} badge-xs">{{ $workspace->status->label() }}</span>
                     @endif
                 </div>
-                @if($workspace->description)
-                    <p class="text-sm text-base-content/50 truncate">{{ Str::limit($workspace->description, 60) }}</p>
-                @endif
+                <div class="flex items-center gap-2">
+                    @if($workspace->owner?->company)
+                        <span class="text-xs text-base-content/50 flex items-center gap-1">
+                            <span class="icon-[tabler--building] size-3"></span>
+                            {{ $workspace->owner->company->name }}
+                        </span>
+                    @endif
+                    @if($workspace->description)
+                        <span class="text-base-content/30">•</span>
+                        <p class="text-sm text-base-content/50 truncate">{{ Str::limit($workspace->description, 60) }}</p>
+                    @endif
+                </div>
             </div>
 
             <!-- Owner -->

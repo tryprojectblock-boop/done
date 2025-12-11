@@ -285,4 +285,93 @@ class MarketplaceController extends Controller
             'status_color' => $isEnabled ? 'success' : 'warning',
         ];
     }
+
+    /**
+     * Display the Google Drive integration detail page.
+     */
+    public function googleDrive(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access this feature.');
+        }
+
+        $company = $user->company;
+        $googleDriveStatus = $this->getGoogleDriveStatus($company);
+
+        return view('marketplace.google-drive', [
+            'user' => $user,
+            'company' => $company,
+            'googleDriveStatus' => $googleDriveStatus,
+        ]);
+    }
+
+    /**
+     * Enable Google Drive integration for the company.
+     */
+    public function enableGoogleDrive(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to enable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['google_drive_enabled'] = true;
+        $settings['google_drive_enabled_at'] = now()->toISOString();
+        $settings['google_drive_enabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.google-drive')
+            ->with('success', 'Google Drive integration has been enabled. Team members can now connect their Google Drive accounts.');
+    }
+
+    /**
+     * Disable Google Drive integration for the company.
+     */
+    public function disableGoogleDrive(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to disable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['google_drive_enabled'] = false;
+        $settings['google_drive_disabled_at'] = now()->toISOString();
+        $settings['google_drive_disabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.google-drive')
+            ->with('success', 'Google Drive integration has been disabled for your organization.');
+    }
+
+    /**
+     * Get the Google Drive integration status for a company.
+     */
+    private function getGoogleDriveStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['google_drive_enabled'] ?? false;
+
+        // Check if Google API credentials are configured (same as Gmail sync)
+        $isInstalled = !empty($settings['google_client_id']) && !empty($settings['google_client_secret']);
+
+        return [
+            'installed' => $isInstalled,
+            'enabled' => $isEnabled,
+            'status' => !$isInstalled ? 'not_installed' : ($isEnabled ? 'enabled' : 'disabled'),
+            'status_label' => !$isInstalled ? 'Not Configured' : ($isEnabled ? 'Enabled' : 'Disabled'),
+            'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
+        ];
+    }
 }

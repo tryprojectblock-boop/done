@@ -208,12 +208,16 @@
         <div id="panel-marketplace" class="{{ $tab !== 'marketplace' ? 'hidden' : '' }}" role="tabpanel" aria-labelledby="tab-marketplace">
 
             <!-- Core Modules Section -->
-            <div class="mb-8">
-                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="icon-[tabler--puzzle] size-5 text-primary"></span>
-                    Core Modules
-                </h2>
-                <p class="text-sm text-base-content/60 mb-4">Enable or disable modules to customize your workspace experience</p>
+            <div class="mb-10">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <span class="icon-[tabler--puzzle] size-5 text-primary"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-base-content">Core Modules</h2>
+                        <p class="text-sm text-base-content/50">Essential tools to power your workspace</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- CRM Module -->
@@ -224,6 +228,7 @@
                         'color' => '#3b82f6',
                         'status' => 'available',
                         'route' => route('guests.index'),
+                        'enabled' => $moduleSettings['crm_enabled'] ?? true,
                     ])
 
                     <!-- Support Inbox -->
@@ -306,6 +311,7 @@
                         'color' => '#a855f7',
                         'status' => 'available',
                         'route' => route('marketplace.milestones'),
+                        'enabled' => $milestonesStatus['enabled'] ?? true,
                     ])
 
                     <!-- Inventory -->
@@ -329,30 +335,56 @@
             </div>
 
             <!-- Security & Authentication Section -->
-            <div class="mb-8">
-                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="icon-[tabler--shield-check] size-5 text-success"></span>
-                    Security & Authentication
-                </h2>
+            <div class="mb-10">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                        <span class="icon-[tabler--shield-check] size-5 text-success"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-base-content">Security & Authentication</h2>
+                        <p class="text-sm text-base-content/50">Protect your workspace with advanced security</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Two-Factor Authentication -->
-                    <a href="{{ route('marketplace.two-factor') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
-                        <div class="card-body p-4">
-                            <div class="flex items-start gap-3">
-                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #3b82f620;">
-                                    <span class="icon-[tabler--shield-lock] size-6" style="color: #3b82f6;"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content text-sm">Two-Factor Auth</h3>
-                                        <span class="badge badge-{{ $twoFactorStatus['status_color'] }} badge-xs">
-                                            {{ $twoFactorStatus['status_label'] }}
-                                        </span>
+                    <a href="{{ route('marketplace.two-factor') }}" class="group block">
+                        <div class="card bg-base-100 border border-base-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30">
+                            <div class="h-1 w-full" style="background: linear-gradient(90deg, #3b82f6, #3b82f699);"></div>
+                            <div class="card-body p-5">
+                                <div class="flex items-start gap-4">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 rounded-2xl blur-xl opacity-30 transition-opacity duration-300 group-hover:opacity-50" style="background-color: #3b82f6;"></div>
+                                        <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110" style="background: linear-gradient(135deg, #3b82f6, #3b82f6cc);">
+                                            <span class="icon-[tabler--shield-lock] size-7 text-white drop-shadow-sm"></span>
+                                        </div>
                                     </div>
-                                    <p class="text-xs text-base-content/60 line-clamp-2">
-                                        Extra security with Google/Microsoft Authenticator
-                                    </p>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <h3 class="font-bold text-base-content text-base group-hover:text-primary transition-colors duration-200">Two-Factor Auth</h3>
+                                            @if($twoFactorStatus['enabled'])
+                                                <span class="badge badge-success badge-xs">Enabled</span>
+                                            @else
+                                                <span class="badge badge-warning badge-xs">Disabled</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-sm text-base-content/60 line-clamp-2 leading-relaxed">Extra security with Google/Microsoft Authenticator</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-base-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2 {{ $twoFactorStatus['enabled'] ? 'text-success' : 'text-warning' }}">
+                                        @if($twoFactorStatus['enabled'])
+                                            <span class="icon-[tabler--circle-check-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Active</span>
+                                        @else
+                                            <span class="icon-[tabler--circle-x-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Inactive</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all duration-200">
+                                        <span>Configure</span>
+                                        <span class="icon-[tabler--arrow-right] size-4"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -388,30 +420,61 @@
             </div>
 
             <!-- Calendar & Integrations Section -->
-            <div class="mb-8">
-                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="icon-[tabler--calendar] size-5 text-info"></span>
-                    Calendar & Integrations
-                </h2>
+            <div class="mb-10">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
+                        <span class="icon-[tabler--calendar] size-5 text-info"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-base-content">Calendar & Integrations</h2>
+                        <p class="text-sm text-base-content/50">Connect with your favorite calendar apps</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Google Calendar -->
-                    <a href="{{ route('marketplace.gmail-sync') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
-                        <div class="card-body p-4">
-                            <div class="flex items-start gap-3">
-                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #ea433520;">
-                                    <span class="icon-[tabler--brand-google] size-6" style="color: #ea4335;"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content text-sm">Google Calendar</h3>
-                                        <span class="badge badge-{{ $gmailSyncStatus['status_color'] }} badge-xs">
-                                            {{ $gmailSyncStatus['status_label'] }}
-                                        </span>
+                    <a href="{{ route('marketplace.gmail-sync') }}" class="group block">
+                        <div class="card bg-base-100 border border-base-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30">
+                            <div class="h-1 w-full" style="background: linear-gradient(90deg, #ea4335, #ea433599);"></div>
+                            <div class="card-body p-5">
+                                <div class="flex items-start gap-4">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 rounded-2xl blur-xl opacity-30 transition-opacity duration-300 group-hover:opacity-50" style="background-color: #ea4335;"></div>
+                                        <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110" style="background: linear-gradient(135deg, #ea4335, #ea4335cc);">
+                                            <span class="icon-[tabler--brand-google] size-7 text-white drop-shadow-sm"></span>
+                                        </div>
                                     </div>
-                                    <p class="text-xs text-base-content/60 line-clamp-2">
-                                        Two-way sync with Google Calendar
-                                    </p>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <h3 class="font-bold text-base-content text-base group-hover:text-primary transition-colors duration-200">Google Calendar</h3>
+                                            @if($gmailSyncStatus['enabled'])
+                                                <span class="badge badge-success badge-xs">Enabled</span>
+                                            @elseif($gmailSyncStatus['installed'])
+                                                <span class="badge badge-warning badge-xs">Disabled</span>
+                                            @else
+                                                <span class="badge badge-ghost badge-xs">Not Configured</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-sm text-base-content/60 line-clamp-2 leading-relaxed">Two-way sync with Google Calendar</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-base-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2 {{ $gmailSyncStatus['enabled'] ? 'text-success' : ($gmailSyncStatus['installed'] ? 'text-warning' : 'text-base-content/50') }}">
+                                        @if($gmailSyncStatus['enabled'])
+                                            <span class="icon-[tabler--circle-check-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Active</span>
+                                        @elseif($gmailSyncStatus['installed'])
+                                            <span class="icon-[tabler--circle-x-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Inactive</span>
+                                        @else
+                                            <span class="icon-[tabler--settings] size-4"></span>
+                                            <span class="text-xs font-medium">Setup Required</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all duration-200">
+                                        <span>Configure</span>
+                                        <span class="icon-[tabler--arrow-right] size-4"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -438,41 +501,97 @@
             </div>
 
             <!-- Storage & Cloud Section -->
-            <div class="mb-8">
-                <h2 class="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <span class="icon-[tabler--cloud] size-5 text-secondary"></span>
-                    Storage & Cloud Integrations
-                </h2>
+            <div class="mb-10">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
+                        <span class="icon-[tabler--cloud] size-5 text-secondary"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-base-content">Storage & Cloud Integrations</h2>
+                        <p class="text-sm text-base-content/50">Manage files across multiple cloud platforms</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Drive (Built-in) -->
-                    <a href="{{ route('drive.index') }}" class="card bg-base-100 shadow hover:shadow-lg transition-all hover:-translate-y-0.5">
-                        <div class="card-body p-4">
-                            <div class="flex items-start gap-3">
-                                <div class="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #3b82f620;">
-                                    <span class="icon-[tabler--cloud] size-6" style="color: #3b82f6;"></span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h3 class="font-semibold text-base-content text-sm">Drive</h3>
-                                        <span class="badge badge-success badge-xs">Active</span>
+                    <a href="{{ route('drive.index') }}" class="group block">
+                        <div class="card bg-base-100 border border-base-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30">
+                            <div class="h-1 w-full" style="background: linear-gradient(90deg, #3b82f6, #3b82f699);"></div>
+                            <div class="card-body p-5">
+                                <div class="flex items-start gap-4">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 rounded-2xl blur-xl opacity-30 transition-opacity duration-300 group-hover:opacity-50" style="background-color: #3b82f6;"></div>
+                                        <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110" style="background: linear-gradient(135deg, #3b82f6, #3b82f6cc);">
+                                            <span class="icon-[tabler--cloud] size-7 text-white drop-shadow-sm"></span>
+                                        </div>
                                     </div>
-                                    <p class="text-xs text-base-content/60 line-clamp-2">
-                                        Built-in file storage and management
-                                    </p>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <h3 class="font-bold text-base-content text-base group-hover:text-primary transition-colors duration-200">Block Drive</h3>
+                                        </div>
+                                        <p class="text-sm text-base-content/60 line-clamp-2 leading-relaxed">Built-in file storage and management</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-base-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="badge badge-success badge-sm">Active</span>
+                                    </div>
+                                    <div class="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all duration-200">
+                                        <span>Open</span>
+                                        <span class="icon-[tabler--arrow-right] size-4"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </a>
 
                     <!-- Google Drive -->
-                    @include('settings.partials.module-card', [
-                        'name' => 'Google Drive',
-                        'description' => 'Connect and sync files with Google Drive',
-                        'icon' => 'tabler--brand-google-drive',
-                        'color' => '#4285f4',
-                        'status' => 'coming_soon',
-                    ])
+                    <a href="{{ route('marketplace.google-drive') }}" class="group block">
+                        <div class="card bg-base-100 border border-base-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30">
+                            <div class="h-1 w-full" style="background: linear-gradient(90deg, #4285f4, #4285f499);"></div>
+                            <div class="card-body p-5">
+                                <div class="flex items-start gap-4">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 rounded-2xl blur-xl opacity-30 transition-opacity duration-300 group-hover:opacity-50" style="background-color: #4285f4;"></div>
+                                        <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110" style="background: linear-gradient(135deg, #4285f4, #4285f4cc);">
+                                            <span class="icon-[tabler--brand-google-drive] size-7 text-white drop-shadow-sm"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <h3 class="font-bold text-base-content text-base group-hover:text-primary transition-colors duration-200">Google Drive</h3>
+                                            @if($googleDriveStatus['enabled'])
+                                                <span class="badge badge-success badge-xs">Enabled</span>
+                                            @elseif($googleDriveStatus['installed'])
+                                                <span class="badge badge-warning badge-xs">Disabled</span>
+                                            @else
+                                                <span class="badge badge-ghost badge-xs">Not Configured</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-sm text-base-content/60 line-clamp-2 leading-relaxed">Connect and sync files with Google Drive</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-base-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2 {{ $googleDriveStatus['enabled'] ? 'text-success' : ($googleDriveStatus['installed'] ? 'text-warning' : 'text-base-content/50') }}">
+                                        @if($googleDriveStatus['enabled'])
+                                            <span class="icon-[tabler--circle-check-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Active</span>
+                                        @elseif($googleDriveStatus['installed'])
+                                            <span class="icon-[tabler--circle-x-filled] size-4"></span>
+                                            <span class="text-xs font-medium">Inactive</span>
+                                        @else
+                                            <span class="icon-[tabler--settings] size-4"></span>
+                                            <span class="text-xs font-medium">Setup Required</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all duration-200">
+                                        <span>Configure</span>
+                                        <span class="icon-[tabler--arrow-right] size-4"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
 
                     <!-- Box.com -->
                     @include('settings.partials.module-card', [

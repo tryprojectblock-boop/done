@@ -102,9 +102,18 @@
                                     </div>
                                 </td>
                                 <td>
+                                    @php
+                                        // Use company_role from pivot table if available
+                                        $displayRole = $user->company_role ?? $user->role;
+                                        $roleData = \App\Models\User::ROLES[$displayRole] ?? null;
+                                        $roleLabel = $roleData['label'] ?? ucfirst($displayRole);
+                                        $roleColor = $roleData['color'] ?? 'neutral';
+                                        // Check if user is the owner of THIS company (not their own company)
+                                        $isOwnerOfThisCompany = auth()->user()->company && auth()->user()->company->owner_id === $user->id;
+                                    @endphp
                                     <div class="flex items-center gap-1">
-                                        <span class="badge badge-{{ $user->role_color }}">{{ $user->role_label }}</span>
-                                        @if($user->isCompanyOwner())
+                                        <span class="badge badge-{{ $roleColor }}">{{ $roleLabel }}</span>
+                                        @if($isOwnerOfThisCompany)
                                             <span class="badge badge-ghost badge-sm" title="Company Owner">
                                                 <span class="icon-[tabler--crown] size-3 text-warning"></span>
                                             </span>

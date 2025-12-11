@@ -54,7 +54,14 @@ class TaskController extends Controller
             ->get()
             ->unique('name')
             ->values();
-        $users = User::where('company_id', $user->company_id)->get();
+        // Get users from company_user pivot table (includes invited members from other companies)
+        $users = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->select('users.*', 'company_user.role as company_role')
+            ->orderBy('users.name')
+            ->get();
         $tags = Tag::where('company_id', $user->company_id)->get();
 
         $viewMode = $request->get('view', session('task_view_mode', 'card'));
@@ -87,7 +94,14 @@ class TaskController extends Controller
         $user = auth()->user();
 
         $workspaces = Workspace::forUser($user)->with('workflow.statuses')->latest()->get();
-        $users = User::where('company_id', $user->company_id)->get();
+        // Get users from company_user pivot table (includes invited members from other companies)
+        $users = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->select('users.*', 'company_user.role as company_role')
+            ->orderBy('users.name')
+            ->get();
         $tags = Tag::where('company_id', $user->company_id)->get();
         $taskTypes = TaskType::cases();
         $priorities = TaskPriority::cases();
@@ -207,7 +221,14 @@ class TaskController extends Controller
         $user = auth()->user();
         // Get statuses only from the task's workspace workflow
         $statuses = $task->workspace->workflow?->statuses ?? collect();
-        $users = User::where('company_id', $user->company_id)->get();
+        // Get users from company_user pivot table (includes invited members from other companies)
+        $users = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->select('users.*', 'company_user.role as company_role')
+            ->orderBy('users.name')
+            ->get();
         $tags = Tag::where('company_id', $user->company_id)->get();
         $priorities = TaskPriority::cases();
 
@@ -223,7 +244,14 @@ class TaskController extends Controller
         $workspaces = Workspace::forUser($user)->get();
         // Get statuses only from the task's workspace workflow
         $statuses = $task->workspace->workflow?->statuses ?? collect();
-        $users = User::where('company_id', $user->company_id)->get();
+        // Get users from company_user pivot table (includes invited members from other companies)
+        $users = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->select('users.*', 'company_user.role as company_role')
+            ->orderBy('users.name')
+            ->get();
         $tags = Tag::where('company_id', $user->company_id)->get();
         $taskTypes = TaskType::cases();
         $priorities = TaskPriority::cases();

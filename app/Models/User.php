@@ -279,11 +279,57 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the company that the user belongs to.
+     * Get the user's primary company (for backward compatibility).
      */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Get all companies this user belongs to.
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_user')
+            ->withPivot('role', 'is_primary', 'joined_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the user's role in a specific company.
+     */
+    public function getRoleInCompany(Company $company): ?string
+    {
+        $membership = $this->companies()->where('company_id', $company->id)->first();
+        return $membership?->pivot->role;
+    }
+
+    /**
+     * Check if user belongs to a company.
+     */
+    public function belongsToCompany(Company $company): bool
+    {
+        return $this->companies()->where('company_id', $company->id)->exists();
+    }
+
+    /**
+     * Get pending team invitations for this user.
+     */
+    public function pendingTeamInvitations(): HasMany
+    {
+        return $this->hasMany(TeamInvitation::class, 'user_id')
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '>', now());
+    }
+
+    /**
+     * Get all team invitations for this user.
+     */
+    public function teamInvitations(): HasMany
+    {
+        return $this->hasMany(TeamInvitation::class, 'user_id');
     }
 
     /**

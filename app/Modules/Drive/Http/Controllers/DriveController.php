@@ -30,6 +30,8 @@ class DriveController extends Controller
     {
         $user = $request->user();
         $companyId = $user->company_id;
+        $company = $user->company;
+        $driveTab = $request->get('drive_tab', 'block');
 
         $filters = [
             'type' => $request->get('type'),
@@ -161,6 +163,10 @@ class DriveController extends Controller
         $total = $attachments->count();
         $attachments = $attachments->forPage($page, $perPage)->values();
 
+        // Check Google Drive status
+        $settings = $company->settings ?? [];
+        $googleDriveEnabled = $settings['google_drive_enabled'] ?? false;
+
         return view('drive::index', compact(
             'attachments',
             'filters',
@@ -170,7 +176,9 @@ class DriveController extends Controller
             'total',
             'storageUsed',
             'storageLimit',
-            'storagePercentage'
+            'storagePercentage',
+            'driveTab',
+            'googleDriveEnabled'
         ));
     }
 

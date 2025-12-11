@@ -312,14 +312,25 @@
                                         <span class="font-medium text-sm">All people who can see this workspace</span>
                                         <p class="text-xs text-base-content/50 mb-2">Everyone in the workspace will be notified about this task</p>
                                         <!-- Avatar stack for all team members -->
+                                        @php
+                                            $allAvatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-info', 'bg-success', 'bg-warning'];
+                                        @endphp
                                         <div class="flex items-center gap-1">
                                             <div class="avatar-group -space-x-3">
-                                                @foreach($users->take(8) as $user)
-                                                    <div class="avatar border-2 border-base-100" title="{{ $user->name }}">
-                                                        <div class="w-8 rounded-full">
-                                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
+                                                @foreach($users->take(8) as $idx => $user)
+                                                    @if($user->avatar_url)
+                                                        <div class="avatar border-2 border-base-100" title="{{ $user->name }}">
+                                                            <div class="w-8 rounded-full">
+                                                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    @else
+                                                        <div class="avatar placeholder border-2 border-base-100" title="{{ $user->name }}">
+                                                            <div class="{{ $allAvatarColors[$idx % count($allAvatarColors)] }} text-white w-8 rounded-full">
+                                                                <span class="text-xs">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 @endforeach
                                                 @if($users->count() > 8)
                                                     <div class="avatar placeholder border-2 border-base-100">
@@ -644,12 +655,18 @@
             @endphp
             @foreach($users as $index => $user)
                 @php $colorClass = $avatarColors[$index % count($avatarColors)]; @endphp
-                <label class="watcher-modal-item flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 cursor-pointer transition-all duration-200 border border-transparent hover:border-primary/20" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-search="{{ strtolower($user->name) }}">
+                <label class="watcher-modal-item flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 cursor-pointer transition-all duration-200 border border-transparent hover:border-primary/20" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-search="{{ strtolower($user->name) }}" data-avatar="{{ $user->avatar_url ?? '' }}">
                     <input type="checkbox" class="checkbox checkbox-primary checkbox-sm watcher-modal-checkbox" value="{{ $user->id }}">
-                    <div class="avatar placeholder">
-                        <div class="{{ $colorClass }} text-white w-10 rounded-full ring-2 ring-offset-2 ring-transparent transition-all">
-                            <span class="text-sm font-medium">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                        </div>
+                    <div class="avatar {{ $user->avatar_url ? '' : 'placeholder' }}">
+                        @if($user->avatar_url)
+                            <div class="w-10 rounded-full ring-2 ring-offset-2 ring-transparent transition-all overflow-hidden">
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
+                            </div>
+                        @else
+                            <div class="{{ $colorClass }} text-white w-10 rounded-full ring-2 ring-offset-2 ring-transparent transition-all">
+                                <span class="text-sm font-medium">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                            </div>
+                        @endif
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-medium text-sm truncate">{{ $user->name }}</p>
@@ -1533,7 +1550,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (item) {
             selectedWatchers.push({
                 id: input.dataset.id,
-                name: item.dataset.name
+                name: item.dataset.name,
+                avatar: item.dataset.avatar || ''
             });
         }
     });
@@ -1582,7 +1600,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const item = checkbox.closest('.watcher-modal-item');
                 selectedWatchers.push({
                     id: checkbox.value,
-                    name: item.dataset.name
+                    name: item.dataset.name,
+                    avatar: item.dataset.avatar || ''
                 });
             }
         });
@@ -1617,13 +1636,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const displayWatchers = selectedWatchers.slice(0, maxAvatars);
 
             displayWatchers.forEach(w => {
-                avatarHtml += `
-                    <div class="avatar placeholder border-2 border-base-100" title="${w.name}">
-                        <div class="bg-primary text-primary-content w-8 rounded-full">
-                            <span class="text-xs">${w.name.charAt(0).toUpperCase()}</span>
+                if (w.avatar) {
+                    avatarHtml += `
+                        <div class="avatar border-2 border-base-100" title="${w.name}">
+                            <div class="w-8 rounded-full">
+                                <img src="${w.avatar}" alt="${w.name}" class="w-full h-full object-cover" />
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    avatarHtml += `
+                        <div class="avatar placeholder border-2 border-base-100" title="${w.name}">
+                            <div class="bg-primary text-primary-content w-8 rounded-full">
+                                <span class="text-xs">${w.name.charAt(0).toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `;
+                }
             });
 
             if (selectedWatchers.length > maxAvatars) {

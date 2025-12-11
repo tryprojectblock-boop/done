@@ -74,8 +74,14 @@ class WorkspaceMemberController extends Controller
                 return back()->with('error', 'This user is already a member of this workspace.');
             }
 
-            // Check if user belongs to the same company
-            if ($user->company_id !== $request->user()->company_id) {
+            // Check if user belongs to the same company (via company_user pivot table)
+            $companyId = $request->user()->company_id;
+            $isCompanyMember = \DB::table('company_user')
+                ->where('company_id', $companyId)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (!$isCompanyMember) {
                 return back()->with('error', 'You can only invite team members from your company.');
             }
 

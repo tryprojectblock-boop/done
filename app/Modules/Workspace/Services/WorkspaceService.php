@@ -88,17 +88,48 @@ final class WorkspaceService implements WorkspaceServiceInterface
 
     public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return Workspace::where('owner_id', $user->id)
-            ->with(['owner', 'members'])
+        // Get workspaces from user's own company only (where they are owner or member)
+        return Workspace::where(function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhereHas('members', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+            })
+            ->whereHas('owner', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            })
+            ->with(['owner.company', 'members'])
             ->withCount(['tasks', 'discussions'])
             ->active()
             ->latest()
             ->paginate($perPage);
     }
 
+    public function getOtherCompanyWorkspaces(User $user): Collection
+    {
+        // Get workspaces from OTHER companies where user is a member
+        return Workspace::whereHas('members', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->whereHas('owner', function ($q) use ($user) {
+                $q->where('company_id', '!=', $user->company_id);
+            })
+            ->with(['owner.company', 'members'])
+            ->withCount(['tasks', 'discussions'])
+            ->active()
+            ->latest()
+            ->get();
+    }
+
     public function getAllForUser(User $user): Collection
     {
-        return Workspace::where('owner_id', $user->id)
+        // Get workspaces where user is either owner OR a member
+        return Workspace::where(function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhereHas('members', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+            })
             ->active()
             ->latest()
             ->get();

@@ -1,12 +1,14 @@
 @php
     $isGuest = $isGuest ?? false;
+    $isOtherCompany = $isOtherCompany ?? false;
     $route = $isGuest ? route('workspace.guest-view', $workspace) : route('workspace.show', $workspace);
-    $hoverColor = $isGuest ? 'warning' : 'primary';
+    $hoverColor = $isGuest ? 'warning' : ($isOtherCompany ? 'info' : 'primary');
     $taskCount = $workspace->tasks_count ?? 0;
     $discussionCount = $workspace->discussions_count ?? 0;
+    $borderClass = $isGuest ? 'border-l-4 border-l-warning' : ($isOtherCompany ? 'border-l-4 border-l-info' : '');
 @endphp
 <a href="{{ $route }}" class="block group">
-    <div class="bg-base-100 border border-base-200 rounded-xl p-4 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 h-full {{ $isGuest ? 'border-l-4 border-l-warning' : '' }}">
+    <div class="bg-base-100 border border-base-200 rounded-xl p-4 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 h-full {{ $borderClass }}">
         <!-- Header -->
         <div class="flex items-start gap-3 mb-3">
             <!-- Workspace Icon -->
@@ -20,7 +22,15 @@
                         <span class="badge badge-warning badge-xs">Guest</span>
                     @endif
                 </div>
-                <span class="badge badge-primary badge-xs mt-1">{{ $workspace->type->label() }}</span>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="badge badge-primary badge-xs">{{ $workspace->type->label() }}</span>
+                    @if($workspace->owner?->company)
+                        <span class="text-xs text-base-content/50 truncate flex items-center gap-1">
+                            <span class="icon-[tabler--building] size-3"></span>
+                            {{ $workspace->owner->company->name }}
+                        </span>
+                    @endif
+                </div>
             </div>
             @if($workspace->status->value !== 'active')
                 <span class="badge badge-{{ $workspace->status->color() }} badge-xs flex-shrink-0">{{ $workspace->status->label() }}</span>

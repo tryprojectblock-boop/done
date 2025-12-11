@@ -11,6 +11,7 @@ use App\Modules\Auth\Enums\IndustryType;
 use App\Modules\Core\Support\BaseModel;
 use App\Modules\Core\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends BaseModel
@@ -104,9 +105,39 @@ class Company extends BaseModel
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /**
+     * Get users directly associated with this company (legacy relationship).
+     */
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Get all members of this company via the pivot table.
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'company_user')
+            ->withPivot('role', 'is_primary', 'joined_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get a user's role in this company.
+     */
+    public function getMemberRole(User $user): ?string
+    {
+        $member = $this->members()->where('user_id', $user->id)->first();
+        return $member?->pivot->role;
+    }
+
+    /**
+     * Check if a user is a member of this company.
+     */
+    public function hasMember(User $user): bool
+    {
+        return $this->members()->where('user_id', $user->id)->exists();
     }
 
     public function plan(): BelongsTo

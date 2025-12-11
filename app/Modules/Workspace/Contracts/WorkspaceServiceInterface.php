@@ -29,6 +29,8 @@ interface WorkspaceServiceInterface
 
     public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator;
 
+    public function getOtherCompanyWorkspaces(User $user): Collection;
+
     public function getAllForUser(User $user): Collection;
 
     public function invite(InviteMemberDTO $dto): WorkspaceInvitation;

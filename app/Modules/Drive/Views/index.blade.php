@@ -9,9 +9,25 @@
                 <h1 class="text-2xl font-bold text-base-content">Drive</h1>
                 <p class="text-base-content/60">All files and attachments from your workspace</p>
             </div>
+            @if($driveTab === 'block')
             <a href="{{ route('drive.create') }}" class="btn btn-primary">
                 <span class="icon-[tabler--upload] size-4"></span>
                 Upload File
+            </a>
+            @endif
+        </div>
+
+        <!-- Drive Tabs -->
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6">
+            <a href="{{ route('drive.index', ['drive_tab' => 'block']) }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $driveTab === 'block' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--cloud] size-5"></span>
+                <span>Block Drive</span>
+            </a>
+            <a href="{{ route('drive.index', ['drive_tab' => 'google']) }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $driveTab === 'google' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--brand-google-drive] size-5"></span>
+                <span>Google Drive</span>
             </a>
         </div>
 
@@ -22,6 +38,8 @@
             </div>
         @endif
 
+        @if($driveTab === 'block')
+        <!-- Block Drive Content -->
         <!-- Storage Usage -->
         <div class="card bg-base-100 shadow mb-6">
             <div class="card-body p-4">
@@ -354,6 +372,58 @@
                     </div>
                 </div>
             @endif
+        @endif
+        @else
+        <!-- Google Drive Content -->
+        @if(!$googleDriveEnabled)
+            <!-- Google Drive Not Enabled -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body text-center py-16">
+                    <div class="max-w-md mx-auto">
+                        <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background-color: #4285f420;">
+                            <span class="icon-[tabler--brand-google-drive] size-10" style="color: #4285f4;"></span>
+                        </div>
+                        <h2 class="text-xl font-bold text-base-content mb-2">Google Drive Not Enabled</h2>
+                        <p class="text-base-content/60 mb-6">
+                            Google Drive integration is not enabled for your organization. An admin can enable this feature from the marketplace settings.
+                        </p>
+                        @if(auth()->user()->isAdminOrHigher())
+                            <a href="{{ route('marketplace.google-drive') }}" class="btn btn-primary">
+                                <span class="icon-[tabler--settings] size-5"></span>
+                                Enable Google Drive
+                            </a>
+                        @else
+                            <div class="alert alert-info">
+                                <span class="icon-[tabler--info-circle] size-5"></span>
+                                <span>Please contact your administrator to enable Google Drive integration.</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @else
+            <!-- Google Drive Enabled - Show Connect / Files -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body text-center py-16">
+                    <div class="max-w-md mx-auto">
+                        <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background-color: #4285f420;">
+                            <span class="icon-[tabler--brand-google-drive] size-10" style="color: #4285f4;"></span>
+                        </div>
+                        <h2 class="text-xl font-bold text-base-content mb-2">Connect Your Google Drive</h2>
+                        <p class="text-base-content/60 mb-6">
+                            Connect your Google account to access and manage your Google Drive files directly from this workspace.
+                        </p>
+                        <a href="{{ route('google.connect') }}" class="btn btn-primary">
+                            <span class="icon-[tabler--brand-google] size-5"></span>
+                            Connect Google Account
+                        </a>
+                        <div class="mt-6 text-sm text-base-content/50">
+                            <p>You'll be redirected to Google to authorize access to your Drive.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
         @endif
     </div>
 </div>

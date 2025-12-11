@@ -1,14 +1,14 @@
 <div class="space-y-6">
-    <!-- Header with Invite Button -->
+    <!-- Header with Add Member Button -->
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-xl font-bold text-base-content">People</h2>
             <p class="text-base-content/60">Manage workspace members and their roles</p>
         </div>
         @if($workspace->isOwner(auth()->user()) || $workspace->getMemberRole(auth()->user())?->isAdmin())
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('invite-modal').showModal()">
+        <button type="button" class="btn btn-primary" onclick="openInviteModal()">
             <span class="icon-[tabler--user-plus] size-5"></span>
-            Invite Members
+            Add Team Member
         </button>
         @endif
     </div>
@@ -142,57 +142,6 @@
         </div>
     </div>
 
-    <!-- Pending Invitations -->
-    @php
-        $pendingInvitations = $workspace->invitations->filter(fn($inv) => $inv->isPending());
-    @endphp
-    @if($pendingInvitations->count() > 0)
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="card-title text-lg">
-                    <span class="icon-[tabler--mail] size-5"></span>
-                    Pending Invitations
-                </h3>
-                <span class="badge badge-warning">{{ $pendingInvitations->count() }} pending</span>
-            </div>
-
-            <div class="space-y-3">
-                @foreach($pendingInvitations as $invitation)
-                <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <div class="avatar placeholder">
-                            <div class="bg-warning text-warning-content rounded-full w-10">
-                                <span class="icon-[tabler--mail] size-5"></span>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="font-medium">{{ $invitation->email }}</p>
-                            <p class="text-sm text-base-content/60">Invited {{ $invitation->created_at->diffForHumans() }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        @php
-                            $invRoleValue = $invitation->role instanceof \App\Modules\Workspace\Enums\WorkspaceRole
-                                ? $invitation->role->value
-                                : $invitation->role;
-                        @endphp
-                        <span class="badge badge-{{ $roleColors[$invRoleValue] ?? 'badge-ghost' }}">{{ ucfirst($invRoleValue) }}</span>
-                        <form action="{{ route('workspace.members.invite', $workspace) }}" method="POST" class="inline">
-                            @csrf
-                            <input type="hidden" name="resend" value="{{ $invitation->id }}">
-                            <button type="submit" class="btn btn-ghost btn-sm" title="Resend invitation">
-                                <span class="icon-[tabler--refresh] size-4"></span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-    @endif
-
     <!-- Guests List -->
     @if($workspace->guests->count() > 0)
     <div class="card bg-base-100 shadow">
@@ -300,82 +249,129 @@
     </div>
 </div>
 
-<!-- Invite Modal -->
-<dialog id="invite-modal" class="modal">
-    <div class="modal-box max-w-lg">
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+<!-- Add Team Member Modal -->
+<div id="invite-modal" class="custom-modal">
+    <div class="custom-modal-box max-w-lg bg-base-100">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <span class="icon-[tabler--user-plus] size-5 text-white"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Add Team Member</h3>
+                    <p class="text-xs text-base-content/50">Add existing team members to this workspace</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeInviteModal()" class="btn btn-ghost btn-sm btn-circle hover:bg-error/10 hover:text-error transition-colors">
                 <span class="icon-[tabler--x] size-5"></span>
             </button>
-        </form>
-        <h3 class="font-bold text-lg mb-4">
-            <span class="icon-[tabler--user-plus] size-5 mr-2"></span>
-            Invite Team Members
-        </h3>
+        </div>
 
         <form action="{{ route('workspace.members.invite', $workspace) }}" method="POST" id="invite-form">
             @csrf
 
-            <!-- Invite from Team -->
+            @php
+                $existingMemberIds = $workspace->members->pluck('id')->toArray();
+                $companyId = auth()->user()->company_id;
+
+                // Get available members from company_user pivot table
+                $availableMembers = \App\Models\User::query()
+                    ->join('company_user', 'users.id', '=', 'company_user.user_id')
+                    ->where('company_user.company_id', $companyId)
+                    ->whereNotIn('users.id', $existingMemberIds)
+                    ->where('users.status', \App\Models\User::STATUS_ACTIVE)
+                    ->select('users.*', 'company_user.role as company_role')
+                    ->orderBy('users.name')
+                    ->get();
+            @endphp
+
+            @if($availableMembers->count() > 0)
+            <!-- Search Input -->
             <div class="form-control mb-4">
-                <label class="label" for="invite-user-select">
-                    <span class="label-text font-medium">Select Team Member</span>
-                </label>
-                <select name="user_id" id="invite-user-select" class="select select-bordered">
-                    <option value="">Choose a team member...</option>
-                    @php
-                        $existingMemberIds = $workspace->members->pluck('id')->toArray();
-                        $availableMembers = \App\Models\User::where('company_id', auth()->user()->company_id)
-                            ->whereNotIn('id', $existingMemberIds)
-                            ->where('status', \App\Models\User::STATUS_ACTIVE)
-                            ->orderBy('name')
-                            ->get();
-                    @endphp
-                    @foreach($availableMembers as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                    @endforeach
-                </select>
+                <div class="relative">
+                    <span class="icon-[tabler--search] size-5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
+                    <input type="text" id="member-search" class="input input-bordered w-full pl-10" placeholder="Search members..." oninput="filterMembers(this.value)">
+                </div>
             </div>
 
-            <div class="divider">OR</div>
-
-            <!-- Invite by Email -->
             <div class="form-control mb-4">
-                <label class="label" for="invite-email">
-                    <span class="label-text font-medium">Invite by Email</span>
+                <label class="label">
+                    <span class="label-text font-medium">Select Team Member</span>
+                    <span class="label-text-alt text-base-content/50" id="available-count">{{ $availableMembers->count() }} available</span>
                 </label>
-                <input type="email" name="email" id="invite-email" class="input input-bordered" placeholder="Enter email address...">
-                <span class="label">
-                    <span class="label-text-alt text-base-content/60">They'll receive an invitation email</span>
-                </span>
+                <div id="members-list" class="border border-base-300 rounded-lg max-h-64 overflow-y-auto">
+                    @foreach($availableMembers as $availableUser)
+                    <label class="member-item flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-200 last:border-b-0" data-name="{{ strtolower($availableUser->name) }}" data-email="{{ strtolower($availableUser->email) }}">
+                        <input type="radio" name="user_id" value="{{ $availableUser->id }}" class="radio radio-primary radio-sm" required>
+                        <div class="avatar {{ $availableUser->avatar_url ? '' : 'placeholder' }}">
+                            @if($availableUser->avatar_url)
+                                <div class="w-9 rounded-full">
+                                    <img src="{{ $availableUser->avatar_url }}" alt="{{ $availableUser->name }}" />
+                                </div>
+                            @else
+                                <div class="bg-primary text-primary-content w-9 rounded-full flex items-center justify-center">
+                                    <span class="text-sm">{{ strtoupper(substr($availableUser->name, 0, 1)) }}</span>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm truncate">{{ $availableUser->name }}</p>
+                            <p class="text-xs text-base-content/50 truncate">{{ $availableUser->email }}</p>
+                        </div>
+                        @php
+                            $userRoleData = \App\Models\User::ROLES[$availableUser->company_role] ?? null;
+                            $userRoleLabel = $userRoleData['label'] ?? ucfirst($availableUser->company_role);
+                            $userRoleColor = $userRoleData['color'] ?? 'neutral';
+                        @endphp
+                        <span class="badge badge-{{ $userRoleColor }} badge-sm">{{ $userRoleLabel }}</span>
+                    </label>
+                    @endforeach
+                </div>
+                <div id="no-results" class="hidden text-center py-8 text-base-content/50">
+                    <span class="icon-[tabler--search-off] size-8 mb-2"></span>
+                    <p>No members found</p>
+                </div>
             </div>
 
             <!-- Role Selection -->
             <div class="form-control mb-6">
                 <label class="label" for="invite-role">
-                    <span class="label-text font-medium">Role <span class="text-error">*</span></span>
+                    <span class="label-text font-medium">Workspace Role <span class="text-error">*</span></span>
                 </label>
-                <select name="role" id="invite-role" class="select select-bordered" required>
+                <select name="role" id="invite-role" class="select select-bordered w-full" required>
                     <option value="">Select a role...</option>
-                    <option value="admin">Admin</option>
-                    <option value="member">Member</option>
-                    <option value="reviewer">Reviewer</option>
+                    <option value="admin">Admin - Can manage members and settings</option>
+                    <option value="member" selected>Member - Can create and edit content</option>
+                    <option value="reviewer">Reviewer - Can view and comment only</option>
                 </select>
             </div>
 
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('invite-modal').close()">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                    <span class="icon-[tabler--send] size-5"></span>
-                    Send Invitation
+            <div class="flex justify-end gap-3 pt-4 border-t border-base-200">
+                <button type="button" class="btn btn-ghost" onclick="closeInviteModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span class="icon-[tabler--plus] size-5"></span>
+                    Add Member
                 </button>
             </div>
+            @else
+            <!-- No available members -->
+            <div class="text-center py-8">
+                <div class="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-4">
+                    <span class="icon-[tabler--users-group] size-8 text-base-content/50"></span>
+                </div>
+                <h4 class="font-medium text-base-content mb-2">All team members added</h4>
+                <p class="text-sm text-base-content/60 mb-6">All your team members are already in this workspace. Invite new members to your team first.</p>
+                <a href="{{ route('users.index') }}" class="btn btn-primary gap-2">
+                    <span class="icon-[tabler--user-plus] size-5"></span>
+                    Invite New Team Members
+                </a>
+            </div>
+            @endif
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    <div class="custom-modal-backdrop" onclick="closeInviteModal()"></div>
+</div>
 
 <!-- Remove Member Confirmation Modal -->
 <dialog id="remove-member-modal" class="modal">
@@ -457,7 +453,120 @@
     </form>
 </dialog>
 
+<style>
+/* Custom Modal Styles */
+.custom-modal {
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+}
+
+.custom-modal.modal-open {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+}
+
+.custom-modal .custom-modal-box {
+    position: relative;
+    z-index: 10000;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform 0.2s ease-out;
+}
+
+.custom-modal.modal-open .custom-modal-box {
+    transform: scale(1);
+}
+
+.custom-modal .custom-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+}
+</style>
+
 <script>
+// Custom modal functions
+function openInviteModal() {
+    document.getElementById('invite-modal').classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    // Focus on search input
+    setTimeout(() => {
+        const searchInput = document.getElementById('member-search');
+        if (searchInput) searchInput.focus();
+    }, 100);
+}
+
+function closeInviteModal() {
+    document.getElementById('invite-modal').classList.remove('modal-open');
+    document.body.style.overflow = '';
+    // Reset search
+    const searchInput = document.getElementById('member-search');
+    if (searchInput) {
+        searchInput.value = '';
+        filterMembers('');
+    }
+}
+
+// Filter members by search
+function filterMembers(query) {
+    const membersList = document.getElementById('members-list');
+    const noResults = document.getElementById('no-results');
+    const availableCount = document.getElementById('available-count');
+
+    if (!membersList) return;
+
+    const items = membersList.querySelectorAll('.member-item');
+    const searchTerm = query.toLowerCase().trim();
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const name = item.dataset.name || '';
+        const email = item.dataset.email || '';
+
+        if (searchTerm === '' || name.includes(searchTerm) || email.includes(searchTerm)) {
+            item.style.display = 'flex';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Show/hide no results message
+    if (visibleCount === 0 && searchTerm !== '') {
+        membersList.style.display = 'none';
+        noResults.classList.remove('hidden');
+    } else {
+        membersList.style.display = 'block';
+        noResults.classList.add('hidden');
+    }
+
+    // Update count
+    if (availableCount) {
+        availableCount.textContent = visibleCount + ' available';
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeInviteModal();
+    }
+});
+
 function confirmRemoveMember(userId, userName) {
     document.getElementById('remove-member-name').textContent = userName;
     document.getElementById('remove-member-form').action = '/workspaces/{{ $workspace->uuid }}/members/' + userId;
