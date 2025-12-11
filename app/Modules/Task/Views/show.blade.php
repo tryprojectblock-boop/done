@@ -1222,7 +1222,7 @@ function downloadLightboxImage() {
     downloadBtn.disabled = true;
 
     // Use server-side proxy to download the image (bypasses CORS)
-    const downloadUrl = '{{ route("images.download") }}?url=' + encodeURIComponent(currentImageSrc);
+    const downloadUrl = '/images/download?url=' + encodeURIComponent(currentImageSrc);
 
     // Create a hidden iframe to trigger the download
     const iframe = document.createElement('iframe');
