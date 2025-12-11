@@ -16,32 +16,8 @@ class TaskPolicy
 
     public function view(User $user, Task $task): bool
     {
-        // Assignee can always view their assigned tasks
-        if ($task->assignee_id == $user->id) {
-            return true;
-        }
-
-        // Task owner can always view
-        if ($task->created_by == $user->id) {
-            return true;
-        }
-
-        // Watchers can view
-        if ($task->isWatcher($user)) {
-            return true;
-        }
-
-        // Same company can view
-        if ($user->company_id == $task->company_id) {
-            return true;
-        }
-
-        // Workspace members can view tasks in their workspace
-        if ($task->workspace && $task->workspace->hasMember($user)) {
-            return true;
-        }
-
-        return false;
+        // Use the model's canView method which handles private task visibility
+        return $task->canView($user);
     }
 
     public function create(User $user): bool

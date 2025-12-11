@@ -29,6 +29,9 @@ enum ActivityType: string
     case UNLINKED = 'unlinked';
     case REOPENED = 'reopened';
     case CLOSED = 'closed';
+    case PUT_ON_HOLD = 'put_on_hold';
+    case RESUMED = 'resumed';
+    case PARENT_CHANGED = 'parent_changed';
 
     public function label(): string
     {
@@ -56,6 +59,9 @@ enum ActivityType: string
             self::UNLINKED => 'unlinked a task',
             self::REOPENED => 'reopened this task',
             self::CLOSED => 'closed this task',
+            self::PUT_ON_HOLD => 'put this task on hold',
+            self::RESUMED => 'resumed this task',
+            self::PARENT_CHANGED => 'changed the parent task',
         };
     }
 
@@ -79,6 +85,9 @@ enum ActivityType: string
             self::LINKED, self::UNLINKED => 'tabler--link',
             self::REOPENED => 'tabler--refresh',
             self::CLOSED => 'tabler--check',
+            self::PUT_ON_HOLD => 'tabler--player-pause',
+            self::RESUMED => 'tabler--player-play',
+            self::PARENT_CHANGED => 'tabler--subtask',
         };
     }
 }

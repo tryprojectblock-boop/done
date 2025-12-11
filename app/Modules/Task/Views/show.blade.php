@@ -19,15 +19,38 @@
 
             <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div class="flex-1">
-                    <h1 class="text-2xl font-bold text-base-content {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
-                        {{ $task->title }}
-                    </h1>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl font-bold text-base-content {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
+                            {{ $task->title }}
+                        </h1>
+                        @if($task->is_private)
+                            <span class="badge badge-warning gap-1" title="Only creator, assignee, and watchers can see this task">
+                                <span class="icon-[tabler--lock] size-3.5"></span>
+                                Private
+                            </span>
+                        @endif
+                    </div>
                     <p class="text-base-content/60 mt-1">
                         Created by {{ $task->creator->name }} on {{ $task->created_at->format('M d, Y') }}
                     </p>
                 </div>
 
                 <div class="flex flex-wrap gap-2">
+                    <!-- On Hold Button -->
+                    @if(!$task->isClosed())
+                        @if($task->isOnHold())
+                            <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
+                                <span class="icon-[tabler--player-play] size-4"></span>
+                                Resume Task
+                            </button>
+                        @else
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
+                                <span class="icon-[tabler--player-pause] size-4"></span>
+                                On Hold
+                            </button>
+                        @endif
+                    @endif
+
                     <!-- Watch Button -->
                     <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
                         @csrf
@@ -42,14 +65,12 @@
                         </button>
                     </form>
 
-                    @if($task->canEdit($user))
+                    @if($task->isOwner($user) && !$task->isOnHold())
                         <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
                             <span class="icon-[tabler--edit] size-4"></span>
                             Edit
                         </a>
-                    @endif
 
-                    @if($task->canClose($user))
                         @if($task->isClosed())
                             <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
                                 @csrf
@@ -85,6 +106,31 @@
                 <span class="icon-[tabler--x] size-5"></span>
                 <span>{{ session('error') }}</span>
             </div>
+        @endif
+
+        <!-- On Hold Banner -->
+        @if($task->isOnHold())
+        <div class="alert alert-warning mb-4">
+            <div class="flex items-start gap-3 w-full">
+                <span class="icon-[tabler--player-pause] size-6 mt-0.5"></span>
+                <div class="flex-1">
+                    <h4 class="font-bold">Task On Hold</h4>
+                    @if($task->hold_reason)
+                        <p class="text-sm mt-1">{{ $task->hold_reason }}</p>
+                    @endif
+                    <p class="text-xs mt-2 opacity-70">
+                        Put on hold by {{ $task->holdByUser?->name ?? 'Unknown' }}
+                        @if($task->hold_at)
+                            on {{ $task->hold_at->format('M d, Y \a\t g:i A') }}
+                        @endif
+                    </p>
+                </div>
+                <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
+                    <span class="icon-[tabler--player-play] size-4"></span>
+                    Resume
+                </button>
+            </div>
+        </div>
         @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -286,7 +332,7 @@
                             <div class="py-3 first:pt-0">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Status</label>
-                                    @if($task->canChangeStatus($user) && !$task->isClosed())
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
                                         <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('status')" title="Edit status">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
@@ -303,7 +349,7 @@
                                     @endif
                                 </div>
                                 <!-- Edit Mode -->
-                                @if($task->canChangeStatus($user) && !$task->isClosed())
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
                                 <form id="status-edit" action="{{ route('tasks.update-status', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
@@ -330,7 +376,7 @@
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Assignee</label>
-                                    @if($task->canEdit($user) && !$task->isClosed())
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
                                         <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('assignee')" title="Edit assignee">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
@@ -352,7 +398,7 @@
                                     @endif
                                 </div>
                                 <!-- Edit Mode -->
-                                @if($task->canEdit($user) && !$task->isClosed())
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
                                 <form id="assignee-edit" action="{{ route('tasks.update-assignee', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
@@ -426,7 +472,7 @@
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Type</label>
-                                    @if($task->canEdit($user) && !$task->isClosed())
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
                                         <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('type')" title="Edit type">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
@@ -446,7 +492,7 @@
                                     @endif
                                 </div>
                                 <!-- Edit Mode -->
-                                @if($task->canEdit($user) && !$task->isClosed())
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
                                 <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
@@ -476,7 +522,7 @@
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Priority</label>
-                                    @if($task->canEdit($user) && !$task->isClosed())
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
                                         <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('priority')" title="Edit priority">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
@@ -494,7 +540,7 @@
                                     @endif
                                 </div>
                                 <!-- Edit Mode -->
-                                @if($task->canEdit($user) && !$task->isClosed())
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
                                 <form id="priority-edit" action="{{ route('tasks.update-priority', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
@@ -521,7 +567,7 @@
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Due Date</label>
-                                    @if($task->canEdit($user) && !$task->isClosed())
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
                                         <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('due-date')" title="Edit due date">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
@@ -542,7 +588,7 @@
                                     @endif
                                 </div>
                                 <!-- Edit Mode with Calendar -->
-                                @if($task->canEdit($user) && !$task->isClosed())
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
                                 <div id="due-date-edit" class="hidden mt-2">
                                     <form action="{{ route('tasks.update-due-date', $task) }}" method="POST" id="due-date-form">
                                         @csrf
@@ -1327,4 +1373,8 @@ if (typeof MutationObserver !== 'undefined') {
 }
 </script>
 @endpush
+
+<!-- On Hold Modal -->
+@include('task::partials.on-hold-modal')
+
 @endsection

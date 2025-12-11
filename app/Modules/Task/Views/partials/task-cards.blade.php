@@ -19,6 +19,11 @@
                     @if($task->isClosed())
                         <span class="badge badge-neutral badge-xs">Closed</span>
                     @endif
+                    @if($task->is_private)
+                        <span class="badge badge-warning badge-xs gap-0.5" title="Private task">
+                            <span class="icon-[tabler--lock] size-3"></span>
+                        </span>
+                    @endif
                 </div>
                 @if($task->priority)
                     <div class="flex items-center gap-1 text-xs" style="color: {{ $task->priority->color() }}">

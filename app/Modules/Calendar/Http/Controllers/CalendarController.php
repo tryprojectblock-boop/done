@@ -41,10 +41,11 @@ class CalendarController extends Controller
         $listStartDate = $startOfMonth->copy()->subDays(7);
         $listEndDate = $endOfMonth->copy()->addDays(7);
 
-        // Query tasks with due dates
+        // Query tasks with due dates (filtered by visibility for private tasks)
         $query = Task::query()
             ->with(['workspace', 'assignee', 'creator', 'status', 'tags'])
             ->where('company_id', $companyId)
+            ->visibleTo($user)
             ->whereNotNull('due_date');
 
         // Apply filters
@@ -71,10 +72,11 @@ class CalendarController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Query tasks without due dates (unscheduled tasks)
+        // Query tasks without due dates (unscheduled tasks, filtered by visibility)
         $unscheduledQuery = Task::query()
             ->with(['workspace', 'assignee', 'creator', 'status', 'tags'])
             ->where('company_id', $companyId)
+            ->visibleTo($user)
             ->whereNull('due_date')
             ->whereNull('closed_at'); // Only show open unscheduled tasks
 
@@ -140,6 +142,7 @@ class CalendarController extends Controller
         $query = Task::query()
             ->with(['workspace', 'assignee', 'status'])
             ->where('company_id', $companyId)
+            ->visibleTo($user)
             ->whereNotNull('due_date')
             ->whereBetween('due_date', [$start, $end]);
 

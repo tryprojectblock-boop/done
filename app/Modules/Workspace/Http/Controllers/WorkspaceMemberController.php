@@ -40,6 +40,8 @@ class WorkspaceMemberController extends Controller
 
         $validated = $request->validate([
             'user_id' => ['nullable', 'exists:users,id'],
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['exists:users,id'],
             'email' => ['nullable', 'email'],
             'role' => ['required', 'in:admin,member,reviewer'],
             'resend' => ['nullable', 'exists:workspace_invitations,id'],
@@ -54,14 +56,63 @@ class WorkspaceMemberController extends Controller
             }
         }
 
-        // Either user_id or email must be provided
-        if (empty($validated['user_id']) && empty($validated['email'])) {
+        // Either user_id, user_ids, or email must be provided
+        if (empty($validated['user_id']) && empty($validated['user_ids']) && empty($validated['email'])) {
             return back()->with('error', 'Please select a team member or enter an email address.');
         }
 
         $role = WorkspaceRole::from($validated['role']);
+        $companyId = $request->user()->company_id;
 
-        // If user_id is provided, add them directly
+        // Handle multiple user_ids (multi-select)
+        if (!empty($validated['user_ids'])) {
+            $addedMembers = [];
+            $skippedMembers = [];
+
+            foreach ($validated['user_ids'] as $userId) {
+                $user = User::find($userId);
+
+                if (!$user) {
+                    continue;
+                }
+
+                // Check if user is already a member
+                if ($workspace->hasMember($user)) {
+                    $skippedMembers[] = $user->name;
+                    continue;
+                }
+
+                // Check if user belongs to the same company (via company_user pivot table)
+                $isCompanyMember = \DB::table('company_user')
+                    ->where('company_id', $companyId)
+                    ->where('user_id', $user->id)
+                    ->exists();
+
+                if (!$isCompanyMember) {
+                    $skippedMembers[] = $user->name;
+                    continue;
+                }
+
+                $workspace->addMember($user, $role, $request->user());
+                $addedMembers[] = $user->name;
+            }
+
+            if (count($addedMembers) === 0 && count($skippedMembers) > 0) {
+                return back()->with('error', 'All selected users are already members of this workspace.');
+            }
+
+            $message = count($addedMembers) === 1
+                ? "{$addedMembers[0]} has been added to the workspace."
+                : count($addedMembers) . " members have been added to the workspace.";
+
+            if (count($skippedMembers) > 0) {
+                $message .= " (" . count($skippedMembers) . " skipped - already members)";
+            }
+
+            return back()->with('success', $message);
+        }
+
+        // If single user_id is provided, add them directly (backward compatibility)
         if (!empty($validated['user_id'])) {
             $user = User::find($validated['user_id']);
 
@@ -75,7 +126,6 @@ class WorkspaceMemberController extends Controller
             }
 
             // Check if user belongs to the same company (via company_user pivot table)
-            $companyId = $request->user()->company_id;
             $isCompanyMember = \DB::table('company_user')
                 ->where('company_id', $companyId)
                 ->where('user_id', $user->id)

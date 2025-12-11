@@ -48,6 +48,8 @@ class Notification extends Model
     public const TYPE_MILESTONE_DUE_SOON = 'milestone_due_soon';
     public const TYPE_MILESTONE_COMPLETED = 'milestone_completed';
     public const TYPE_MILESTONE_COMMENT = 'milestone_comment';
+    public const TYPE_TASK_ON_HOLD = 'task_on_hold';
+    public const TYPE_TASK_RESUMED = 'task_resumed';
 
     public function user(): BelongsTo
     {
@@ -107,6 +109,8 @@ class Notification extends Model
             self::TYPE_MILESTONE_DUE_SOON => 'icon-[tabler--clock-exclamation]',
             self::TYPE_MILESTONE_COMPLETED => 'icon-[tabler--flag-check]',
             self::TYPE_MILESTONE_COMMENT => 'icon-[tabler--message-2]',
+            self::TYPE_TASK_ON_HOLD => 'icon-[tabler--player-pause]',
+            self::TYPE_TASK_RESUMED => 'icon-[tabler--player-play]',
             default => 'icon-[tabler--bell]',
         };
     }
@@ -127,6 +131,8 @@ class Notification extends Model
             self::TYPE_MILESTONE_DUE_SOON => 'text-warning',
             self::TYPE_MILESTONE_COMPLETED => 'text-success',
             self::TYPE_MILESTONE_COMMENT => 'text-info',
+            self::TYPE_TASK_ON_HOLD => 'text-warning',
+            self::TYPE_TASK_RESUMED => 'text-success',
             default => 'text-base-content',
         };
     }

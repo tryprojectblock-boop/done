@@ -94,17 +94,6 @@ class TaskController extends Controller
         $user = auth()->user();
 
         $workspaces = Workspace::forUser($user)->with('workflow.statuses')->latest()->get();
-        // Get users from company_user pivot table (includes invited members from other companies)
-        $users = User::query()
-            ->join('company_user', 'users.id', '=', 'company_user.user_id')
-            ->where('company_user.company_id', $user->company_id)
-            ->where('users.status', User::STATUS_ACTIVE)
-            ->select('users.*', 'company_user.role as company_role')
-            ->orderBy('users.name')
-            ->get();
-        $tags = Tag::where('company_id', $user->company_id)->get();
-        $taskTypes = TaskType::cases();
-        $priorities = TaskPriority::cases();
 
         // Check for workspace by ID or UUID
         $selectedWorkspace = $request->get('workspace_id');
@@ -113,6 +102,19 @@ class TaskController extends Controller
             $workspace = Workspace::where('uuid', $request->get('workspace'))->first();
             $selectedWorkspace = $workspace?->id;
         }
+
+        // Get users only from selected workspace (if any)
+        $users = collect();
+        if ($selectedWorkspace) {
+            $workspace = Workspace::find($selectedWorkspace);
+            if ($workspace) {
+                $users = $workspace->members()->where('users.status', User::STATUS_ACTIVE)->orderBy('users.name')->get();
+            }
+        }
+
+        $tags = Tag::where('company_id', $user->company_id)->get();
+        $taskTypes = TaskType::cases();
+        $priorities = TaskPriority::cases();
 
         // Check for milestone by ID
         $selectedMilestone = $request->get('milestone');
@@ -129,6 +131,47 @@ class TaskController extends Controller
             'selectedMilestone',
             'parentTask'
         ));
+    }
+
+    /**
+     * Get workspace members for task assignment.
+     */
+    public function getWorkspaceMembers(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $workspaceId = $request->get('workspace_id');
+
+        if (!$workspaceId) {
+            return response()->json(['users' => []]);
+        }
+
+        $workspace = Workspace::find($workspaceId);
+
+        if (!$workspace) {
+            return response()->json(['users' => []]);
+        }
+
+        // Check if user has access to this workspace
+        $user = auth()->user();
+        if (!$workspace->hasMember($user) && $workspace->company_id !== $user->company_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $members = $workspace->members()
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->orderBy('users.name')
+            ->get()
+            ->map(function ($member) {
+                return [
+                    'id' => $member->id,
+                    'name' => $member->name,
+                    'full_name' => $member->full_name,
+                    'email' => $member->email,
+                    'avatar_url' => $member->avatar_url,
+                    'initials' => $member->initials,
+                ];
+            });
+
+        return response()->json(['users' => $members]);
     }
 
     public function store(StoreTaskRequest $request): RedirectResponse
@@ -221,14 +264,8 @@ class TaskController extends Controller
         $user = auth()->user();
         // Get statuses only from the task's workspace workflow
         $statuses = $task->workspace->workflow?->statuses ?? collect();
-        // Get users from company_user pivot table (includes invited members from other companies)
-        $users = User::query()
-            ->join('company_user', 'users.id', '=', 'company_user.user_id')
-            ->where('company_user.company_id', $user->company_id)
-            ->where('users.status', User::STATUS_ACTIVE)
-            ->select('users.*', 'company_user.role as company_role')
-            ->orderBy('users.name')
-            ->get();
+        // Get only workspace members for task assignment
+        $users = $task->workspace ? $task->workspace->members()->where('users.status', User::STATUS_ACTIVE)->orderBy('users.name')->get() : collect();
         $tags = Tag::where('company_id', $user->company_id)->get();
         $priorities = TaskPriority::cases();
 
@@ -244,14 +281,8 @@ class TaskController extends Controller
         $workspaces = Workspace::forUser($user)->get();
         // Get statuses only from the task's workspace workflow
         $statuses = $task->workspace->workflow?->statuses ?? collect();
-        // Get users from company_user pivot table (includes invited members from other companies)
-        $users = User::query()
-            ->join('company_user', 'users.id', '=', 'company_user.user_id')
-            ->where('company_user.company_id', $user->company_id)
-            ->where('users.status', User::STATUS_ACTIVE)
-            ->select('users.*', 'company_user.role as company_role')
-            ->orderBy('users.name')
-            ->get();
+        // Get only workspace members for task assignment
+        $users = $task->workspace ? $task->workspace->members()->where('users.status', User::STATUS_ACTIVE)->orderBy('users.name')->get() : collect();
         $tags = Tag::where('company_id', $user->company_id)->get();
         $taskTypes = TaskType::cases();
         $priorities = TaskPriority::cases();
@@ -318,6 +349,60 @@ class TaskController extends Controller
         $this->taskService->reopenTask($task, $user);
 
         return back()->with('success', "Task {$task->task_number} reopened successfully.");
+    }
+
+    public function hold(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to put this task on hold.');
+        }
+
+        if ($task->isOnHold()) {
+            return back()->with('error', 'This task is already on hold.');
+        }
+
+        $request->validate([
+            'hold_reason' => 'required|string|max:1000',
+            'notify_users' => 'nullable|array',
+            'notify_users.*' => 'exists:users,id',
+        ]);
+
+        $this->taskService->putOnHold(
+            $task,
+            $user,
+            $request->input('hold_reason'),
+            $request->input('notify_users', [])
+        );
+
+        return back()->with('success', "Task {$task->task_number} has been put on hold.");
+    }
+
+    public function resume(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to resume this task.');
+        }
+
+        if (!$task->isOnHold()) {
+            return back()->with('error', 'This task is not on hold.');
+        }
+
+        $request->validate([
+            'notify_users' => 'nullable|array',
+            'notify_users.*' => 'exists:users,id',
+        ]);
+
+        $this->taskService->resumeTask(
+            $task,
+            $user,
+            $request->input('notify_users', [])
+        );
+
+        return back()->with('success', "Task {$task->task_number} has been resumed.");
     }
 
     public function updateStatus(Request $request, Task $task): RedirectResponse

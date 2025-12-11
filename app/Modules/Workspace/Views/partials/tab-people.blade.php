@@ -287,50 +287,60 @@
             @endphp
 
             @if($availableMembers->count() > 0)
-            <!-- Search Input -->
-            <div class="form-control mb-4">
-                <div class="relative">
-                    <span class="icon-[tabler--search] size-5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
-                    <input type="text" id="member-search" class="input input-bordered w-full pl-10" placeholder="Search members..." oninput="filterMembers(this.value)">
-                </div>
-            </div>
-
+            <!-- Multi-Select Team Members (Select2 style with chips) -->
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text font-medium">Select Team Member</span>
-                    <span class="label-text-alt text-base-content/50" id="available-count">{{ $availableMembers->count() }} available</span>
+                    <span class="label-text font-medium">Select Team Members <span class="text-error">*</span></span>
+                    <span class="label-text-alt text-base-content/50">Select multiple members</span>
                 </label>
-                <div id="members-list" class="border border-base-300 rounded-lg max-h-64 overflow-y-auto">
-                    @foreach($availableMembers as $availableUser)
-                    <label class="member-item flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-200 last:border-b-0" data-name="{{ strtolower($availableUser->name) }}" data-email="{{ strtolower($availableUser->email) }}">
-                        <input type="radio" name="user_id" value="{{ $availableUser->id }}" class="radio radio-primary radio-sm" required>
-                        <div class="avatar {{ $availableUser->avatar_url ? '' : 'placeholder' }}">
-                            @if($availableUser->avatar_url)
-                                <div class="w-9 rounded-full">
-                                    <img src="{{ $availableUser->avatar_url }}" alt="{{ $availableUser->name }}" />
+                <div class="relative">
+                    <!-- Selected members chips container -->
+                    <div id="modal-selected-members" class="flex flex-wrap gap-2 mb-2 min-h-0 empty:hidden"></div>
+
+                    <div id="modal-member-select-container" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-2 bg-base-100 hover:border-primary transition-colors">
+                        <span class="icon-[tabler--search] size-5 text-base-content/50"></span>
+                        <input type="text" id="modal-member-search" class="flex-1 bg-transparent border-0 outline-none text-sm" placeholder="Search and select team members..." autocomplete="off">
+                        <span id="modal-member-chevron" class="icon-[tabler--chevron-down] size-4 text-base-content/50"></span>
+                    </div>
+                    <div id="modal-member-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                        @foreach($availableMembers as $availableUser)
+                            @php
+                                $userRoleData = \App\Models\User::ROLES[$availableUser->company_role] ?? null;
+                                $userRoleLabel = $userRoleData['label'] ?? ucfirst($availableUser->company_role);
+                                $userRoleColor = $userRoleData['color'] ?? 'neutral';
+                            @endphp
+                            <div class="modal-member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
+                                 data-id="{{ $availableUser->id }}"
+                                 data-name="{{ $availableUser->name }}"
+                                 data-email="{{ $availableUser->email }}"
+                                 data-avatar="{{ $availableUser->avatar_url }}"
+                                 data-initials="{{ $availableUser->initials }}"
+                                 data-search="{{ strtolower($availableUser->name . ' ' . $availableUser->email) }}">
+                                <div class="flex items-center justify-center w-5 h-5 border-2 border-base-300 rounded modal-member-checkbox transition-colors">
+                                    <span class="modal-member-check icon-[tabler--check] size-4 text-white hidden"></span>
                                 </div>
-                            @else
-                                <div class="bg-primary text-primary-content w-9 rounded-full flex items-center justify-center">
-                                    <span class="text-sm">{{ strtoupper(substr($availableUser->name, 0, 1)) }}</span>
+                                <div class="avatar {{ $availableUser->avatar_url ? '' : 'placeholder' }}">
+                                    @if($availableUser->avatar_url)
+                                        <div class="w-9 rounded-full">
+                                            <img src="{{ $availableUser->avatar_url }}" alt="{{ $availableUser->name }}" class="object-cover">
+                                        </div>
+                                    @else
+                                        <div class="bg-primary text-primary-content rounded-full w-9 h-9 flex items-center justify-center">
+                                            <span class="text-xs">{{ $availableUser->initials }}</span>
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-sm truncate">{{ $availableUser->name }}</p>
-                            <p class="text-xs text-base-content/50 truncate">{{ $availableUser->email }}</p>
-                        </div>
-                        @php
-                            $userRoleData = \App\Models\User::ROLES[$availableUser->company_role] ?? null;
-                            $userRoleLabel = $userRoleData['label'] ?? ucfirst($availableUser->company_role);
-                            $userRoleColor = $userRoleData['color'] ?? 'neutral';
-                        @endphp
-                        <span class="badge badge-{{ $userRoleColor }} badge-sm">{{ $userRoleLabel }}</span>
-                    </label>
-                    @endforeach
-                </div>
-                <div id="no-results" class="hidden text-center py-8 text-base-content/50">
-                    <span class="icon-[tabler--search-off] size-8 mb-2"></span>
-                    <p>No members found</p>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-sm truncate">{{ $availableUser->name }}</p>
+                                    <p class="text-xs text-base-content/50 truncate">{{ $availableUser->email }}</p>
+                                </div>
+                                <span class="badge badge-{{ $userRoleColor }} badge-sm">{{ $userRoleLabel }}</span>
+                            </div>
+                        @endforeach
+                        <div id="modal-no-member-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>
+                    </div>
+                    <!-- Hidden inputs container for selected member IDs -->
+                    <div id="modal-member-hidden-inputs"></div>
                 </div>
             </div>
 
@@ -347,11 +357,20 @@
                 </select>
             </div>
 
+            <!-- Role descriptions -->
+            <div class="mb-6 p-3 bg-info/10 border border-info/20 rounded-lg">
+                <p class="text-sm text-base-content/70">
+                    <strong>Admin:</strong> Can manage members and settings.
+                    <strong>Member:</strong> Can create and manage content.
+                    <strong>Reviewer:</strong> Can view and comment only.
+                </p>
+            </div>
+
             <div class="flex justify-end gap-3 pt-4 border-t border-base-200">
                 <button type="button" class="btn btn-ghost" onclick="closeInviteModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary gap-2">
+                <button type="submit" class="btn btn-primary gap-2" id="modal-add-btn" disabled>
                     <span class="icon-[tabler--plus] size-5"></span>
-                    Add Member
+                    <span id="modal-add-btn-text">Add Members</span>
                 </button>
             </div>
             @else
@@ -374,20 +393,28 @@
 </div>
 
 <!-- Remove Member Confirmation Modal -->
-<dialog id="remove-member-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg text-error mb-4">
-            <span class="icon-[tabler--alert-triangle] size-5 mr-2"></span>
-            Remove Member
-        </h3>
-        <p class="mb-4">Are you sure you want to remove <strong id="remove-member-name"></strong> from this workspace?</p>
-        <p class="text-sm text-base-content/60 mb-6">They will lose access to all workspace content immediately.</p>
+<div id="remove-member-modal" class="custom-modal">
+    <div class="custom-modal-box max-w-md bg-base-100">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-error/20 flex items-center justify-center">
+                <span class="icon-[tabler--user-minus] size-8 text-error"></span>
+            </div>
+            <h3 class="text-xl font-bold text-base-content mb-2">Remove Member</h3>
+            <p class="text-base-content/70">Are you sure you want to remove <strong id="remove-member-name" class="text-error"></strong> from this workspace?</p>
+        </div>
+
+        <div class="p-4 bg-error/10 border border-error/20 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <span class="icon-[tabler--alert-triangle] size-5 text-error mt-0.5"></span>
+                <p class="text-sm text-base-content/70">This action cannot be undone. They will lose access to all workspace content immediately.</p>
+            </div>
+        </div>
 
         <form id="remove-member-form" method="POST">
             @csrf
             @method('DELETE')
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('remove-member-modal').close()">Cancel</button>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn btn-ghost" onclick="closeRemoveMemberModal()">Cancel</button>
                 <button type="submit" class="btn btn-error">
                     <span class="icon-[tabler--user-minus] size-5"></span>
                     Remove Member
@@ -395,25 +422,38 @@
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    <div class="custom-modal-backdrop" onclick="closeRemoveMemberModal()"></div>
+</div>
 
 <!-- Transfer Ownership Confirmation Modal -->
-<dialog id="transfer-ownership-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg text-warning mb-4">
-            <span class="icon-[tabler--crown] size-5 mr-2"></span>
-            Transfer Ownership
-        </h3>
-        <p class="mb-4">Are you sure you want to transfer ownership to <strong id="transfer-member-name"></strong>?</p>
-        <p class="text-sm text-base-content/60 mb-6">You will become an Admin and they will have full control over this workspace.</p>
+<div id="transfer-ownership-modal" class="custom-modal">
+    <div class="custom-modal-box max-w-md bg-base-100">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
+                <span class="icon-[tabler--crown] size-8 text-warning"></span>
+            </div>
+            <h3 class="text-xl font-bold text-base-content mb-2">Transfer Ownership</h3>
+            <p class="text-base-content/70">Are you sure you want to transfer ownership to <strong id="transfer-member-name" class="text-warning"></strong>?</p>
+        </div>
+
+        <div class="p-4 bg-warning/10 border border-warning/20 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <span class="icon-[tabler--info-circle] size-5 text-warning mt-0.5"></span>
+                <div class="text-sm text-base-content/70">
+                    <p class="mb-2"><strong>What will happen:</strong></p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>They will become the new workspace owner</li>
+                        <li>You will be changed to an Admin role</li>
+                        <li>This action cannot be undone by you</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
         <form id="transfer-ownership-form" method="POST">
             @csrf
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('transfer-ownership-modal').close()">Cancel</button>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn btn-ghost" onclick="closeTransferOwnershipModal()">Cancel</button>
                 <button type="submit" class="btn btn-warning">
                     <span class="icon-[tabler--crown] size-5"></span>
                     Transfer Ownership
@@ -421,26 +461,32 @@
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    <div class="custom-modal-backdrop" onclick="closeTransferOwnershipModal()"></div>
+</div>
 
 <!-- Remove Guest Confirmation Modal -->
-<dialog id="remove-guest-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg text-error mb-4">
-            <span class="icon-[tabler--alert-triangle] size-5 mr-2"></span>
-            Remove Guest
-        </h3>
-        <p class="mb-4">Are you sure you want to remove <strong id="remove-guest-name"></strong> from this workspace?</p>
-        <p class="text-sm text-base-content/60 mb-6">They will lose access to all workspace content immediately.</p>
+<div id="remove-guest-modal" class="custom-modal">
+    <div class="custom-modal-box max-w-md bg-base-100">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-error/20 flex items-center justify-center">
+                <span class="icon-[tabler--user-star] size-8 text-error"></span>
+            </div>
+            <h3 class="text-xl font-bold text-base-content mb-2">Remove Guest</h3>
+            <p class="text-base-content/70">Are you sure you want to remove <strong id="remove-guest-name" class="text-error"></strong> from this workspace?</p>
+        </div>
+
+        <div class="p-4 bg-error/10 border border-error/20 rounded-lg mb-6">
+            <div class="flex items-start gap-3">
+                <span class="icon-[tabler--alert-triangle] size-5 text-error mt-0.5"></span>
+                <p class="text-sm text-base-content/70">This action cannot be undone. They will lose access to all workspace content immediately.</p>
+            </div>
+        </div>
 
         <form id="remove-guest-form" method="POST">
             @csrf
             @method('DELETE')
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="document.getElementById('remove-guest-modal').close()">Cancel</button>
+            <div class="flex justify-end gap-3">
+                <button type="button" class="btn btn-ghost" onclick="closeRemoveGuestModal()">Cancel</button>
                 <button type="submit" class="btn btn-error">
                     <span class="icon-[tabler--user-minus] size-5"></span>
                     Remove Guest
@@ -448,10 +494,8 @@
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    <div class="custom-modal-backdrop" onclick="closeRemoveGuestModal()"></div>
+</div>
 
 <style>
 /* Custom Modal Styles */
@@ -499,13 +543,16 @@
 </style>
 
 <script>
+// Track selected members
+let selectedMembers = [];
+
 // Custom modal functions
 function openInviteModal() {
     document.getElementById('invite-modal').classList.add('modal-open');
     document.body.style.overflow = 'hidden';
     // Focus on search input
     setTimeout(() => {
-        const searchInput = document.getElementById('member-search');
+        const searchInput = document.getElementById('modal-member-search');
         if (searchInput) searchInput.focus();
     }, 100);
 }
@@ -513,75 +560,269 @@ function openInviteModal() {
 function closeInviteModal() {
     document.getElementById('invite-modal').classList.remove('modal-open');
     document.body.style.overflow = '';
-    // Reset search
-    const searchInput = document.getElementById('member-search');
+    // Reset modal dropdown
+    resetModalDropdown();
+}
+
+function resetModalDropdown() {
+    const searchInput = document.getElementById('modal-member-search');
+    const dropdown = document.getElementById('modal-member-dropdown');
+    const selectedContainer = document.getElementById('modal-selected-members');
+    const hiddenInputsContainer = document.getElementById('modal-member-hidden-inputs');
+    const addBtn = document.getElementById('modal-add-btn');
+    const addBtnText = document.getElementById('modal-add-btn-text');
+
+    // Clear selected members
+    selectedMembers = [];
+
     if (searchInput) {
         searchInput.value = '';
-        filterMembers('');
+        searchInput.placeholder = 'Search and select team members...';
     }
-}
+    if (dropdown) dropdown.classList.add('hidden');
+    if (selectedContainer) selectedContainer.innerHTML = '';
+    if (hiddenInputsContainer) hiddenInputsContainer.innerHTML = '';
+    if (addBtn) addBtn.disabled = true;
+    if (addBtnText) addBtnText.textContent = 'Add Members';
 
-// Filter members by search
-function filterMembers(query) {
-    const membersList = document.getElementById('members-list');
-    const noResults = document.getElementById('no-results');
-    const availableCount = document.getElementById('available-count');
-
-    if (!membersList) return;
-
-    const items = membersList.querySelectorAll('.member-item');
-    const searchTerm = query.toLowerCase().trim();
-    let visibleCount = 0;
-
-    items.forEach(item => {
-        const name = item.dataset.name || '';
-        const email = item.dataset.email || '';
-
-        if (searchTerm === '' || name.includes(searchTerm) || email.includes(searchTerm)) {
-            item.style.display = 'flex';
-            visibleCount++;
-        } else {
-            item.style.display = 'none';
+    // Reset all options - uncheck all
+    document.querySelectorAll('.modal-member-option').forEach(opt => {
+        opt.style.display = 'flex';
+        opt.classList.remove('bg-primary/10');
+        const checkbox = opt.querySelector('.modal-member-checkbox');
+        const check = opt.querySelector('.modal-member-check');
+        if (checkbox) {
+            checkbox.classList.remove('bg-primary', 'border-primary');
+            checkbox.classList.add('border-base-300');
         }
+        if (check) check.classList.add('hidden');
     });
-
-    // Show/hide no results message
-    if (visibleCount === 0 && searchTerm !== '') {
-        membersList.style.display = 'none';
-        noResults.classList.remove('hidden');
-    } else {
-        membersList.style.display = 'block';
-        noResults.classList.add('hidden');
-    }
-
-    // Update count
-    if (availableCount) {
-        availableCount.textContent = visibleCount + ' available';
-    }
+    document.getElementById('modal-no-member-results')?.classList.add('hidden');
 }
 
-// Close modal on Escape key
+// Close modals on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeInviteModal();
+        closeRemoveMemberModal();
+        closeTransferOwnershipModal();
+        closeRemoveGuestModal();
     }
 });
 
+// Add member to selection
+function addMemberToSelection(userId, userName, userAvatar, userInitials) {
+    if (selectedMembers.find(m => m.id === userId)) return;
+
+    selectedMembers.push({ id: userId, name: userName, avatar: userAvatar, initials: userInitials });
+    updateSelectedMembersUI();
+}
+
+// Remove member from selection
+function removeMemberFromSelection(userId) {
+    selectedMembers = selectedMembers.filter(m => m.id !== userId);
+    updateSelectedMembersUI();
+
+    // Uncheck the option in dropdown
+    const option = document.querySelector(`.modal-member-option[data-id="${userId}"]`);
+    if (option) {
+        option.classList.remove('bg-primary/10');
+        const checkbox = option.querySelector('.modal-member-checkbox');
+        const check = option.querySelector('.modal-member-check');
+        if (checkbox) {
+            checkbox.classList.remove('bg-primary', 'border-primary');
+            checkbox.classList.add('border-base-300');
+        }
+        if (check) check.classList.add('hidden');
+    }
+}
+
+// Update UI for selected members
+function updateSelectedMembersUI() {
+    const selectedContainer = document.getElementById('modal-selected-members');
+    const hiddenInputsContainer = document.getElementById('modal-member-hidden-inputs');
+    const addBtn = document.getElementById('modal-add-btn');
+    const addBtnText = document.getElementById('modal-add-btn-text');
+
+    // Clear containers
+    selectedContainer.innerHTML = '';
+    hiddenInputsContainer.innerHTML = '';
+
+    // Add chips for selected members
+    selectedMembers.forEach(member => {
+        // Add chip
+        const chip = document.createElement('div');
+        chip.className = 'badge badge-lg gap-2 pr-1 bg-primary/10 border-primary/20';
+        chip.innerHTML = `
+            <div class="avatar ${member.avatar ? '' : 'placeholder'}">
+                ${member.avatar
+                    ? `<div class="w-5 rounded-full"><img src="${member.avatar}" alt="${member.name}"></div>`
+                    : `<div class="bg-primary text-primary-content rounded-full w-5 h-5 flex items-center justify-center"><span class="text-[10px]">${member.initials}</span></div>`
+                }
+            </div>
+            <span class="text-sm">${member.name}</span>
+            <button type="button" class="btn btn-ghost btn-xs btn-circle hover:bg-error/20 hover:text-error" onclick="removeMemberFromSelection('${member.id}')">
+                <span class="icon-[tabler--x] size-3"></span>
+            </button>
+        `;
+        selectedContainer.appendChild(chip);
+
+        // Add hidden input
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'user_ids[]';
+        input.value = member.id;
+        hiddenInputsContainer.appendChild(input);
+    });
+
+    // Update button state
+    if (addBtn) {
+        addBtn.disabled = selectedMembers.length === 0;
+    }
+    if (addBtnText) {
+        if (selectedMembers.length === 0) {
+            addBtnText.textContent = 'Add Members';
+        } else if (selectedMembers.length === 1) {
+            addBtnText.textContent = 'Add 1 Member';
+        } else {
+            addBtnText.textContent = `Add ${selectedMembers.length} Members`;
+        }
+    }
+}
+
+// Modal searchable dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('modal-member-select-container');
+    const searchInput = document.getElementById('modal-member-search');
+    const dropdown = document.getElementById('modal-member-dropdown');
+    const noResults = document.getElementById('modal-no-member-results');
+    const options = document.querySelectorAll('.modal-member-option');
+
+    if (!container || !searchInput || !dropdown) return;
+
+    // Toggle dropdown on container click
+    container.addEventListener('click', function(e) {
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            searchInput.focus();
+        }
+    });
+
+    // Search filtering
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        options.forEach(opt => {
+            const searchStr = opt.dataset.search || '';
+            if (query === '' || searchStr.includes(query)) {
+                opt.style.display = 'flex';
+                visibleCount++;
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+
+        // Show/hide no results
+        if (visibleCount === 0 && query !== '') {
+            noResults?.classList.remove('hidden');
+        } else {
+            noResults?.classList.add('hidden');
+        }
+    });
+
+    // Option selection (toggle)
+    options.forEach(opt => {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+
+            const userId = this.dataset.id;
+            const userName = this.dataset.name;
+            const userAvatar = this.dataset.avatar;
+            const userInitials = this.dataset.initials;
+            const checkbox = this.querySelector('.modal-member-checkbox');
+            const check = this.querySelector('.modal-member-check');
+
+            // Check if already selected
+            const isSelected = selectedMembers.find(m => m.id === userId);
+
+            if (isSelected) {
+                // Deselect
+                removeMemberFromSelection(userId);
+            } else {
+                // Select
+                addMemberToSelection(userId, userName, userAvatar, userInitials);
+                this.classList.add('bg-primary/10');
+                if (checkbox) {
+                    checkbox.classList.add('bg-primary', 'border-primary');
+                    checkbox.classList.remove('border-base-300');
+                }
+                if (check) check.classList.remove('hidden');
+            }
+
+            // Clear search and keep dropdown open
+            searchInput.value = '';
+            options.forEach(o => o.style.display = 'flex');
+            noResults?.classList.add('hidden');
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const selectedContainer = document.getElementById('modal-selected-members');
+        if (!container.contains(e.target) && !dropdown.contains(e.target) && !selectedContainer?.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Form validation
+    const form = document.getElementById('invite-form');
+    form?.addEventListener('submit', function(e) {
+        if (selectedMembers.length === 0) {
+            e.preventDefault();
+            searchInput.focus();
+            container.classList.add('border-error');
+            setTimeout(() => container.classList.remove('border-error'), 2000);
+        }
+    });
+});
+
+// Remove Member Modal Functions
 function confirmRemoveMember(userId, userName) {
     document.getElementById('remove-member-name').textContent = userName;
     document.getElementById('remove-member-form').action = '/workspaces/{{ $workspace->uuid }}/members/' + userId;
-    document.getElementById('remove-member-modal').showModal();
+    document.getElementById('remove-member-modal').classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
 }
 
+function closeRemoveMemberModal() {
+    document.getElementById('remove-member-modal').classList.remove('modal-open');
+    document.body.style.overflow = '';
+}
+
+// Transfer Ownership Modal Functions
 function confirmTransferOwnership(userId, userName) {
     document.getElementById('transfer-member-name').textContent = userName;
     document.getElementById('transfer-ownership-form').action = '/workspaces/{{ $workspace->uuid }}/members/' + userId + '/transfer-ownership';
-    document.getElementById('transfer-ownership-modal').showModal();
+    document.getElementById('transfer-ownership-modal').classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
 }
 
+function closeTransferOwnershipModal() {
+    document.getElementById('transfer-ownership-modal').classList.remove('modal-open');
+    document.body.style.overflow = '';
+}
+
+// Remove Guest Modal Functions
 function confirmRemoveGuest(guestId, guestName) {
     document.getElementById('remove-guest-name').textContent = guestName;
     document.getElementById('remove-guest-form').action = '/workspaces/{{ $workspace->uuid }}/guests/' + guestId;
-    document.getElementById('remove-guest-modal').showModal();
+    document.getElementById('remove-guest-modal').classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRemoveGuestModal() {
+    document.getElementById('remove-guest-modal').classList.remove('modal-open');
+    document.body.style.overflow = '';
 }
 </script>

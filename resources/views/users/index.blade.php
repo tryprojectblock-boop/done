@@ -64,6 +64,12 @@
                     <span class="text-base-content/60">{{ $roleCounts[$key] ?? 0 }}</span>
                 </div>
             @endforeach
+            @if($pendingInvitationCount > 0)
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="badge badge-warning badge-sm">Pending Invitations</span>
+                    <span class="text-base-content/60">{{ $pendingInvitationCount }}</span>
+                </div>
+            @endif
         </div>
 
         <!-- Users Table -->
@@ -80,6 +86,59 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {{-- Pending Team Invitations (existing users from other companies) --}}
+                        @foreach($pendingInvitations as $invitation)
+                            <tr class="hover bg-warning/5">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="avatar {{ $invitation->user->avatar_url ? '' : 'placeholder' }}">
+                                            @if($invitation->user->avatar_url)
+                                                <div class="w-10 h-10 rounded-full overflow-hidden">
+                                                    <img src="{{ $invitation->user->avatar_url }}" alt="{{ $invitation->user->full_name }}" class="w-full h-full object-cover" />
+                                                </div>
+                                            @else
+                                                <div class="bg-warning text-warning-content rounded-full w-10 h-10 flex items-center justify-center">
+                                                    <span class="text-sm font-medium">{{ $invitation->user->initials }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">{{ $invitation->user->full_name }}</div>
+                                            <div class="text-sm text-base-content/60">{{ $invitation->user->email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @php
+                                        $roleData = \App\Models\User::ROLES[$invitation->role] ?? null;
+                                        $roleLabel = $roleData['label'] ?? ucfirst($invitation->role);
+                                        $roleColor = $roleData['color'] ?? 'neutral';
+                                    @endphp
+                                    <span class="badge badge-{{ $roleColor }}">{{ $roleLabel }}</span>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col">
+                                        <span class="badge badge-warning">Pending Invitation</span>
+                                        <span class="text-xs text-base-content/50 mt-1">Expires {{ $invitation->expires_at->diffForHumans() }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-base-content/60 text-sm">
+                                    Invited {{ $invitation->created_at->diffForHumans() }}
+                                </td>
+                                <td class="text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button class="btn btn-ghost btn-sm btn-circle" onclick="resendTeamInvitation({{ $invitation->id }})" title="Resend Invitation">
+                                            <span class="icon-[tabler--mail-forward] size-4"></span>
+                                        </button>
+                                        <button class="btn btn-ghost btn-sm btn-circle text-error" onclick="cancelTeamInvitation({{ $invitation->id }})" title="Cancel Invitation">
+                                            <span class="icon-[tabler--x] size-4"></span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+
+                        {{-- Regular Users --}}
                         @forelse($users as $user)
                             <tr class="hover cursor-pointer" onclick="openUserDrawer({{ $user->id }})">
                                 <td>
@@ -151,6 +210,7 @@
                                 </td>
                             </tr>
                         @empty
+                            @if($pendingInvitations->isEmpty())
                             <tr>
                                 <td colspan="5" class="text-center py-12">
                                     <div class="text-base-content/50">
@@ -160,6 +220,7 @@
                                     </div>
                                 </td>
                             </tr>
+                            @endif
                         @endforelse
                     </tbody>
                 </table>
@@ -378,6 +439,58 @@ async function resendInvitation(userId) {
             alert('Invitation email resent successfully!');
         } else {
             alert(data.error || 'Failed to resend invitation');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+async function resendTeamInvitation(invitationId) {
+    if (!confirm('Resend invitation email to this user?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/team-invitations/${invitationId}/resend`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('Invitation email resent successfully!');
+        } else {
+            alert(data.error || 'Failed to resend invitation');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+async function cancelTeamInvitation(invitationId) {
+    if (!confirm('Are you sure you want to cancel this invitation?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/team-invitations/${invitationId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to cancel invitation');
         }
     } catch (error) {
         alert('An error occurred. Please try again.');

@@ -11,6 +11,7 @@ use App\Modules\Task\Models\Tag;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskActivity;
 use App\Modules\Task\Models\TaskComment;
+use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,7 @@ class TaskService implements TaskServiceInterface
         $query = Task::query()
             ->with(['workspace', 'status', 'assignee', 'creator', 'tags'])
             ->where('company_id', $user->company_id)
+            ->visibleTo($user) // Filter private tasks
             ->where(function ($q) use ($user) {
                 $q->where('assignee_id', $user->id)
                     ->orWhere('created_by', $user->id)
@@ -35,11 +37,12 @@ class TaskService implements TaskServiceInterface
         return $this->applyFilters($query, $filters)->paginate($perPage);
     }
 
-    public function getTasksForWorkspace(int $workspaceId, array $filters = [], int $perPage = 20): LengthAwarePaginator
+    public function getTasksForWorkspace(int $workspaceId, User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Task::query()
             ->with(['workspace', 'status', 'assignee', 'creator', 'tags'])
-            ->where('workspace_id', $workspaceId);
+            ->where('workspace_id', $workspaceId)
+            ->visibleTo($user); // Filter private tasks
 
         return $this->applyFilters($query, $filters)->paginate($perPage);
     }
@@ -158,6 +161,7 @@ class TaskService implements TaskServiceInterface
                 'parent_link_notes' => $data['parent_link_notes'] ?? null,
                 'estimated_time' => $data['estimated_time'] ?? null,
                 'milestone_id' => $data['milestone_id'] ?? null,
+                'is_private' => $data['is_private'] ?? false,
             ]);
 
             // Handle tags from tagify (JSON format) or tag_ids array
@@ -187,6 +191,11 @@ class TaskService implements TaskServiceInterface
 
             // Create notifications for mentioned users in description
             if (!empty($data['description'])) {
+                // For private tasks, auto-add mentioned users as watchers so they can see the task
+                if ($task->is_private) {
+                    $this->addMentionedUsersAsWatchers($task, $data['description'], $user);
+                }
+
                 $this->notificationService->notifyMentionedUsers($data['description'], $user, $task);
             }
 
@@ -421,10 +430,53 @@ class TaskService implements TaskServiceInterface
             $task->watchers()->attach($user->id, ['added_by' => $user->id]);
         }
 
+        // For private tasks, auto-add mentioned users as watchers so they can see the task
+        if ($task->is_private) {
+            $this->addMentionedUsersAsWatchers($task, $content, $user);
+        }
+
         // Create notifications for mentioned users
         $this->notificationService->notifyMentionedUsers($content, $user, $task, $comment);
 
         return $comment->fresh(['user']);
+    }
+
+    /**
+     * Extract mentioned user IDs from content and add them as watchers to private tasks.
+     */
+    protected function addMentionedUsersAsWatchers(Task $task, string $content, User $addedBy): void
+    {
+        // Extract user IDs from mentions in content
+        // Quill mentions format: data-id="USER_ID" or data-mention-id="USER_ID"
+        preg_match_all('/data-(?:mention-)?id=["\'](\d+)["\']/', $content, $matches);
+
+        if (empty($matches[1])) {
+            return;
+        }
+
+        $mentionedUserIds = array_unique(array_map('intval', $matches[1]));
+
+        foreach ($mentionedUserIds as $userId) {
+            // Skip if user is already a watcher
+            if ($task->watchers()->where('user_id', $userId)->exists()) {
+                continue;
+            }
+
+            // Add user as watcher
+            $task->watchers()->attach($userId, ['added_by' => $addedBy->id]);
+
+            // Log activity
+            $mentionedUser = User::find($userId);
+            if ($mentionedUser) {
+                TaskActivity::log(
+                    $task,
+                    $addedBy,
+                    ActivityType::WATCHER_ADDED,
+                    null,
+                    ['id' => $mentionedUser->id, 'name' => $mentionedUser->name, 'reason' => 'mentioned in comment']
+                );
+            }
+        }
     }
 
     public function getTaskByUuid(string $uuid): ?Task
@@ -432,6 +484,105 @@ class TaskService implements TaskServiceInterface
         return Task::where('uuid', $uuid)
             ->with(['workspace', 'status', 'assignee', 'creator', 'tags', 'watchers', 'comments.user', 'activities.user', 'attachments'])
             ->first();
+    }
+
+    public function putOnHold(Task $task, User $user, string $reason, array $notifyUserIds = []): Task
+    {
+        $task->update([
+            'is_on_hold' => true,
+            'hold_reason' => $reason,
+            'hold_by' => $user->id,
+            'hold_at' => now(),
+        ]);
+
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::PUT_ON_HOLD,
+            null,
+            ['reason' => $reason]
+        );
+
+        // Notify selected users
+        if (!empty($notifyUserIds)) {
+            $task->load(['workspace']);
+            foreach ($notifyUserIds as $userId) {
+                $notifyUser = User::find($userId);
+                if ($notifyUser) {
+                    Notification::create([
+                        'user_id' => $notifyUser->id,
+                        'type' => Notification::TYPE_TASK_ON_HOLD,
+                        'title' => "Task put on hold",
+                        'message' => "{$user->name} put task #{$task->task_number} on hold: {$reason}",
+                        'notifiable_type' => Task::class,
+                        'notifiable_id' => $task->id,
+                        'data' => [
+                            'user_id' => $user->id,
+                            'user_name' => $user->name,
+                            'user_avatar' => $user->avatar_url,
+                            'task_id' => $task->id,
+                            'task_uuid' => $task->uuid,
+                            'task_title' => $task->title,
+                            'task_number' => $task->task_number,
+                            'task_url' => route('tasks.show', $task->uuid),
+                            'hold_reason' => $reason,
+                        ],
+                    ]);
+                }
+            }
+        }
+
+        return $task->fresh();
+    }
+
+    public function resumeTask(Task $task, User $user, array $notifyUserIds = []): Task
+    {
+        $previousReason = $task->hold_reason;
+
+        $task->update([
+            'is_on_hold' => false,
+            'hold_reason' => null,
+            'hold_by' => null,
+            'hold_at' => null,
+        ]);
+
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::RESUMED,
+            ['reason' => $previousReason],
+            null
+        );
+
+        // Notify selected users
+        if (!empty($notifyUserIds)) {
+            $task->load(['workspace']);
+            foreach ($notifyUserIds as $userId) {
+                $notifyUser = User::find($userId);
+                if ($notifyUser) {
+                    Notification::create([
+                        'user_id' => $notifyUser->id,
+                        'type' => Notification::TYPE_TASK_RESUMED,
+                        'title' => "Task resumed",
+                        'message' => "{$user->name} resumed task #{$task->task_number}",
+                        'notifiable_type' => Task::class,
+                        'notifiable_id' => $task->id,
+                        'data' => [
+                            'user_id' => $user->id,
+                            'user_name' => $user->name,
+                            'user_avatar' => $user->avatar_url,
+                            'task_id' => $task->id,
+                            'task_uuid' => $task->uuid,
+                            'task_title' => $task->title,
+                            'task_number' => $task->task_number,
+                            'task_url' => route('tasks.show', $task->uuid),
+                        ],
+                    ]);
+                }
+            }
+        }
+
+        return $task->fresh();
     }
 
     /**

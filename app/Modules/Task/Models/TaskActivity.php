@@ -99,6 +99,8 @@ class TaskActivity extends Model
             ActivityType::CLOSED => "{$userName} closed this task",
             ActivityType::REOPENED => "{$userName} reopened this task",
             ActivityType::PARENT_CHANGED => $this->formatParentChange($userName),
+            ActivityType::PUT_ON_HOLD => $this->formatPutOnHold($userName),
+            ActivityType::RESUMED => "{$userName} resumed this task",
             default => "{$userName} made changes to this task",
         };
     }
@@ -200,6 +202,15 @@ class TaskActivity extends Model
             return "{$userName} unlinked this task from {$oldParent}";
         }
         return "{$userName} moved this task from {$oldParent} to {$newParent}";
+    }
+
+    private function formatPutOnHold(string $userName): string
+    {
+        $reason = $this->new_value['reason'] ?? null;
+        if ($reason) {
+            return "{$userName} put this task on hold: \"{$reason}\"";
+        }
+        return "{$userName} put this task on hold";
     }
 
     // ==================== FACTORY METHODS ====================

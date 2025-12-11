@@ -52,6 +52,12 @@ Route::get('/team/invitation/{token}', [TeamInvitationController::class, 'show']
 Route::post('/team/invitation/{token}/accept', [TeamInvitationController::class, 'accept'])->name('team.invitation.accept');
 Route::post('/team/invitation/{token}/reject', [TeamInvitationController::class, 'reject'])->name('team.invitation.reject');
 
+// Team Invitation Management (Authenticated - for admins/owners)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/team-invitations/{id}/resend', [TeamInvitationController::class, 'resend'])->name('team-invitations.resend');
+    Route::delete('/team-invitations/{id}', [TeamInvitationController::class, 'destroy'])->name('team-invitations.destroy');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Dashboard Routes (Authenticated)

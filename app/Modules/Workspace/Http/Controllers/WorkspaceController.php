@@ -78,11 +78,14 @@ class WorkspaceController extends Controller
                 ->with('error', "You have reached the workspace limit ({$limits['workspaces']}) for your {$planName} plan. Please upgrade to create more workspaces.");
         }
 
-        // Get team members for invitation (excluding current user)
-        $teamMembers = User::where('company_id', $request->user()->company_id)
-            ->where('id', '!=', $request->user()->id)
-            ->where('status', User::STATUS_ACTIVE)
-            ->orderBy('name')
+        // Get team members for invitation (excluding current user) from company_user pivot table
+        $teamMembers = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $request->user()->company_id)
+            ->where('users.id', '!=', $request->user()->id)
+            ->where('users.status', User::STATUS_ACTIVE)
+            ->select('users.*', 'company_user.role as company_role')
+            ->orderBy('users.name')
             ->get();
 
         // Get all available workflows for this company (built-in and user-created)
@@ -227,8 +230,9 @@ class WorkspaceController extends Controller
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
 
-        // Load tasks for this workspace
+        // Load tasks for this workspace (filtered by visibility for private tasks)
         $tasks = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
+            ->visibleTo($request->user())
             ->with(['assignee', 'creator', 'status'])
             ->orderBy('created_at', 'desc')
             ->limit(20)

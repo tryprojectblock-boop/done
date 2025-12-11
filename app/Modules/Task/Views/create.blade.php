@@ -128,7 +128,7 @@
                                     <input type="checkbox" name="is_private" value="1" class="toggle toggle-primary" {{ old('is_private') ? 'checked' : '' }}>
                                     <div>
                                         <span class="font-medium" id="visibility-label">{{ old('is_private') ? 'Private Task' : 'Public Task' }}</span>
-                                        <p class="text-xs text-base-content/50" id="visibility-description">{{ old('is_private') ? 'Only you and assigned members can see this task' : 'All workspace members can see this task' }}</p>
+                                        <p class="text-xs text-base-content/50" id="visibility-description">{{ old('is_private') ? 'Only you, assignee, and selected watchers can see this task' : 'All workspace members can see this task' }}</p>
                                     </div>
                                 </label>
                                 <span id="visibility-icon" class="icon-[tabler--{{ old('is_private') ? 'lock' : 'world' }}] size-6 text-base-content/50"></span>
@@ -276,21 +276,29 @@
                                     <input type="text" id="assignee-search" class="flex-1 min-w-32 bg-transparent border-0 outline-none text-sm" placeholder="Search and select assignees..." autocomplete="off">
                                 </div>
                                 <div id="assignee-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
-                                    @foreach($users as $user)
-                                        <div class="assignee-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-avatar="{{ $user->avatar_url }}" data-search="{{ strtolower($user->name) }}">
-                                            <div class="avatar">
-                                                <div class="w-8 rounded-full">
-                                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="object-cover">
+                                    @if($users->isNotEmpty())
+                                        @foreach($users as $user)
+                                            <div class="assignee-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-avatar="{{ $user->avatar_url }}" data-search="{{ strtolower($user->name) }}">
+                                                <div class="avatar">
+                                                    <div class="w-8 rounded-full">
+                                                        @if($user->avatar_url)
+                                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="object-cover">
+                                                        @else
+                                                            <div class="bg-primary text-primary-content w-8 h-8 flex items-center justify-center text-sm">{{ $user->initials }}</div>
+                                                        @endif
+                                                    </div>
                                                 </div>
+                                                <div class="flex-1">
+                                                    <p class="font-medium text-sm">{{ $user->name }}</p>
+                                                    <p class="text-xs text-base-content/50">{{ $user->email ?? '' }}</p>
+                                                </div>
+                                                <span class="assignee-check icon-[tabler--check] size-5 text-primary hidden"></span>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="font-medium text-sm">{{ $user->name }}</p>
-                                                <p class="text-xs text-base-content/50">{{ $user->email ?? '' }}</p>
-                                            </div>
-                                            <span class="assignee-check icon-[tabler--check] size-5 text-primary hidden"></span>
-                                        </div>
-                                    @endforeach
-                                    <div id="no-assignee-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>
+                                        @endforeach
+                                        <div id="no-assignee-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>
+                                    @else
+                                        <div class="p-3 text-center text-base-content/50 text-sm">Select a workspace first to see available members</div>
+                                    @endif
                                 </div>
                             </div>
                             <!-- Hidden inputs for form submission -->
@@ -1261,6 +1269,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Update milestones dropdown
             updateMilestoneDropdown(id);
+
+            // Update assignee dropdown with workspace members
+            updateAssigneeDropdown(id);
         });
     });
 
@@ -1284,6 +1295,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Reset milestone dropdown
         updateMilestoneDropdown(null);
+
+        // Clear assignee dropdown
+        updateAssigneeDropdown(null);
     };
 
     // Status dropdown
@@ -1562,9 +1576,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Sync modal checkboxes with selected watchers
-        watcherModalCheckboxes.forEach(checkbox => {
-            checkbox.checked = selectedWatchers.some(w => w.id === checkbox.value);
+        // Sync modal checkboxes with selected watchers (including dynamically added ones)
+        const currentCheckboxes = document.querySelectorAll('.watcher-modal-checkbox');
+        currentCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectedWatchers.some(w => w.id == checkbox.value);
         });
         updateModalCount();
 
@@ -1587,15 +1602,65 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('overflow-hidden');
         if (watcherModalSearch) watcherModalSearch.value = '';
         // Reset search filter
-        watcherModalItems.forEach(item => item.classList.remove('hidden'));
+        const currentItems = document.querySelectorAll('.watcher-modal-item');
+        currentItems.forEach(item => item.classList.remove('hidden'));
         if (watcherModalEmpty) watcherModalEmpty.classList.add('hidden');
     };
+
+    // Update watcher modal with workspace members
+    function updateWatcherModal(users) {
+        const watcherList = document.getElementById('watcher-modal-list');
+        if (!watcherList) return;
+
+        const avatarColors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-info', 'bg-success', 'bg-warning'];
+
+        if (!users || users.length === 0) {
+            watcherList.innerHTML = '<div class="p-4 text-center text-base-content/50 text-sm">Select a workspace to see team members</div>';
+            return;
+        }
+
+        let html = '';
+        users.forEach((user, index) => {
+            const colorClass = avatarColors[index % avatarColors.length];
+            const isChecked = selectedWatchers.some(w => w.id == user.id);
+            html += `
+                <label class="watcher-modal-item flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 cursor-pointer transition-all duration-200 border border-transparent hover:border-primary/20"
+                       data-id="${user.id}" data-name="${user.name}" data-search="${user.name.toLowerCase()}" data-avatar="${user.avatar_url || ''}">
+                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm watcher-modal-checkbox" value="${user.id}" ${isChecked ? 'checked' : ''}>
+                    <div class="avatar ${user.avatar_url ? '' : 'placeholder'}">
+                        ${user.avatar_url
+                            ? `<div class="w-10 rounded-full ring-2 ring-offset-2 ring-transparent transition-all overflow-hidden"><img src="${user.avatar_url}" alt="${user.name}" class="w-full h-full object-cover" /></div>`
+                            : `<div class="${colorClass} text-white w-10 rounded-full ring-2 ring-offset-2 ring-transparent transition-all"><span class="text-sm font-medium">${user.name.charAt(0).toUpperCase()}</span></div>`
+                        }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-sm truncate">${user.name}</p>
+                        <p class="text-xs text-base-content/50 truncate">${user.email || 'Team Member'}</p>
+                    </div>
+                    <span class="icon-[tabler--circle-check] size-5 text-primary opacity-0 transition-opacity watcher-check-icon"></span>
+                </label>
+            `;
+        });
+
+        watcherList.innerHTML = html;
+
+        // Re-attach search functionality to new items
+        const newItems = watcherList.querySelectorAll('.watcher-modal-item');
+        const newCheckboxes = watcherList.querySelectorAll('.watcher-modal-checkbox');
+
+        // Update checkbox listeners
+        newCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateModalCount);
+        });
+    }
 
     // Apply watcher selection
     window.applyWatcherSelection = function() {
         selectedWatchers = [];
 
-        watcherModalCheckboxes.forEach(checkbox => {
+        // Query current checkboxes (including dynamically added ones)
+        const currentCheckboxes = document.querySelectorAll('.watcher-modal-checkbox');
+        currentCheckboxes.forEach(checkbox => {
             if (checkbox.checked) {
                 const item = checkbox.closest('.watcher-modal-item');
                 selectedWatchers.push({
@@ -1701,7 +1766,7 @@ document.addEventListener('DOMContentLoaded', function() {
         visibilityToggle.addEventListener('change', function() {
             if (this.checked) {
                 if (visibilityLabel) visibilityLabel.textContent = 'Private Task';
-                if (visibilityDescription) visibilityDescription.textContent = 'Only you and assigned members can see this task';
+                if (visibilityDescription) visibilityDescription.textContent = 'Only you, assignee, and selected watchers can see this task';
                 if (visibilityIcon) visibilityIcon.className = 'icon-[tabler--lock] size-6 text-base-content/50';
                 updateNotificationOptions(true);
             } else {
@@ -1719,8 +1784,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchTerm = this.value.toLowerCase();
             let visibleCount = 0;
 
-            watcherModalItems.forEach(item => {
-                const name = item.dataset.search;
+            // Query current items (including dynamically added ones)
+            const currentItems = document.querySelectorAll('.watcher-modal-item');
+            currentItems.forEach(item => {
+                const name = item.dataset.search || '';
                 if (name.includes(searchTerm)) {
                     item.classList.remove('hidden');
                     visibleCount++;
@@ -1736,7 +1803,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal select all
     if (modalSelectAll) {
         modalSelectAll.addEventListener('click', function() {
-            watcherModalItems.forEach(item => {
+            // Query current items (including dynamically added ones)
+            const currentItems = document.querySelectorAll('.watcher-modal-item');
+            currentItems.forEach(item => {
                 if (!item.classList.contains('hidden')) {
                     const checkbox = item.querySelector('.watcher-modal-checkbox');
                     if (checkbox) checkbox.checked = true;
@@ -1749,14 +1818,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal clear all
     if (modalClearAll) {
         modalClearAll.addEventListener('click', function() {
-            watcherModalCheckboxes.forEach(checkbox => {
+            // Query current checkboxes (including dynamically added ones)
+            const currentCheckboxes = document.querySelectorAll('.watcher-modal-checkbox');
+            currentCheckboxes.forEach(checkbox => {
                 checkbox.checked = false;
             });
             updateModalCount();
         });
     }
 
-    // Update count when checkbox changes
+    // Update count when checkbox changes (for initial checkboxes)
     watcherModalCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateModalCount);
     });
@@ -1954,10 +2025,121 @@ document.addEventListener('DOMContentLoaded', function() {
     const assigneeSearch = document.getElementById('assignee-search');
     const selectedAssigneesContainer = document.getElementById('selected-assignees');
     const assigneeHiddenInputs = document.getElementById('assignee-hidden-inputs');
-    const assigneeOptions = document.querySelectorAll('.assignee-option');
+    let assigneeOptions = document.querySelectorAll('.assignee-option');
     const noAssigneeResults = document.getElementById('no-assignee-results');
     let selectedAssignees = [];
     let assigneeHighlightIndex = -1;
+
+    // Fetch and update assignee dropdown with workspace members
+    async function updateAssigneeDropdown(workspaceId) {
+        // Clear selected assignees
+        selectedAssignees = [];
+        if (selectedAssigneesContainer) selectedAssigneesContainer.innerHTML = '';
+        if (assigneeHiddenInputs) assigneeHiddenInputs.innerHTML = '';
+        if (assigneeSearch) assigneeSearch.placeholder = 'Search and select assignees...';
+
+        // If no workspace, show "Select a workspace first" message
+        if (!workspaceId) {
+            if (assigneeDropdown) {
+                assigneeDropdown.innerHTML = '<div class="p-3 text-center text-base-content/50 text-sm">Select a workspace first to see available members</div>';
+            }
+            return;
+        }
+
+        // Show loading
+        if (assigneeDropdown) {
+            assigneeDropdown.innerHTML = '<div class="p-3 text-center"><span class="loading loading-spinner loading-sm"></span> Loading members...</div>';
+        }
+
+        try {
+            const response = await fetch(`/tasks/workspace-members?workspace_id=${workspaceId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+            const data = await response.json();
+
+            if (data.users && data.users.length > 0) {
+                // Rebuild dropdown options
+                let html = '';
+                data.users.forEach(user => {
+                    html += `
+                        <div class="assignee-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
+                             data-id="${user.id}"
+                             data-name="${user.name}"
+                             data-avatar="${user.avatar_url || ''}"
+                             data-search="${user.name.toLowerCase()}">
+                            <div class="avatar">
+                                <div class="w-8 rounded-full">
+                                    ${user.avatar_url
+                                        ? `<img src="${user.avatar_url}" alt="${user.name}" class="object-cover">`
+                                        : `<div class="bg-primary text-primary-content w-8 h-8 flex items-center justify-center text-sm">${user.initials}</div>`
+                                    }
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm">${user.name}</p>
+                                <p class="text-xs text-base-content/50">${user.email || ''}</p>
+                            </div>
+                            <span class="assignee-check icon-[tabler--check] size-5 text-primary hidden"></span>
+                        </div>
+                    `;
+                });
+                html += '<div id="no-assignee-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>';
+
+                if (assigneeDropdown) {
+                    assigneeDropdown.innerHTML = html;
+                    // Re-query and attach event listeners
+                    assigneeOptions = assigneeDropdown.querySelectorAll('.assignee-option');
+                    attachAssigneeOptionListeners();
+                }
+
+                // Also update watcher modal with workspace members
+                updateWatcherModal(data.users);
+            } else {
+                if (assigneeDropdown) {
+                    assigneeDropdown.innerHTML = '<div class="p-3 text-center text-base-content/50 text-sm">No members in this workspace</div>';
+                }
+                // Clear watcher modal
+                updateWatcherModal([]);
+            }
+        } catch (error) {
+            console.error('Error fetching workspace members:', error);
+            if (assigneeDropdown) {
+                assigneeDropdown.innerHTML = '<div class="p-3 text-center text-error text-sm">Error loading members</div>';
+            }
+        }
+    }
+
+    // Attach click listeners to assignee options (for dynamically loaded options)
+    function attachAssigneeOptionListeners() {
+        assigneeOptions.forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const avatar = this.dataset.avatar || '';
+                const checkIcon = this.querySelector('.assignee-check');
+
+                const index = selectedAssignees.findIndex(a => a.id === id);
+                if (index > -1) {
+                    selectedAssignees.splice(index, 1);
+                    if (checkIcon) checkIcon.classList.add('hidden');
+                    this.classList.remove('bg-primary/10');
+                } else {
+                    selectedAssignees.push({ id, name, avatar });
+                    if (checkIcon) checkIcon.classList.remove('hidden');
+                    this.classList.add('bg-primary/10');
+                }
+
+                this.classList.remove('bg-base-200');
+                updateSelectedAssignees();
+
+                if (assigneeSearch) assigneeSearch.focus();
+            });
+        });
+    }
 
     // Get visible assignee options
     function getVisibleAssigneeOptions() {
@@ -2098,25 +2280,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Select/deselect assignee
+    // Select/deselect assignee - for initial server-rendered options
     assigneeOptions.forEach(option => {
         option.addEventListener('click', function(e) {
             e.stopPropagation();
             const id = this.dataset.id;
             const name = this.dataset.name;
-            const avatar = this.dataset.avatar;
+            const avatar = this.dataset.avatar || '';
             const checkIcon = this.querySelector('.assignee-check');
 
             const index = selectedAssignees.findIndex(a => a.id === id);
             if (index > -1) {
                 // Deselect
                 selectedAssignees.splice(index, 1);
-                checkIcon.classList.add('hidden');
+                if (checkIcon) checkIcon.classList.add('hidden');
                 this.classList.remove('bg-primary/10');
             } else {
                 // Select
                 selectedAssignees.push({ id, name, avatar });
-                checkIcon.classList.remove('hidden');
+                if (checkIcon) checkIcon.classList.remove('hidden');
                 this.classList.add('bg-primary/10');
             }
 

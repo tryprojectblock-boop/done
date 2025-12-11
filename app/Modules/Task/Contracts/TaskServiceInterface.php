@@ -13,7 +13,7 @@ interface TaskServiceInterface
 {
     public function getTasksForUser(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator;
 
-    public function getTasksForWorkspace(int $workspaceId, array $filters = [], int $perPage = 20): LengthAwarePaginator;
+    public function getTasksForWorkspace(int $workspaceId, User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator;
 
     public function createTask(array $data, User $user): Task;
 
@@ -40,4 +40,8 @@ interface TaskServiceInterface
     public function addComment(Task $task, string $content, User $user, ?int $parentId = null): \App\Modules\Task\Models\TaskComment;
 
     public function getTaskByUuid(string $uuid): ?Task;
+
+    public function putOnHold(Task $task, User $user, string $reason, array $notifyUserIds = []): Task;
+
+    public function resumeTask(Task $task, User $user, array $notifyUserIds = []): Task;
 }

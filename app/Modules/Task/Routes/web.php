@@ -10,12 +10,17 @@ use App\Modules\Task\Http\Controllers\TaskWatcherController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth'])->group(function () {
+    // Workspace members for task assignment
+    Route::get('tasks/workspace-members', [TaskController::class, 'getWorkspaceMembers'])->name('tasks.workspace-members');
+
     // Main task routes
     Route::resource('tasks', TaskController::class);
 
     // Task actions
     Route::post('tasks/{task}/close', [TaskController::class, 'close'])->name('tasks.close');
     Route::post('tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
+    Route::post('tasks/{task}/hold', [TaskController::class, 'hold'])->name('tasks.hold');
+    Route::post('tasks/{task}/resume', [TaskController::class, 'resume'])->name('tasks.resume');
     Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
     Route::patch('tasks/{task}/assignee', [TaskController::class, 'updateAssignee'])->name('tasks.update-assignee');
     Route::patch('tasks/{task}/priority', [TaskController::class, 'updatePriority'])->name('tasks.update-priority');

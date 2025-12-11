@@ -259,15 +259,45 @@
 
                     <!-- Add Member Row -->
                     <div class="flex flex-col md:flex-row gap-3 mt-4 p-4 bg-base-200 rounded-lg">
-                        <div class="flex-1">
-                            <select id="member-select" class="select select-bordered w-full">
-                                <option value="">Select a team member...</option>
+                        <div class="flex-1 relative">
+                            <div id="member-select-container" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-2 bg-base-100">
+                                <span class="icon-[tabler--user] size-5 text-base-content/50"></span>
+                                <input type="text" id="member-search" class="flex-1 bg-transparent border-0 outline-none text-sm" placeholder="Search team members..." autocomplete="off">
+                                <span id="member-clear" class="icon-[tabler--x] size-4 text-base-content/50 hover:text-error cursor-pointer hidden"></span>
+                                <span id="member-chevron" class="icon-[tabler--chevron-down] size-4 text-base-content/50"></span>
+                            </div>
+                            <div id="member-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
                                 @foreach($teamMembers as $member)
-                                    <option value="{{ $member->id }}" data-name="{{ $member->name }}" data-email="{{ $member->email }}">
-                                        {{ $member->name }} ({{ $member->email }})
-                                    </option>
+                                    <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
+                                         data-id="{{ $member->id }}"
+                                         data-name="{{ $member->name }}"
+                                         data-email="{{ $member->email }}"
+                                         data-avatar="{{ $member->avatar_url }}"
+                                         data-search="{{ strtolower($member->name . ' ' . $member->email) }}">
+                                        <div class="avatar {{ $member->avatar_url ? '' : 'placeholder' }}">
+                                            @if($member->avatar_url)
+                                                <div class="w-8 rounded-full">
+                                                    <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" class="object-cover">
+                                                </div>
+                                            @else
+                                                <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
+                                                    <span class="text-xs">{{ $member->initials }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-sm truncate">{{ $member->name }}</p>
+                                            <p class="text-xs text-base-content/50 truncate">{{ $member->email }}</p>
+                                        </div>
+                                        <span class="member-check icon-[tabler--check] size-5 text-primary hidden"></span>
+                                    </div>
                                 @endforeach
-                            </select>
+                                @if($teamMembers->isEmpty())
+                                    <div class="p-3 text-center text-base-content/50 text-sm">No team members available</div>
+                                @endif
+                                <div id="no-member-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>
+                            </div>
+                            <input type="hidden" id="member-select" value="">
                         </div>
                         <div class="w-full md:w-48">
                             <select id="member-role" class="select select-bordered w-full">
@@ -595,6 +625,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const memberRole = document.getElementById('member-role');
     const addMemberBtn = document.getElementById('add-member-btn');
 
+    // Searchable member dropdown
+    const memberSelectContainer = document.getElementById('member-select-container');
+    const memberDropdown = document.getElementById('member-dropdown');
+    const memberSearch = document.getElementById('member-search');
+    const memberClear = document.getElementById('member-clear');
+    const memberOptions = document.querySelectorAll('.member-option');
+    const noMemberResults = document.getElementById('no-member-results');
+    let selectedMember = null;
+
     const guestsList = document.getElementById('guests-list');
     const guestSelect = document.getElementById('guest-select');
     const addGuestSelectBtn = document.getElementById('add-guest-select-btn');
@@ -607,16 +646,143 @@ document.addEventListener('DOMContentLoaded', function() {
     const addedGuests = new Set(); // Track by email
     const addedGuestIds = new Set(); // Track by ID
 
+    // Member dropdown functions
+    function showMemberDropdown() {
+        if (memberDropdown) memberDropdown.classList.remove('hidden');
+        if (memberSelectContainer) memberSelectContainer.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+    }
+
+    function hideMemberDropdown() {
+        if (memberDropdown) memberDropdown.classList.add('hidden');
+        if (memberSelectContainer) memberSelectContainer.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+        // Restore selected member name if exists
+        if (selectedMember && memberSearch) {
+            memberSearch.value = selectedMember.name;
+        }
+    }
+
+    function clearMemberSelection(event) {
+        if (event) event.stopPropagation();
+        selectedMember = null;
+        if (memberSearch) memberSearch.value = '';
+        if (memberSelect) memberSelect.value = '';
+        if (memberClear) memberClear.classList.add('hidden');
+
+        // Deselect all options
+        memberOptions.forEach(opt => {
+            const check = opt.querySelector('.member-check');
+            if (check) check.classList.add('hidden');
+            opt.classList.remove('bg-primary/10');
+        });
+    }
+
+    // Click on container
+    if (memberSelectContainer) {
+        memberSelectContainer.addEventListener('click', function(e) {
+            if (e.target === memberSearch) {
+                if (memberDropdown && memberDropdown.classList.contains('hidden')) {
+                    showMemberDropdown();
+                }
+            } else if (e.target.id !== 'member-clear' && !e.target.closest('#member-clear')) {
+                if (memberDropdown && memberDropdown.classList.contains('hidden')) {
+                    showMemberDropdown();
+                } else {
+                    hideMemberDropdown();
+                }
+                if (memberSearch) memberSearch.focus();
+            }
+        });
+    }
+
+    // Clear button
+    if (memberClear) {
+        memberClear.addEventListener('click', clearMemberSelection);
+    }
+
+    // Focus on input shows dropdown
+    if (memberSearch) {
+        memberSearch.addEventListener('focus', function() {
+            if (memberDropdown && memberDropdown.classList.contains('hidden')) {
+                showMemberDropdown();
+            }
+        });
+
+        // Search functionality
+        memberSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
+
+            memberOptions.forEach(option => {
+                const searchData = option.dataset.search;
+                if (searchData.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (noMemberResults) noMemberResults.classList.toggle('hidden', visibleCount > 0);
+
+            if (memberDropdown && memberDropdown.classList.contains('hidden')) {
+                showMemberDropdown();
+            }
+        });
+
+        // Keyboard navigation
+        memberSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideMemberDropdown();
+                memberSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideMemberDropdown();
+            }
+        });
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (memberSelectContainer && memberDropdown && !memberSelectContainer.contains(e.target) && !memberDropdown.contains(e.target)) {
+            hideMemberDropdown();
+        }
+    });
+
+    // Select member option
+    memberOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const email = this.dataset.email;
+            const avatar = this.dataset.avatar;
+
+            // Deselect previous
+            memberOptions.forEach(opt => {
+                opt.querySelector('.member-check').classList.add('hidden');
+                opt.classList.remove('bg-primary/10');
+            });
+
+            // Select this one
+            this.querySelector('.member-check').classList.remove('hidden');
+            this.classList.add('bg-primary/10');
+
+            selectedMember = { id, name, email, avatar };
+            if (memberSearch) memberSearch.value = name;
+            if (memberSelect) memberSelect.value = id;
+            if (memberClear) memberClear.classList.remove('hidden');
+
+            hideMemberDropdown();
+        });
+    });
+
     // Add member
     addMemberBtn.addEventListener('click', function() {
-        const userId = memberSelect.value;
-        const selectedOption = memberSelect.options[memberSelect.selectedIndex];
-
-        if (!userId) {
+        if (!selectedMember) {
             alert('Please select a team member');
             return;
         }
 
+        const userId = selectedMember.id;
         const role = memberRole.value;
         if (!role) {
             alert('Please select a role');
@@ -628,8 +794,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const name = selectedOption.dataset.name;
-        const email = selectedOption.dataset.email;
+        const name = selectedMember.name;
+        const email = selectedMember.email;
+        const avatar = selectedMember.avatar;
         const roleLabel = memberRole.options[memberRole.selectedIndex].text;
 
         const memberRow = document.createElement('div');
@@ -637,10 +804,11 @@ document.addEventListener('DOMContentLoaded', function() {
         memberRow.dataset.userId = userId;
         memberRow.innerHTML = `
             <div class="flex items-center gap-3">
-                <div class="avatar placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-10">
-                        <span class="text-sm">${name.charAt(0).toUpperCase()}</span>
-                    </div>
+                <div class="avatar ${avatar ? '' : 'placeholder'}">
+                    ${avatar
+                        ? `<div class="w-10 rounded-full"><img src="${avatar}" alt="${name}" class="object-cover"></div>`
+                        : `<div class="bg-primary text-primary-content rounded-full w-10 h-10 flex items-center justify-center"><span class="text-sm">${name.charAt(0).toUpperCase()}</span></div>`
+                    }
                 </div>
                 <div>
                     <p class="font-medium text-base-content">${name}</p>
@@ -661,8 +829,8 @@ document.addEventListener('DOMContentLoaded', function() {
         addedMembers.add(userId);
         memberIndex++;
 
-        // Reset select
-        memberSelect.value = '';
+        // Reset selection
+        clearMemberSelection();
 
         // Remove member event
         memberRow.querySelector('.remove-member').addEventListener('click', function() {

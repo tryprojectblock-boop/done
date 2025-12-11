@@ -30,6 +30,11 @@
                                     @if($task->isClosed())
                                         <span class="badge badge-neutral badge-xs ml-1">Closed</span>
                                     @endif
+                                    @if($task->is_private)
+                                        <span class="badge badge-warning badge-xs ml-1 gap-0.5" title="Private task">
+                                            <span class="icon-[tabler--lock] size-3"></span>
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="text-xs text-base-content/50">{{ $task->workspace->name }}</div>
                             </div>

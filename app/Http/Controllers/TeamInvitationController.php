@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TeamInvitationMail;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class TeamInvitationController extends Controller
@@ -156,6 +158,71 @@ class TeamInvitationController extends Controller
         return response()->json([
             'invitations' => $invitations,
             'count' => $invitations->count(),
+        ]);
+    }
+
+    /**
+     * Resend a team invitation email.
+     */
+    public function resend(Request $request, int $id): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $invitation = TeamInvitation::with(['user', 'company'])
+            ->where('id', $id)
+            ->where('company_id', $currentUser->company_id)
+            ->first();
+
+        if (!$invitation) {
+            return response()->json(['error' => 'Invitation not found.'], 404);
+        }
+
+        if ($invitation->isAccepted()) {
+            return response()->json(['error' => 'This invitation has already been accepted.'], 400);
+        }
+
+        if ($invitation->isRejected()) {
+            return response()->json(['error' => 'This invitation has been declined.'], 400);
+        }
+
+        // Update expiration date
+        $invitation->update([
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        // Resend the invitation email
+        Mail::to($invitation->user->email)->send(new TeamInvitationMail($invitation, $currentUser));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation email resent successfully.',
+        ]);
+    }
+
+    /**
+     * Cancel/delete a team invitation.
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $invitation = TeamInvitation::where('id', $id)
+            ->where('company_id', $currentUser->company_id)
+            ->first();
+
+        if (!$invitation) {
+            return response()->json(['error' => 'Invitation not found.'], 404);
+        }
+
+        if ($invitation->isAccepted()) {
+            return response()->json(['error' => 'Cannot cancel an accepted invitation.'], 400);
+        }
+
+        $invitation->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation cancelled successfully.',
         ]);
     }
 }

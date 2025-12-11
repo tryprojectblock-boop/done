@@ -44,6 +44,7 @@ class StoreTaskRequest extends FormRequest
             'tag_ids.*' => ['exists:tags,id'],
             'watcher_ids' => ['nullable', 'array'],
             'watcher_ids.*' => ['exists:users,id'],
+            'is_private' => ['nullable', 'boolean'],
             'files' => ['nullable', 'array', 'max:' . self::MAX_FILES_COUNT],
             'files.*' => ['file', 'max:' . self::MAX_FILE_SIZE_KB], // 10MB max per file
             'action' => ['nullable', 'string', 'in:create,create_and_add_more,create_and_copy'],

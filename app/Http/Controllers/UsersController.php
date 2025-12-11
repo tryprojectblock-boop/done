@@ -67,6 +67,35 @@ class UsersController extends Controller
             ->pluck('count', 'role')
             ->toArray();
 
+        // Get pending team invitations (existing users from other companies)
+        $pendingInvitationsQuery = TeamInvitation::with('user')
+            ->where('company_id', $companyId)
+            ->pending();
+
+        // Apply search filter to pending invitations too
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $pendingInvitationsQuery->whereHas('user', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply role filter to pending invitations
+        if ($request->filled('role')) {
+            $pendingInvitationsQuery->where('role', $request->role);
+        }
+
+        // Only show pending invitations when status filter is empty or 'invited'
+        $pendingInvitations = collect();
+        if (!$request->filled('status') || $request->status === 'invited') {
+            $pendingInvitations = $pendingInvitationsQuery->get();
+        }
+
+        // Count pending invitations
+        $pendingInvitationCount = TeamInvitation::where('company_id', $companyId)->pending()->count();
+
         return view('users.index', [
             'users' => $users,
             'roles' => User::ROLES,
@@ -74,6 +103,8 @@ class UsersController extends Controller
             'currentRole' => $request->role,
             'currentStatus' => $request->status,
             'search' => $request->search,
+            'pendingInvitations' => $pendingInvitations,
+            'pendingInvitationCount' => $pendingInvitationCount,
         ]);
     }
 

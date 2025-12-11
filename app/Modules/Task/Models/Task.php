@@ -44,6 +44,11 @@ class Task extends Model
         'estimated_time',
         'actual_time',
         'position',
+        'is_private',
+        'is_on_hold',
+        'hold_reason',
+        'hold_by',
+        'hold_at',
         'milestone_id',
         'google_event_id',
         'google_synced_at',
@@ -62,6 +67,9 @@ class Task extends Model
             'estimated_time' => 'integer',
             'actual_time' => 'integer',
             'position' => 'integer',
+            'is_private' => 'boolean',
+            'is_on_hold' => 'boolean',
+            'hold_at' => 'datetime',
             'google_synced_at' => 'datetime',
         ];
     }
@@ -187,6 +195,11 @@ class Task extends Model
         return $this->belongsTo(User::class, 'closed_by');
     }
 
+    public function holdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hold_by');
+    }
+
     public function parentTask(): BelongsTo
     {
         return $this->belongsTo(Task::class, 'parent_task_id');
@@ -237,6 +250,11 @@ class Task extends Model
         return $this->closed_at !== null || ($this->status?->isClosed() ?? false);
     }
 
+    public function isOnHold(): bool
+    {
+        return $this->is_on_hold === true;
+    }
+
     public function isOverdue(): bool
     {
         return $this->due_date && $this->due_date->isPast() && !$this->isClosed();
@@ -260,6 +278,90 @@ class Task extends Model
     public function isWatcher(User $user): bool
     {
         return $this->watchers()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Check if a user can view this task.
+     * Private tasks can only be viewed by workspace owner/admin, creator, assignee, or watchers.
+     */
+    public function canView(User $user): bool
+    {
+        // Public tasks - standard visibility (workspace members or company members)
+        if (!$this->is_private) {
+            // If task belongs to a workspace, check workspace membership
+            if ($this->workspace_id) {
+                return $this->workspace && $this->workspace->hasMember($user);
+            }
+            // Otherwise check company membership
+            return $this->company_id === $user->company_id;
+        }
+
+        // Private tasks - check workspace role first (not system role)
+        if ($this->workspace_id && $this->workspace) {
+            // Workspace owner can always view
+            if ($this->workspace->isOwner($user)) {
+                return true;
+            }
+
+            // Workspace admin can always view
+            $workspaceRole = $this->workspace->getMemberRole($user);
+            if ($workspaceRole && $workspaceRole->isAdmin()) {
+                return true;
+            }
+        }
+
+        // Private tasks - only creator, assignee, and watchers can view
+        if ($this->isOwner($user)) {
+            return true;
+        }
+
+        if ($this->isAssignee($user)) {
+            return true;
+        }
+
+        if ($this->isWatcher($user)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a user is mentioned in any comment on this task.
+     */
+    public function isMentionedInComments(User $user): bool
+    {
+        // Get all comments for this task
+        $comments = $this->comments()->get();
+
+        foreach ($comments as $comment) {
+            // Check if user ID is mentioned in the comment content
+            // Quill mentions format: data-id="USER_ID" or data-mention-id="USER_ID"
+            if (preg_match('/data-(?:mention-)?id=["\']' . $user->id . '["\']/', $comment->content)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get all user IDs mentioned in comments.
+     */
+    public function getMentionedUserIds(): array
+    {
+        $mentionedIds = [];
+        $comments = $this->comments()->get();
+
+        foreach ($comments as $comment) {
+            // Extract user IDs from mentions in comment content
+            preg_match_all('/data-(?:mention-)?id=["\'](\d+)["\']/', $comment->content, $matches);
+            if (!empty($matches[1])) {
+                $mentionedIds = array_merge($mentionedIds, $matches[1]);
+            }
+        }
+
+        return array_unique(array_map('intval', $mentionedIds));
     }
 
     public function canChangeStatus(User $user): bool
@@ -308,6 +410,42 @@ class Task extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Check if user can inline edit task details (Status, Assignee, Type, Priority, Due Date).
+     * For public tasks in a workspace:
+     *   - Workspace owner/admin can inline edit
+     *   - Assignee can inline edit
+     *   - Regular workspace members cannot inline edit
+     * For private tasks, the creator and assignee can inline edit.
+     */
+    public function canInlineEdit(User $user): bool
+    {
+        // For tasks in a workspace, check workspace role (not system role)
+        if ($this->workspace_id && $this->workspace) {
+            // Workspace owner can always inline edit
+            if ($this->workspace->isOwner($user)) {
+                return true;
+            }
+
+            // Workspace admin can always inline edit
+            $workspaceRole = $this->workspace->getMemberRole($user);
+            if ($workspaceRole && $workspaceRole->isAdmin()) {
+                return true;
+            }
+
+            // For public tasks, only assignee can inline edit
+            if (!$this->is_private) {
+                return $this->isAssignee($user);
+            }
+
+            // For private tasks, creator and assignee can inline edit
+            return $this->isOwner($user) || $this->isAssignee($user);
+        }
+
+        // For tasks without workspace, use standard edit permission
+        return $this->canEdit($user);
     }
 
     // ==================== SCOPES ====================
@@ -397,5 +535,33 @@ class Task extends Model
     public function scopeUpdatedWithinDays($query, int $days)
     {
         return $query->where('updated_at', '>=', now()->subDays($days));
+    }
+
+    /**
+     * Scope to filter tasks visible to a user.
+     * Private tasks are only visible to workspace owner/admin, creator, assignee, or watchers.
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return $query->where(function ($q) use ($user) {
+            // Public tasks
+            $q->where('is_private', false)
+            // OR private tasks where user has access
+            ->orWhere(function ($privateQuery) use ($user) {
+                $privateQuery->where('is_private', true)
+                    ->where(function ($accessQuery) use ($user) {
+                        // User is creator
+                        $accessQuery->where('created_by', $user->id)
+                            // OR user is assignee
+                            ->orWhere('assignee_id', $user->id)
+                            // OR user is watcher
+                            ->orWhereHas('watchers', fn ($w) => $w->where('user_id', $user->id))
+                            // OR user is workspace owner
+                            ->orWhereHas('workspace', fn ($ws) => $ws->where('owner_id', $user->id))
+                            // OR user is workspace admin
+                            ->orWhereHas('workspace.members', fn ($m) => $m->where('workspace_members.user_id', $user->id)->where('workspace_members.role', 'admin'));
+                    });
+            });
+        });
     }
 }
