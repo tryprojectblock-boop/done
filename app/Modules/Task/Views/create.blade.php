@@ -277,10 +277,10 @@
                                 </div>
                                 <div id="assignee-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
                                     @foreach($users as $user)
-                                        <div class="assignee-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-search="{{ strtolower($user->name) }}">
-                                            <div class="avatar placeholder">
-                                                <div class="bg-primary text-primary-content w-8 rounded-full">
-                                                    <span class="text-sm">{{ substr($user->name, 0, 1) }}</span>
+                                        <div class="assignee-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-avatar="{{ $user->avatar_url }}" data-search="{{ strtolower($user->name) }}">
+                                            <div class="avatar">
+                                                <div class="w-8 rounded-full">
+                                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="object-cover">
                                                 </div>
                                             </div>
                                             <div class="flex-1">
@@ -1616,19 +1616,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Visibility toggle change handler
-    visibilityToggle.addEventListener('change', function() {
-        if (this.checked) {
-            visibilityLabel.textContent = 'Private Task';
-            visibilityDescription.textContent = 'Only you and assigned members can see this task';
-            visibilityIcon.className = 'icon-[tabler--lock] size-6 text-base-content/50';
-            updateNotificationOptions(true);
-        } else {
-            visibilityLabel.textContent = 'Public Task';
-            visibilityDescription.textContent = 'All workspace members can see this task';
-            visibilityIcon.className = 'icon-[tabler--world] size-6 text-base-content/50';
-            updateNotificationOptions(false);
-        }
-    });
+    if (visibilityToggle) {
+        visibilityToggle.addEventListener('change', function() {
+            if (this.checked) {
+                if (visibilityLabel) visibilityLabel.textContent = 'Private Task';
+                if (visibilityDescription) visibilityDescription.textContent = 'Only you and assigned members can see this task';
+                if (visibilityIcon) visibilityIcon.className = 'icon-[tabler--lock] size-6 text-base-content/50';
+                updateNotificationOptions(true);
+            } else {
+                if (visibilityLabel) visibilityLabel.textContent = 'Public Task';
+                if (visibilityDescription) visibilityDescription.textContent = 'All workspace members can see this task';
+                if (visibilityIcon) visibilityIcon.className = 'icon-[tabler--world] size-6 text-base-content/50';
+                updateNotificationOptions(false);
+            }
+        });
+    }
 
     // Modal search functionality
     if (watcherModalSearch) {
@@ -1730,73 +1732,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Click on container
-    tasktypeSelect.addEventListener('click', function(e) {
-        if (e.target.closest('button')) return;
-        if (tasktypeDropdown.classList.contains('hidden')) {
-            showTasktypeDropdown();
-        }
-        tasktypeSearch.focus();
-    });
+    if (tasktypeSelect) {
+        tasktypeSelect.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                showTasktypeDropdown();
+            }
+            if (tasktypeSearch) tasktypeSearch.focus();
+        });
+    }
 
     // Search functionality
-    tasktypeSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
+    if (tasktypeSearch) {
+        tasktypeSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        tasktypeOptions.forEach(option => {
-            const searchText = option.dataset.search;
-            if (searchText.includes(searchTerm)) {
-                option.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                option.classList.add('hidden');
+            tasktypeOptions.forEach(option => {
+                const searchText = option.dataset.search;
+                if (searchText.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (noTasktypeResults) noTasktypeResults.classList.toggle('hidden', visibleCount > 0);
+            tasktypeHighlightIndex = -1;
+            updateTasktypeHighlight();
+
+            if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                showTasktypeDropdown();
             }
         });
 
-        noTasktypeResults.classList.toggle('hidden', visibleCount > 0);
-        tasktypeHighlightIndex = -1;
-        updateTasktypeHighlight();
+        // Keyboard navigation
+        tasktypeSearch.addEventListener('keydown', function(e) {
+            const visibleOptions = getVisibleTasktypeOptions();
 
-        if (tasktypeDropdown.classList.contains('hidden')) {
-            showTasktypeDropdown();
-        }
-    });
-
-    // Keyboard navigation
-    tasktypeSearch.addEventListener('keydown', function(e) {
-        const visibleOptions = getVisibleTasktypeOptions();
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (tasktypeDropdown.classList.contains('hidden')) {
-                showTasktypeDropdown();
-            } else {
-                tasktypeHighlightIndex = Math.min(tasktypeHighlightIndex + 1, visibleOptions.length - 1);
-                updateTasktypeHighlight();
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (tasktypeDropdown && tasktypeDropdown.classList.contains('hidden')) {
+                    showTasktypeDropdown();
+                } else {
+                    tasktypeHighlightIndex = Math.min(tasktypeHighlightIndex + 1, visibleOptions.length - 1);
+                    updateTasktypeHighlight();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (tasktypeDropdown && !tasktypeDropdown.classList.contains('hidden')) {
+                    tasktypeHighlightIndex = Math.max(tasktypeHighlightIndex - 1, 0);
+                    updateTasktypeHighlight();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (tasktypeHighlightIndex >= 0 && visibleOptions[tasktypeHighlightIndex]) {
+                    visibleOptions[tasktypeHighlightIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideTasktypeDropdown();
+                tasktypeSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideTasktypeDropdown();
             }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!tasktypeDropdown.classList.contains('hidden')) {
-                tasktypeHighlightIndex = Math.max(tasktypeHighlightIndex - 1, 0);
-                updateTasktypeHighlight();
-            }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (tasktypeHighlightIndex >= 0 && visibleOptions[tasktypeHighlightIndex]) {
-                visibleOptions[tasktypeHighlightIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            hideTasktypeDropdown();
-            tasktypeSearch.blur();
-        } else if (e.key === 'Tab') {
-            hideTasktypeDropdown();
-        }
-    });
+        });
+    }
 
     // Hide dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!tasktypeSelect.contains(e.target) && !tasktypeDropdown.contains(e.target)) {
+        if (tasktypeSelect && tasktypeDropdown && !tasktypeSelect.contains(e.target) && !tasktypeDropdown.contains(e.target)) {
             hideTasktypeDropdown();
         }
     });
@@ -1915,95 +1921,101 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Click on container (but not input) opens dropdown and focuses input
-    assigneeSelect.addEventListener('click', function(e) {
-        // Don't toggle if clicking on remove button in badge
-        if (e.target.closest('button')) {
-            return;
-        }
-        if (e.target === assigneeSearch) {
-            // Click was on the input itself, just show dropdown
-            if (assigneeDropdown.classList.contains('hidden')) {
-                showAssigneeDropdown();
+    if (assigneeSelect) {
+        assigneeSelect.addEventListener('click', function(e) {
+            // Don't toggle if clicking on remove button in badge
+            if (e.target.closest('button')) {
+                return;
             }
-        } else {
-            // Click was on container or other elements
-            toggleAssigneeDropdown();
-            assigneeSearch.focus();
-        }
-    });
+            if (e.target === assigneeSearch) {
+                // Click was on the input itself, just show dropdown
+                if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                    showAssigneeDropdown();
+                }
+            } else {
+                // Click was on container or other elements
+                toggleAssigneeDropdown();
+                if (assigneeSearch) assigneeSearch.focus();
+            }
+        });
+    }
 
     // Focus on input shows dropdown
-    assigneeSearch.addEventListener('focus', function() {
-        if (assigneeDropdown.classList.contains('hidden')) {
-            showAssigneeDropdown();
-        }
-    });
+    if (assigneeSearch) {
+        assigneeSearch.addEventListener('focus', function() {
+            if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                showAssigneeDropdown();
+            }
+        });
+    }
 
     // Hide dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!assigneeSelect.contains(e.target) && !assigneeDropdown.contains(e.target)) {
+        if (assigneeSelect && assigneeDropdown && !assigneeSelect.contains(e.target) && !assigneeDropdown.contains(e.target)) {
             hideAssigneeDropdown();
         }
     });
 
     // Search functionality
-    assigneeSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        let visibleCount = 0;
+    if (assigneeSearch) {
+        assigneeSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
 
-        assigneeOptions.forEach(option => {
-            const name = option.dataset.search;
-            if (name.includes(searchTerm)) {
-                option.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                option.classList.add('hidden');
+            assigneeOptions.forEach(option => {
+                const name = option.dataset.search;
+                if (name.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (noAssigneeResults) noAssigneeResults.classList.toggle('hidden', visibleCount > 0);
+
+            // Reset highlight when searching
+            assigneeHighlightIndex = -1;
+            updateAssigneeHighlight();
+
+            // Show dropdown if hidden while typing
+            if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                showAssigneeDropdown();
             }
         });
 
-        noAssigneeResults.classList.toggle('hidden', visibleCount > 0);
+        // Keyboard navigation for assignee
+        assigneeSearch.addEventListener('keydown', function(e) {
+            const visibleOptions = getVisibleAssigneeOptions();
 
-        // Reset highlight when searching
-        assigneeHighlightIndex = -1;
-        updateAssigneeHighlight();
-
-        // Show dropdown if hidden while typing
-        if (assigneeDropdown.classList.contains('hidden')) {
-            showAssigneeDropdown();
-        }
-    });
-
-    // Keyboard navigation for assignee
-    assigneeSearch.addEventListener('keydown', function(e) {
-        const visibleOptions = getVisibleAssigneeOptions();
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (assigneeDropdown.classList.contains('hidden')) {
-                showAssigneeDropdown();
-            } else {
-                assigneeHighlightIndex = Math.min(assigneeHighlightIndex + 1, visibleOptions.length - 1);
-                updateAssigneeHighlight();
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (assigneeDropdown && assigneeDropdown.classList.contains('hidden')) {
+                    showAssigneeDropdown();
+                } else {
+                    assigneeHighlightIndex = Math.min(assigneeHighlightIndex + 1, visibleOptions.length - 1);
+                    updateAssigneeHighlight();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (assigneeDropdown && !assigneeDropdown.classList.contains('hidden')) {
+                    assigneeHighlightIndex = Math.max(assigneeHighlightIndex - 1, 0);
+                    updateAssigneeHighlight();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (assigneeHighlightIndex >= 0 && visibleOptions[assigneeHighlightIndex]) {
+                    visibleOptions[assigneeHighlightIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideAssigneeDropdown();
+                assigneeSearch.blur();
+            } else if (e.key === 'Tab') {
+                hideAssigneeDropdown();
             }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!assigneeDropdown.classList.contains('hidden')) {
-                assigneeHighlightIndex = Math.max(assigneeHighlightIndex - 1, 0);
-                updateAssigneeHighlight();
-            }
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (assigneeHighlightIndex >= 0 && visibleOptions[assigneeHighlightIndex]) {
-                visibleOptions[assigneeHighlightIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            hideAssigneeDropdown();
-            assigneeSearch.blur();
-        } else if (e.key === 'Tab') {
-            hideAssigneeDropdown();
-        }
-    });
+        });
+    }
 
     // Select/deselect assignee
     assigneeOptions.forEach(option => {
@@ -2011,6 +2023,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const id = this.dataset.id;
             const name = this.dataset.name;
+            const avatar = this.dataset.avatar;
             const checkIcon = this.querySelector('.assignee-check');
 
             const index = selectedAssignees.findIndex(a => a.id === id);
@@ -2021,7 +2034,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.remove('bg-primary/10');
             } else {
                 // Select
-                selectedAssignees.push({ id, name });
+                selectedAssignees.push({ id, name, avatar });
                 checkIcon.classList.remove('hidden');
                 this.classList.add('bg-primary/10');
             }
@@ -2031,30 +2044,36 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSelectedAssignees();
 
             // Keep dropdown open for multi-select, but refocus the search
-            assigneeSearch.focus();
+            if (assigneeSearch) assigneeSearch.focus();
         });
     });
 
     // Update UI
     function updateSelectedAssignees() {
-        // Update visible tags
-        selectedAssigneesContainer.innerHTML = selectedAssignees.map(a => `
-            <span class="badge badge-primary gap-1">
-                <span class="text-xs">${a.name.charAt(0)}</span>
-                ${a.name}
-                <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeAssignee('${a.id}', event)">
-                    <span class="icon-[tabler--x] size-3"></span>
-                </button>
-            </span>
-        `).join('');
+        // Update visible tags with avatars
+        if (selectedAssigneesContainer) {
+            selectedAssigneesContainer.innerHTML = selectedAssignees.map(a => `
+                <span class="badge badge-soft badge-primary gap-1 pr-1">
+                    <img src="${a.avatar}" alt="${a.name}" class="w-5 h-5 rounded-full object-cover">
+                    ${a.name}
+                    <button type="button" class="btn btn-ghost btn-xs btn-circle size-4" onclick="removeAssignee('${a.id}', event)">
+                        <span class="icon-[tabler--x] size-3"></span>
+                    </button>
+                </span>
+            `).join('');
+        }
 
         // Update hidden inputs
-        assigneeHiddenInputs.innerHTML = selectedAssignees.map(a =>
-            `<input type="hidden" name="assignee_ids[]" value="${a.id}">`
-        ).join('');
+        if (assigneeHiddenInputs) {
+            assigneeHiddenInputs.innerHTML = selectedAssignees.map(a =>
+                `<input type="hidden" name="assignee_ids[]" value="${a.id}">`
+            ).join('');
+        }
 
         // Update placeholder visibility
-        assigneeSearch.placeholder = selectedAssignees.length > 0 ? 'Add more...' : 'Search and select assignees...';
+        if (assigneeSearch) {
+            assigneeSearch.placeholder = selectedAssignees.length > 0 ? 'Add more...' : 'Search and select assignees...';
+        }
     }
 
     // Remove assignee

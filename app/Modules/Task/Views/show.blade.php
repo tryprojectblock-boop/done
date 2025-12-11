@@ -407,6 +407,21 @@
                                 @endif
                             </div>
 
+                            <!-- Creator -->
+                            <div class="py-3">
+                                <label class="text-sm font-medium text-base-content/70">Created By</label>
+                                <div class="mt-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="avatar">
+                                            <div class="w-6 rounded-full">
+                                                <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
+                                            </div>
+                                        </div>
+                                        <span class="text-sm">{{ $task->creator->name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Task Type(s) -->
                             <div class="py-3">
                                 <div class="flex items-center justify-between">

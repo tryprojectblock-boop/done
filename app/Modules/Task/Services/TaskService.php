@@ -131,10 +131,15 @@ class TaskService implements TaskServiceInterface
             }
 
             // Handle assignee - support both assignee_id (single) and assignee_ids (array from multi-select)
+            // If no assignee is provided, auto-assign to the creator
             $assigneeId = $data['assignee_id'] ?? null;
             if (empty($assigneeId) && !empty($data['assignee_ids'])) {
                 // Take the first assignee from the array
                 $assigneeId = $data['assignee_ids'][0] ?? null;
+            }
+            // Auto-assign to creator if no assignee is specified
+            if (empty($assigneeId)) {
+                $assigneeId = $user->id;
             }
 
             $task = Task::create([
