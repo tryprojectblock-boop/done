@@ -29,6 +29,7 @@ class SettingsController extends Controller
         $gmailSyncStatus = null;
         $googleDriveStatus = null;
         $milestonesStatus = null;
+        $outOfOfficeStatus = null;
         $moduleSettings = [];
         $defaultWorkspace = null;
 
@@ -37,6 +38,7 @@ class SettingsController extends Controller
             $gmailSyncStatus = $this->getGmailSyncStatus($company);
             $googleDriveStatus = $this->getGoogleDriveStatus($company);
             $milestonesStatus = $this->getMilestonesStatus($company);
+            $outOfOfficeStatus = $this->getOutOfOfficeStatus($company);
             $moduleSettings = $this->getModuleSettings($company);
             // Get first workspace for module links
             $defaultWorkspace = Workspace::first();
@@ -50,6 +52,7 @@ class SettingsController extends Controller
             'gmailSyncStatus' => $gmailSyncStatus,
             'googleDriveStatus' => $googleDriveStatus,
             'milestonesStatus' => $milestonesStatus,
+            'outOfOfficeStatus' => $outOfOfficeStatus,
             'moduleSettings' => $moduleSettings,
             'defaultWorkspace' => $defaultWorkspace,
         ]);
@@ -116,6 +119,23 @@ class SettingsController extends Controller
     {
         $settings = $company->settings ?? [];
         $isEnabled = $settings['milestones_enabled'] ?? true; // Enabled by default
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
+
+    /**
+     * Get the Out of Office status for a company.
+     */
+    private function getOutOfOfficeStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['out_of_office_enabled'] ?? false;
 
         return [
             'installed' => true,

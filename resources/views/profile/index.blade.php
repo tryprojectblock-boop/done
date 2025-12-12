@@ -22,16 +22,8 @@
 
                     <!-- Profile Image Section -->
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 pb-8 border-b border-base-200">
-                        <div class="avatar placeholder">
-                            @if($user->avatar_path)
-                                <div class="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
-                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->first_name }}" class="w-full h-full object-cover" />
-                                </div>
-                            @else
-                                <div class="bg-primary text-primary-content rounded-full w-24 h-24 flex items-center justify-center ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <span class="text-3xl font-semibold">{{ substr($user->first_name ?? 'U', 0, 1) }}{{ substr($user->last_name ?? '', 0, 1) }}</span>
-                                </div>
-                            @endif
+                        <div class="relative">
+                            @include('partials.user-avatar', ['user' => $user, 'size' => 'xl', 'ring' => true])
                         </div>
                         <div class="flex-1">
                             <h3 class="font-semibold text-lg mb-2">Profile Photo</h3>
@@ -259,6 +251,146 @@
                         <span class="icon-[tabler--brand-google] size-5"></span>
                         Connect Google Calendar
                     </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        <!-- Out of Office Card -->
+        @if($oooEnabled)
+        <div class="card bg-base-100 shadow mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-lg mb-4">
+                    <span class="icon-[tabler--plane-departure] size-5 text-warning"></span>
+                    Out of Office
+                </h2>
+
+                @if($outOfOffice && $outOfOffice->isCurrentlyActive())
+                    <!-- Currently Out of Office -->
+                    <div class="alert alert-warning mb-4">
+                        <span class="icon-[tabler--plane-departure] size-5"></span>
+                        <div>
+                            <h3 class="font-bold">You're Currently Out of Office</h3>
+                            <p class="text-sm">
+                                {{ $outOfOffice->start_date->format('M d, Y') }} - {{ $outOfOffice->end_date->format('M d, Y') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-base-200 rounded-lg p-4 mb-4">
+                        <div class="space-y-3">
+                            @if($outOfOffice->message)
+                            <div>
+                                <span class="font-medium text-base-content text-sm">Status Message</span>
+                                <p class="text-sm text-base-content/70">{{ $outOfOffice->message }}</p>
+                            </div>
+                            @endif
+                            @if($outOfOffice->auto_respond_message)
+                            <div>
+                                <span class="font-medium text-base-content text-sm">Auto-Response Message</span>
+                                <p class="text-sm text-base-content/70">{{ $outOfOffice->auto_respond_message }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <form action="{{ route('profile.out-of-office.delete') }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-error btn-outline">
+                            <span class="icon-[tabler--x] size-4"></span>
+                            Cancel Out of Office
+                        </button>
+                    </form>
+                @else
+                    <!-- Set Out of Office Form -->
+                    <p class="text-base-content/70 mb-4">
+                        Set your out of office status to let your team know when you're unavailable.
+                        Auto-responses will be posted to task comments on your behalf.
+                    </p>
+
+                    <form action="{{ route('profile.out-of-office.update') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="label" for="ooo_start_date">
+                                    <span class="label-text font-medium">Start Date <span class="text-error">*</span></span>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="ooo_start_date"
+                                    name="start_date"
+                                    value="{{ old('start_date', $outOfOffice?->start_date?->format('Y-m-d')) }}"
+                                    class="input input-bordered w-full @error('start_date') input-error @enderror"
+                                    min="{{ date('Y-m-d') }}"
+                                    required
+                                />
+                                @error('start_date')
+                                    <p class="text-error text-sm mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="label" for="ooo_end_date">
+                                    <span class="label-text font-medium">End Date <span class="text-error">*</span></span>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="ooo_end_date"
+                                    name="end_date"
+                                    value="{{ old('end_date', $outOfOffice?->end_date?->format('Y-m-d')) }}"
+                                    class="input input-bordered w-full @error('end_date') input-error @enderror"
+                                    min="{{ date('Y-m-d') }}"
+                                    required
+                                />
+                                @error('end_date')
+                                    <p class="text-error text-sm mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="label" for="ooo_message">
+                                <span class="label-text font-medium">Status Message</span>
+                            </label>
+                            <textarea
+                                id="ooo_message"
+                                name="message"
+                                rows="2"
+                                class="textarea textarea-bordered w-full @error('message') textarea-error @enderror"
+                                placeholder="e.g., I'm on vacation and will return on..."
+                                maxlength="500"
+                            >{{ old('message', $outOfOffice?->message) }}</textarea>
+                            <p class="text-xs text-base-content/50 mt-1">Displayed on your profile (max 500 characters)</p>
+                            @error('message')
+                                <p class="text-error text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="label" for="ooo_auto_respond_message">
+                                <span class="label-text font-medium">Auto-Response Message</span>
+                            </label>
+                            <textarea
+                                id="ooo_auto_respond_message"
+                                name="auto_respond_message"
+                                rows="3"
+                                class="textarea textarea-bordered w-full @error('auto_respond_message') textarea-error @enderror"
+                                placeholder="e.g., Thanks for your message. I'm currently out of office and will respond when I return."
+                                maxlength="1000"
+                            >{{ old('auto_respond_message', $outOfOffice?->auto_respond_message) }}</textarea>
+                            <p class="text-xs text-base-content/50 mt-1">Posted automatically when someone comments on your tasks (max 1000 characters)</p>
+                            @error('auto_respond_message')
+                                <p class="text-error text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <span class="icon-[tabler--plane-departure] size-5"></span>
+                            Set Out of Office
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

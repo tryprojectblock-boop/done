@@ -78,6 +78,8 @@ function showToast(message, type = 'success', duration = 5000) {
 
 // Make it available globally
 window.showToast = showToast;
+
+// Note: Live notification polling is handled in app.js
 </script>
 
 <style>

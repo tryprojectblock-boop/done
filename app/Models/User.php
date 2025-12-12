@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -675,6 +676,41 @@ class User extends Authenticatable
     public function getUnreadNotificationCountAttribute(): int
     {
         return $this->unreadNotifications()->count();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Out of Office Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get user's out of office settings.
+     */
+    public function outOfOffice(): HasOne
+    {
+        return $this->hasOne(UserOutOfOffice::class)->where('is_active', true)->latest();
+    }
+
+    /**
+     * Check if user is currently out of office.
+     */
+    public function isOutOfOffice(): bool
+    {
+        $ooo = $this->outOfOffice;
+        return $ooo && $ooo->isCurrentlyActive();
+    }
+
+    /**
+     * Get the current out of office entry if active.
+     */
+    public function getCurrentOutOfOffice(): ?UserOutOfOffice
+    {
+        $ooo = $this->outOfOffice;
+        if ($ooo && $ooo->isCurrentlyActive()) {
+            return $ooo;
+        }
+        return null;
     }
 
     /*

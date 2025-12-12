@@ -48,6 +48,9 @@ class StoreTaskRequest extends FormRequest
             'files' => ['nullable', 'array', 'max:' . self::MAX_FILES_COUNT],
             'files.*' => ['file', 'max:' . self::MAX_FILE_SIZE_KB], // 10MB max per file
             'action' => ['nullable', 'string', 'in:create,create_and_add_more,create_and_copy'],
+            'notify_option' => ['nullable', 'string', 'in:all,selected,none'],
+            'notify_users' => ['nullable', 'array'],
+            'notify_users.*' => ['exists:users,id'],
         ];
     }
 

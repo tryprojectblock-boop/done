@@ -80,6 +80,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
     Route::get('/profile/activity', [ProfileController::class, 'activity'])->name('profile.activity');
+    Route::put('/profile/out-of-office', [ProfileController::class, 'updateOutOfOffice'])->name('profile.out-of-office.update');
+    Route::delete('/profile/out-of-office', [ProfileController::class, 'deleteOutOfOffice'])->name('profile.out-of-office.delete');
 
     // Password routes
     Route::get('/profile/password', [PasswordController::class, 'index'])->name('profile.password');
@@ -126,6 +128,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/marketplace/google-drive', [MarketplaceController::class, 'googleDrive'])->name('marketplace.google-drive');
     Route::post('/marketplace/google-drive/enable', [MarketplaceController::class, 'enableGoogleDrive'])->name('marketplace.google-drive.enable');
     Route::post('/marketplace/google-drive/disable', [MarketplaceController::class, 'disableGoogleDrive'])->name('marketplace.google-drive.disable');
+    Route::get('/marketplace/out-of-office', [MarketplaceController::class, 'outOfOffice'])->name('marketplace.out-of-office');
+    Route::post('/marketplace/out-of-office/enable', [MarketplaceController::class, 'enableOutOfOffice'])->name('marketplace.out-of-office.enable');
+    Route::post('/marketplace/out-of-office/disable', [MarketplaceController::class, 'disableOutOfOffice'])->name('marketplace.out-of-office.disable');
 
     // Google Calendar OAuth routes
     Route::get('/auth/google/connect', [GoogleCalendarController::class, 'connect'])->name('google.connect');
@@ -241,6 +246,7 @@ Route::middleware(['auth'])->prefix('notifications')->name('notifications.')->gr
     Route::get('/', [NotificationController::class, 'index'])->name('index');
     Route::get('/dropdown', [NotificationController::class, 'dropdown'])->name('dropdown');
     Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+    Route::get('/poll', [NotificationController::class, 'poll'])->name('poll');
     Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
     Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
     Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');

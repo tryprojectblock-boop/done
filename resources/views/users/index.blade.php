@@ -91,17 +91,7 @@
                             <tr class="hover bg-warning/5">
                                 <td>
                                     <div class="flex items-center gap-3">
-                                        <div class="avatar {{ $invitation->user->avatar_url ? '' : 'placeholder' }}">
-                                            @if($invitation->user->avatar_url)
-                                                <div class="w-10 h-10 rounded-full overflow-hidden">
-                                                    <img src="{{ $invitation->user->avatar_url }}" alt="{{ $invitation->user->full_name }}" class="w-full h-full object-cover" />
-                                                </div>
-                                            @else
-                                                <div class="bg-warning text-warning-content rounded-full w-10 h-10 flex items-center justify-center">
-                                                    <span class="text-sm font-medium">{{ $invitation->user->initials }}</span>
-                                                </div>
-                                            @endif
-                                        </div>
+                                        @include('partials.user-avatar', ['user' => $invitation->user, 'size' => 'md'])
                                         <div>
                                             <div class="font-medium">{{ $invitation->user->full_name }}</div>
                                             <div class="text-sm text-base-content/60">{{ $invitation->user->email }}</div>
@@ -143,17 +133,7 @@
                             <tr class="hover cursor-pointer" onclick="openUserDrawer({{ $user->id }})">
                                 <td>
                                     <div class="flex items-center gap-3">
-                                        <div class="avatar {{ $user->avatar_url ? '' : 'placeholder' }}">
-                                            @if($user->avatar_url)
-                                                <div class="w-10 h-10 rounded-full overflow-hidden">
-                                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->full_name }}" class="w-full h-full object-cover" />
-                                                </div>
-                                            @else
-                                                <div class="bg-primary text-primary-content rounded-full w-10 h-10 flex items-center justify-center">
-                                                    <span class="text-sm font-medium">{{ $user->initials }}</span>
-                                                </div>
-                                            @endif
-                                        </div>
+                                        @include('partials.user-avatar', ['user' => $user, 'size' => 'md'])
                                         <div>
                                             <div class="font-medium">{{ $user->full_name }}</div>
                                             <div class="text-sm text-base-content/60">{{ $user->email }}</div>

@@ -24,6 +24,7 @@ class TaskComment extends Model
         'parent_id',
         'edited_at',
         'is_edited',
+        'is_auto_response',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class TaskComment extends Model
         return [
             'is_edited' => 'boolean',
             'edited_at' => 'datetime',
+            'is_auto_response' => 'boolean',
         ];
     }
 
@@ -118,5 +120,10 @@ class TaskComment extends Model
             'is_edited' => true,
             'edited_at' => now(),
         ]);
+    }
+
+    public function isAutoResponse(): bool
+    {
+        return $this->is_auto_response === true;
     }
 }

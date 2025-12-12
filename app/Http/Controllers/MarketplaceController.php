@@ -374,4 +374,90 @@ class MarketplaceController extends Controller
             'status_color' => !$isInstalled ? 'ghost' : ($isEnabled ? 'success' : 'warning'),
         ];
     }
+
+    /**
+     * Display the Out of Office detail page.
+     */
+    public function outOfOffice(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access this feature.');
+        }
+
+        $company = $user->company;
+        $outOfOfficeStatus = $this->getOutOfOfficeStatus($company);
+
+        return view('marketplace.out-of-office', [
+            'user' => $user,
+            'company' => $company,
+            'outOfOfficeStatus' => $outOfOfficeStatus,
+        ]);
+    }
+
+    /**
+     * Enable Out of Office feature for the company.
+     */
+    public function enableOutOfOffice(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to enable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['out_of_office_enabled'] = true;
+        $settings['out_of_office_enabled_at'] = now()->toISOString();
+        $settings['out_of_office_enabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.out-of-office')
+            ->with('success', 'Out of Office feature has been enabled. Team members can now set their out of office status.');
+    }
+
+    /**
+     * Disable Out of Office feature for the company.
+     */
+    public function disableOutOfOffice(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to disable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['out_of_office_enabled'] = false;
+        $settings['out_of_office_disabled_at'] = now()->toISOString();
+        $settings['out_of_office_disabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.out-of-office')
+            ->with('success', 'Out of Office feature has been disabled for your organization.');
+    }
+
+    /**
+     * Get the Out of Office status for a company.
+     */
+    public function getOutOfOfficeStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['out_of_office_enabled'] ?? false;
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
 }

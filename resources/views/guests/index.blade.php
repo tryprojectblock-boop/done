@@ -88,17 +88,7 @@
                             <tr class="hover">
                                 <td>
                                     <div class="flex items-center gap-3">
-                                        <div class="avatar {{ $guest->avatar_url ? '' : 'placeholder' }}">
-                                            @if($guest->avatar_url)
-                                                <div class="w-10 h-10 rounded-full overflow-hidden">
-                                                    <img src="{{ $guest->avatar_url }}" alt="{{ $guest->full_name }}" class="w-full h-full object-cover" />
-                                                </div>
-                                            @else
-                                                <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
-                                                    <span class="text-sm font-medium">{{ $guest->initials }}</span>
-                                                </div>
-                                            @endif
-                                        </div>
+                                        @include('partials.user-avatar', ['user' => $guest, 'size' => 'md'])
                                         <div>
                                             <div class="font-medium">{{ $guest->full_name }}</div>
                                             <div class="text-sm text-base-content/60">{{ $guest->email }}</div>

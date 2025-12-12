@@ -209,6 +209,28 @@ class TaskService implements TaskServiceInterface
                 }
             }
 
+            // Handle notify_option for task creation notifications
+            $notifyOption = $data['notify_option'] ?? 'none';
+            $notifyUserIds = [];
+
+            if ($notifyOption === 'all') {
+                // Notify all workspace members
+                $workspace = $task->workspace;
+                if ($workspace) {
+                    $notifyUserIds = $workspace->members()->pluck('users.id')->toArray();
+                }
+            } elseif ($notifyOption === 'selected' && !empty($data['notify_users'])) {
+                // Notify selected users
+                $notifyUserIds = $data['notify_users'];
+            }
+
+            // Create notifications for notified users (excluding creator and assignee who already got notified)
+            if (!empty($notifyUserIds)) {
+                // Remove assignee from notify list as they already get a separate notification
+                $notifyUserIds = array_filter($notifyUserIds, fn($id) => $id != $assigneeId);
+                $this->notificationService->createTaskCreatedNotifications($task, $user, $notifyUserIds);
+            }
+
             return $task->fresh(['workspace', 'status', 'assignee', 'creator', 'tags', 'watchers']);
         });
     }
@@ -439,10 +461,72 @@ class TaskService implements TaskServiceInterface
         // Create in-app notifications for mentioned users
         $this->notificationService->notifyMentionedUsers($content, $user, $task, $comment);
 
+        // Create in-app notifications for assignee and watchers (excluding mentioned users who already got notified)
+        $this->notificationService->createTaskCommentNotifications($task, $comment, $user, $mentionedUserIds);
+
         // Send email notifications to all involved users (assignee, watchers, mentioned)
         $this->notificationService->sendTaskCommentEmails($task, $comment, $user, $mentionedUserIds);
 
+        // Check if assignee is out of office and should auto-respond
+        $this->handleOutOfOfficeAutoResponse($task, $comment, $user);
+
         return $comment->fresh(['user']);
+    }
+
+    /**
+     * Handle Out of Office auto-response for task comments.
+     * If the task assignee is out of office and has an auto-respond message,
+     * automatically post a reply comment on their behalf.
+     */
+    protected function handleOutOfOfficeAutoResponse(Task $task, TaskComment $originalComment, User $commenter): void
+    {
+        // Only respond if task has an assignee
+        if (!$task->assignee_id) {
+            return;
+        }
+
+        // Don't auto-respond to assignee's own comments
+        if ($task->assignee_id === $commenter->id) {
+            return;
+        }
+
+        // Load the assignee if not already loaded
+        $assignee = $task->assignee ?? User::find($task->assignee_id);
+        if (!$assignee) {
+            return;
+        }
+
+        // Check if assignee is out of office
+        if (!$assignee->isOutOfOffice()) {
+            return;
+        }
+
+        // Get the active OOO settings
+        $outOfOffice = $assignee->getCurrentOutOfOffice();
+        if (!$outOfOffice || empty($outOfOffice->auto_respond_message)) {
+            return;
+        }
+
+        // Check if we've already auto-responded to this commenter on this task recently (within last 24 hours)
+        // to avoid spamming with multiple auto-responses
+        $recentAutoResponse = TaskComment::where('task_id', $task->id)
+            ->where('user_id', $assignee->id)
+            ->where('is_auto_response', true)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->exists();
+
+        if ($recentAutoResponse) {
+            return;
+        }
+
+        // Create the auto-response comment
+        TaskComment::create([
+            'task_id' => $task->id,
+            'user_id' => $assignee->id,
+            'content' => '<p>' . e($outOfOffice->auto_respond_message) . '</p>',
+            'parent_id' => $originalComment->id, // Reply to the original comment
+            'is_auto_response' => true,
+        ]);
     }
 
     /**

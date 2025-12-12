@@ -132,6 +132,19 @@ class DiscussionService implements DiscussionServiceInterface
                 );
             }
 
+            // Notify all added participants about the new discussion
+            $allParticipantIds = array_merge(
+                $data['member_ids'] ?? [],
+                $data['guest_ids'] ?? []
+            );
+            if (!empty($allParticipantIds)) {
+                $this->notificationService->createDiscussionAddedNotifications(
+                    $discussion,
+                    $user,
+                    $allParticipantIds
+                );
+            }
+
             return $discussion->fresh(['workspace', 'creator', 'participants', 'attachments']);
         });
     }
@@ -225,8 +238,14 @@ class DiscussionService implements DiscussionServiceInterface
             $discussion->updateCommentsCount();
             $discussion->updateLastActivity();
 
+            // Parse mentioned user IDs from comment content
+            $mentionedUserIds = $this->notificationService->parseMentionsFromContent($content);
+
             // Notify mentioned users
             $this->notificationService->notifyMentionedUsers($content, $user, $discussion, $comment);
+
+            // Create in-app notifications for creator and participants (excluding mentioned users who already got notified)
+            $this->notificationService->createDiscussionCommentNotifications($discussion, $comment, $user, $mentionedUserIds);
 
             return $comment->fresh(['user', 'attachments']);
         });

@@ -21,17 +21,7 @@
                 <div class="card-body">
                     <!-- User Avatar & Info Header -->
                     <div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-200">
-                        <div class="avatar {{ $user->avatar_url ? '' : 'placeholder' }}">
-                            @if($user->avatar_url)
-                                <div class="w-16 h-16 rounded-full overflow-hidden">
-                                    <img src="{{ $user->avatar_url }}" alt="{{ $user->full_name }}" class="w-full h-full object-cover">
-                                </div>
-                            @else
-                                <div class="bg-neutral text-neutral-content rounded-full w-16 h-16 flex items-center justify-center">
-                                    <span class="text-xl font-bold">{{ $user->initials }}</span>
-                                </div>
-                            @endif
-                        </div>
+                        @include('partials.user-avatar', ['user' => $user, 'size' => 'lg'])
                         <div>
                             <h3 class="text-lg font-semibold flex items-center gap-2">
                                 {{ $user->full_name }}

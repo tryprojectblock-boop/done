@@ -160,7 +160,7 @@
             </button>
 
             <!-- Notifications -->
-            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationDropdown()" x-init="init()">
+            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationData" x-init="initNotifications()">
                 <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications" @click="loadNotifications">
                     <span class="icon-[tabler--bell] size-5"></span>
                     <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="badge badge-primary badge-xs indicator-item" x-cloak></span>
@@ -224,17 +224,7 @@
         <!-- Profile Dropdown -->
         <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
             <button id="profile-dropdown" type="button" class="dropdown-toggle btn btn-ghost gap-2 px-2" aria-haspopup="menu" aria-expanded="false" aria-label="Profile menu">
-                <div class="avatar {{ $user->avatar_url ? '' : 'placeholder' }}">
-                    @if($user->avatar_url)
-                        <div class="w-8 h-8 rounded-full overflow-hidden">
-                            <img src="{{ $user->avatar_url }}" alt="{{ $user->full_name }}" class="w-full h-full object-cover" />
-                        </div>
-                    @else
-                        <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
-                            <span class="text-sm">{{ $user->initials }}</span>
-                        </div>
-                    @endif
-                </div>
+                @include('partials.user-avatar', ['user' => $user, 'size' => 'sm', 'showOOO' => true, 'compact' => true])
                 <span class="hidden md:inline text-sm font-medium">{{ $user->first_name ?? 'User' }}</span>
                 @if($isGuestOnly)
                     <span class="badge badge-warning badge-xs hidden md:inline">Guest</span>
@@ -330,116 +320,3 @@
         </div>
     </div>
 </nav>
-
-@once
-@push('scripts')
-<script>
-function notificationDropdown() {
-    return {
-        notifications: [],
-        unreadCount: {{ auth()->user()->unread_notification_count ?? 0 }},
-        loading: false,
-        loaded: false,
-
-        async loadNotifications() {
-            // Skip if already loading
-            if (this.loading) return;
-
-            this.loading = true;
-
-            try {
-                const response = await fetch('{{ route("notifications.dropdown") }}', {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                this.notifications = Array.isArray(data.notifications) ? data.notifications : [];
-                this.unreadCount = data.unread_count || 0;
-                this.loaded = true;
-            } catch (error) {
-                console.error('Failed to load notifications:', error);
-                this.notifications = [];
-                this.loaded = true;
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        async markAllAsRead() {
-            try {
-                await fetch('{{ route("notifications.mark-all-read") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                    }
-                });
-                this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
-                this.unreadCount = 0;
-            } catch (error) {
-                console.error('Failed to mark all as read:', error);
-            }
-        },
-
-        async goToNotification(notification) {
-            // Mark as read
-            if (!notification.is_read) {
-                try {
-                    await fetch(`/notifications/${notification.id}/read`, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                        }
-                    });
-                    notification.is_read = true;
-                    this.unreadCount = Math.max(0, this.unreadCount - 1);
-                } catch (error) {
-                    console.error('Failed to mark as read:', error);
-                }
-            }
-
-            // Navigate to URL if available
-            if (notification.url) {
-                window.location.href = notification.url;
-            }
-        },
-
-        init() {
-            // Check for new notifications every 30 seconds
-            setInterval(async () => {
-                try {
-                    const response = await fetch('{{ route("notifications.unread-count") }}', {
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.count !== this.unreadCount) {
-                            this.unreadCount = data.count;
-                            this.loaded = false; // Force reload on next open
-                        }
-                    }
-                } catch (error) {
-                    // Silently fail
-                }
-            }, 30000);
-        }
-    };
-}
-</script>
-@endpush
-@endonce

@@ -257,16 +257,8 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     @if($task->assignee)
-                                                        <div class="avatar {{ $task->assignee->avatar_url ? '' : 'placeholder' }}" title="{{ $task->assignee->full_name }}">
-                                                            @if($task->assignee->avatar_url)
-                                                                <div class="w-6 h-6 rounded-full">
-                                                                    <img src="{{ $task->assignee->avatar_url }}" alt="">
-                                                                </div>
-                                                            @else
-                                                                <div class="bg-primary text-primary-content rounded-full w-6 h-6 flex items-center justify-center">
-                                                                    <span class="text-xs">{{ $task->assignee->initials }}</span>
-                                                                </div>
-                                                            @endif
+                                                        <div title="{{ $task->assignee->full_name }}">
+                                                            @include('partials.user-avatar', ['user' => $task->assignee, 'size' => 'xs'])
                                                         </div>
                                                     @endif
                                                     <form action="{{ route('milestones.removeTask', [$workspace->uuid, $milestone->uuid, $task->uuid]) }}" method="POST" class="inline">
@@ -298,16 +290,8 @@
                         <form action="{{ route('milestones.addComment', [$workspace->uuid, $milestone->uuid]) }}" method="POST" class="mb-4">
                             @csrf
                             <div class="flex gap-3">
-                                <div class="avatar {{ auth()->user()->avatar_url ? '' : 'placeholder' }} flex-shrink-0">
-                                    @if(auth()->user()->avatar_url)
-                                        <div class="w-8 h-8 rounded-full">
-                                            <img src="{{ auth()->user()->avatar_url }}" alt="">
-                                        </div>
-                                    @else
-                                        <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
-                                            <span class="text-xs">{{ auth()->user()->initials }}</span>
-                                        </div>
-                                    @endif
+                                <div class="flex-shrink-0">
+                                    @include('partials.user-avatar', ['user' => auth()->user(), 'size' => 'sm'])
                                 </div>
                                 <div class="flex-1">
                                     <textarea name="content" rows="2" class="textarea textarea-bordered w-full" placeholder="Add a comment..." required></textarea>

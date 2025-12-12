@@ -50,6 +50,9 @@ class Notification extends Model
     public const TYPE_MILESTONE_COMMENT = 'milestone_comment';
     public const TYPE_TASK_ON_HOLD = 'task_on_hold';
     public const TYPE_TASK_RESUMED = 'task_resumed';
+    public const TYPE_DISCUSSION_COMMENT = 'discussion_comment';
+    public const TYPE_DISCUSSION_ADDED = 'discussion_added';
+    public const TYPE_TASK_CREATED = 'task_created';
 
     public function user(): BelongsTo
     {

@@ -228,6 +228,207 @@ class NotificationService
     }
 
     /**
+     * Create in-app notifications for task comments.
+     * Notifies: assignee, watchers (excluding commenter and already-mentioned users).
+     */
+    public function createTaskCommentNotifications(
+        Task $task,
+        TaskComment $comment,
+        User $commenter,
+        array $mentionedUserIds = []
+    ): array {
+        $notifications = [];
+        $recipientIds = collect();
+
+        // Add assignee if exists
+        if ($task->assignee_id) {
+            $recipientIds->push($task->assignee_id);
+        }
+
+        // Add all watchers
+        $watcherIds = $task->watchers()->pluck('users.id');
+        $recipientIds = $recipientIds->merge($watcherIds);
+
+        // Remove duplicates, exclude commenter, and exclude already-mentioned users
+        // (mentioned users get their own notification via notifyMentionedUsers)
+        $recipientIds = $recipientIds->unique()
+            ->filter(fn($id) => $id !== $commenter->id)
+            ->filter(fn($id) => !in_array($id, $mentionedUserIds));
+
+        if ($recipientIds->isEmpty()) {
+            return [];
+        }
+
+        $recipients = User::whereIn('id', $recipientIds)->get();
+
+        foreach ($recipients as $recipient) {
+            $notifications[] = Notification::create([
+                'user_id' => $recipient->id,
+                'type' => Notification::TYPE_TASK_COMMENT,
+                'title' => "{$commenter->name} commented",
+                'message' => "New comment on task: {$task->title}",
+                'notifiable_type' => TaskComment::class,
+                'notifiable_id' => $comment->id,
+                'data' => [
+                    'commenter_id' => $commenter->id,
+                    'commenter_name' => $commenter->name,
+                    'commenter_avatar' => $commenter->avatar_url,
+                    'task_id' => $task->id,
+                    'task_uuid' => $task->uuid,
+                    'task_title' => $task->title,
+                    'task_number' => $task->task_number,
+                    'task_url' => route('tasks.show', $task->uuid),
+                    'comment_preview' => \Str::limit(strip_tags($comment->content), 100),
+                ],
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Create in-app notifications when a task is created and users are notified.
+     */
+    public function createTaskCreatedNotifications(
+        Task $task,
+        User $creator,
+        array $notifyUserIds
+    ): array {
+        $notifications = [];
+
+        // Filter out the creator from notifications
+        $notifyUserIds = array_filter($notifyUserIds, fn($id) => $id != $creator->id);
+
+        if (empty($notifyUserIds)) {
+            return [];
+        }
+
+        $users = User::whereIn('id', $notifyUserIds)->get();
+
+        foreach ($users as $user) {
+            $notifications[] = Notification::create([
+                'user_id' => $user->id,
+                'type' => Notification::TYPE_TASK_CREATED,
+                'title' => "New task created",
+                'message' => "{$creator->name} created: {$task->title}",
+                'notifiable_type' => Task::class,
+                'notifiable_id' => $task->id,
+                'data' => [
+                    'creator_id' => $creator->id,
+                    'creator_name' => $creator->name,
+                    'creator_avatar' => $creator->avatar_url,
+                    'task_id' => $task->id,
+                    'task_uuid' => $task->uuid,
+                    'task_title' => $task->title,
+                    'task_number' => $task->task_number,
+                    'task_url' => route('tasks.show', $task->uuid),
+                ],
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Create in-app notifications when participants are added to a discussion.
+     */
+    public function createDiscussionAddedNotifications(
+        Discussion $discussion,
+        User $creator,
+        array $participantIds
+    ): array {
+        $notifications = [];
+
+        // Filter out the creator from notifications
+        $participantIds = array_filter($participantIds, fn($id) => $id != $creator->id);
+
+        if (empty($participantIds)) {
+            return [];
+        }
+
+        $participants = User::whereIn('id', $participantIds)->get();
+
+        foreach ($participants as $participant) {
+            $notifications[] = Notification::create([
+                'user_id' => $participant->id,
+                'type' => Notification::TYPE_DISCUSSION_ADDED,
+                'title' => "Added to discussion",
+                'message' => "{$creator->name} added you to: {$discussion->title}",
+                'notifiable_type' => Discussion::class,
+                'notifiable_id' => $discussion->id,
+                'data' => [
+                    'creator_id' => $creator->id,
+                    'creator_name' => $creator->name,
+                    'creator_avatar' => $creator->avatar_url,
+                    'discussion_id' => $discussion->id,
+                    'discussion_uuid' => $discussion->uuid,
+                    'discussion_title' => $discussion->title,
+                    'discussion_url' => route('discussions.show', $discussion->uuid),
+                ],
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Create in-app notifications for discussion comments.
+     * Notifies: creator, participants (excluding commenter and already-mentioned users).
+     */
+    public function createDiscussionCommentNotifications(
+        Discussion $discussion,
+        DiscussionComment $comment,
+        User $commenter,
+        array $mentionedUserIds = []
+    ): array {
+        $notifications = [];
+        $recipientIds = collect();
+
+        // Add creator
+        if ($discussion->created_by) {
+            $recipientIds->push($discussion->created_by);
+        }
+
+        // Add all participants
+        $participantIds = $discussion->participants()->pluck('users.id');
+        $recipientIds = $recipientIds->merge($participantIds);
+
+        // Remove duplicates, exclude commenter, and exclude already-mentioned users
+        $recipientIds = $recipientIds->unique()
+            ->filter(fn($id) => $id !== $commenter->id)
+            ->filter(fn($id) => !in_array($id, $mentionedUserIds));
+
+        if ($recipientIds->isEmpty()) {
+            return [];
+        }
+
+        $recipients = User::whereIn('id', $recipientIds)->get();
+
+        foreach ($recipients as $recipient) {
+            $notifications[] = Notification::create([
+                'user_id' => $recipient->id,
+                'type' => Notification::TYPE_DISCUSSION_COMMENT,
+                'title' => "{$commenter->name} commented",
+                'message' => "New comment on discussion: {$discussion->title}",
+                'notifiable_type' => DiscussionComment::class,
+                'notifiable_id' => $comment->id,
+                'data' => [
+                    'commenter_id' => $commenter->id,
+                    'commenter_name' => $commenter->name,
+                    'commenter_avatar' => $commenter->avatar_url,
+                    'discussion_id' => $discussion->id,
+                    'discussion_uuid' => $discussion->uuid,
+                    'discussion_title' => $discussion->title,
+                    'discussion_url' => route('discussions.show', $discussion->uuid),
+                    'comment_preview' => \Str::limit(strip_tags($comment->content), 100),
+                ],
+            ]);
+        }
+
+        return $notifications;
+    }
+
+    /**
      * Parse mentions from HTML content and return mentioned user IDs.
      */
     public function parseMentionsFromContent(string $content): array
