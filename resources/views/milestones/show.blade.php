@@ -310,16 +310,8 @@
                             <div class="space-y-4 border-t border-base-200 pt-4">
                                 @foreach($milestone->comments as $comment)
                                     <div class="flex gap-3">
-                                        <div class="avatar {{ $comment->user->avatar_url ? '' : 'placeholder' }} flex-shrink-0">
-                                            @if($comment->user->avatar_url)
-                                                <div class="w-8 h-8 rounded-full">
-                                                    <img src="{{ $comment->user->avatar_url }}" alt="">
-                                                </div>
-                                            @else
-                                                <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
-                                                    <span class="text-xs">{{ $comment->user->initials }}</span>
-                                                </div>
-                                            @endif
+                                        <div class="flex-shrink-0">
+                                            @include('partials.user-avatar', ['user' => $comment->user, 'size' => 'sm'])
                                         </div>
                                         <div class="flex-1">
                                             <div class="flex items-center gap-2 mb-1">
@@ -353,17 +345,7 @@
                         <h3 class="font-semibold text-sm text-base-content/60 mb-3">Owner</h3>
                         @if($milestone->owner)
                             <div class="flex items-center gap-3">
-                                <div class="avatar {{ $milestone->owner->avatar_url ? '' : 'placeholder' }}">
-                                    @if($milestone->owner->avatar_url)
-                                        <div class="w-10 h-10 rounded-full">
-                                            <img src="{{ $milestone->owner->avatar_url }}" alt="">
-                                        </div>
-                                    @else
-                                        <div class="bg-primary text-primary-content rounded-full w-10 h-10 flex items-center justify-center">
-                                            <span class="text-sm">{{ $milestone->owner->initials }}</span>
-                                        </div>
-                                    @endif
-                                </div>
+                                @include('partials.user-avatar', ['user' => $milestone->owner, 'size' => 'md'])
                                 <div>
                                     <div class="font-medium">{{ $milestone->owner->full_name }}</div>
                                     <div class="text-xs text-base-content/60">{{ $milestone->owner->email }}</div>
@@ -376,17 +358,7 @@
                         <div class="border-t border-base-200 pt-3 mt-3">
                             <h3 class="font-semibold text-sm text-base-content/60 mb-2">Created by</h3>
                             <div class="flex items-center gap-2">
-                                <div class="avatar {{ $milestone->creator->avatar_url ? '' : 'placeholder' }}">
-                                    @if($milestone->creator->avatar_url)
-                                        <div class="w-6 h-6 rounded-full">
-                                            <img src="{{ $milestone->creator->avatar_url }}" alt="">
-                                        </div>
-                                    @else
-                                        <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
-                                            <span class="text-xs">{{ $milestone->creator->initials }}</span>
-                                        </div>
-                                    @endif
-                                </div>
+                                @include('partials.user-avatar', ['user' => $milestone->creator, 'size' => 'xs'])
                                 <span class="text-sm">{{ $milestone->creator->full_name }}</span>
                             </div>
                             <div class="text-xs text-base-content/50 mt-1">{{ $milestone->created_at->format('M d, Y \a\t g:i A') }}</div>

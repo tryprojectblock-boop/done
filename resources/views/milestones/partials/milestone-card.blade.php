@@ -82,17 +82,7 @@
                 <!-- Owner -->
                 @if($milestone->owner)
                     <div class="flex items-center gap-2">
-                        <div class="avatar {{ $milestone->owner->avatar_url ? '' : 'placeholder' }}">
-                            @if($milestone->owner->avatar_url)
-                                <div class="w-6 h-6 rounded-full">
-                                    <img src="{{ $milestone->owner->avatar_url }}" alt="{{ $milestone->owner->full_name }}">
-                                </div>
-                            @else
-                                <div class="bg-primary text-primary-content rounded-full w-6 h-6 flex items-center justify-center">
-                                    <span class="text-xs">{{ $milestone->owner->initials }}</span>
-                                </div>
-                            @endif
-                        </div>
+                        @include('partials.user-avatar', ['user' => $milestone->owner, 'size' => 'xs'])
                         <span class="hidden md:inline">{{ $milestone->owner->full_name }}</span>
                     </div>
                 @endif
