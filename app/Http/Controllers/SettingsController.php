@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MailLog;
 use App\Modules\Admin\Models\Coupon;
 use App\Modules\Admin\Models\Plan;
 use App\Modules\Auth\Enums\CompanySize;
@@ -569,5 +570,74 @@ class SettingsController extends Controller
 
         return redirect()->route('settings.billing')
             ->with('success', "Coupon applied! You now have {$coupon->discount_percent}% off.");
+    }
+
+    /**
+     * Display mail logs.
+     */
+    public function mailLogs(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to view mail logs.');
+        }
+
+        $logs = MailLog::orderBy('created_at', 'desc')->paginate(20);
+
+        return view('settings.mail-logs', [
+            'user' => $user,
+            'logs' => $logs,
+        ]);
+    }
+
+    /**
+     * Display a single mail log.
+     */
+    public function showMailLog(Request $request, MailLog $mailLog): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to view mail logs.');
+        }
+
+        return view('settings.mail-log-show', [
+            'user' => $user,
+            'mailLog' => $mailLog,
+        ]);
+    }
+
+    /**
+     * Delete a mail log.
+     */
+    public function deleteMailLog(Request $request, MailLog $mailLog): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to delete mail logs.');
+        }
+
+        $mailLog->delete();
+
+        return redirect()->route('settings.mail-logs')->with('success', 'Mail log deleted.');
+    }
+
+    /**
+     * Delete all mail logs.
+     */
+    public function clearMailLogs(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to delete mail logs.');
+        }
+
+        $count = MailLog::count();
+        MailLog::truncate();
+
+        return redirect()->route('settings.mail-logs')->with('success', "Cleared {$count} mail logs.");
     }
 }

@@ -281,11 +281,50 @@ class Task extends Model
     }
 
     /**
+     * Check if a user can manage the on-hold state of this task.
+     * Only task creator, assignee, and admins can put tasks on hold or resume them.
+     */
+    public function canManageHold(User $user): bool
+    {
+        // Task creator can manage hold
+        if ($this->isOwner($user)) {
+            return true;
+        }
+
+        // Task assignee can manage hold
+        if ($this->isAssignee($user)) {
+            return true;
+        }
+
+        // Admins and owners can manage hold
+        if ($user->isAdminOrHigher()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Check if a user can view this task.
-     * Private tasks can only be viewed by workspace owner/admin, creator, assignee, or watchers.
+     * Users can view if they are: workspace member, watcher, assignee, creator, or mentioned.
      */
     public function canView(User $user): bool
     {
+        // Watchers can always view (they were explicitly added or mentioned)
+        if ($this->isWatcher($user)) {
+            return true;
+        }
+
+        // Assignee can always view
+        if ($this->isAssignee($user)) {
+            return true;
+        }
+
+        // Creator can always view
+        if ($this->isOwner($user)) {
+            return true;
+        }
+
         // Public tasks - standard visibility (workspace members or company members)
         if (!$this->is_private) {
             // If task belongs to a workspace, check workspace membership
@@ -296,7 +335,7 @@ class Task extends Model
             return $this->company_id === $user->company_id;
         }
 
-        // Private tasks - check workspace role first (not system role)
+        // Private tasks - check workspace role (owner/admin can view all private tasks)
         if ($this->workspace_id && $this->workspace) {
             // Workspace owner can always view
             if ($this->workspace->isOwner($user)) {
@@ -308,19 +347,6 @@ class Task extends Model
             if ($workspaceRole && $workspaceRole->isAdmin()) {
                 return true;
             }
-        }
-
-        // Private tasks - only creator, assignee, and watchers can view
-        if ($this->isOwner($user)) {
-            return true;
-        }
-
-        if ($this->isAssignee($user)) {
-            return true;
-        }
-
-        if ($this->isWatcher($user)) {
-            return true;
         }
 
         return false;

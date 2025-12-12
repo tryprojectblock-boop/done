@@ -355,7 +355,7 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        if (!$task->canEdit($user)) {
+        if (!$task->canManageHold($user)) {
             return back()->with('error', 'You do not have permission to put this task on hold.');
         }
 
@@ -383,7 +383,7 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        if (!$task->canEdit($user)) {
+        if (!$task->canManageHold($user)) {
             return back()->with('error', 'You do not have permission to resume this task.');
         }
 

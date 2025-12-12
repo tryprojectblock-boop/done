@@ -430,19 +430,24 @@ class TaskService implements TaskServiceInterface
             $task->watchers()->attach($user->id, ['added_by' => $user->id]);
         }
 
-        // For private tasks, auto-add mentioned users as watchers so they can see the task
-        if ($task->is_private) {
-            $this->addMentionedUsersAsWatchers($task, $content, $user);
-        }
+        // Auto-add mentioned users as watchers so they can view the task
+        $this->addMentionedUsersAsWatchers($task, $content, $user);
 
-        // Create notifications for mentioned users
+        // Parse mentioned user IDs from comment content
+        $mentionedUserIds = $this->notificationService->parseMentionsFromContent($content);
+
+        // Create in-app notifications for mentioned users
         $this->notificationService->notifyMentionedUsers($content, $user, $task, $comment);
+
+        // Send email notifications to all involved users (assignee, watchers, mentioned)
+        $this->notificationService->sendTaskCommentEmails($task, $comment, $user, $mentionedUserIds);
 
         return $comment->fresh(['user']);
     }
 
     /**
-     * Extract mentioned user IDs from content and add them as watchers to private tasks.
+     * Extract mentioned user IDs from content and add them as watchers.
+     * This allows mentioned users to view and access the task.
      */
     protected function addMentionedUsersAsWatchers(Task $task, string $content, User $addedBy): void
     {

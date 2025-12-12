@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Mail\TaskAssignedMail;
+use App\Mail\TaskCommentMail;
 use App\Models\Notification;
 use App\Models\User;
 use App\Modules\Discussion\Models\Discussion;
@@ -175,6 +176,55 @@ class NotificationService
                 'comment_id' => $comment->id,
             ],
         ]);
+    }
+
+    /**
+     * Send comment email notifications to all involved users.
+     * Sends to: assignee, watchers, and mentioned users (excluding commenter).
+     */
+    public function sendTaskCommentEmails(
+        Task $task,
+        TaskComment $comment,
+        User $commenter,
+        array $mentionedUserIds = []
+    ): void {
+        // Collect all users who should receive the email
+        $recipientIds = collect();
+
+        // Add assignee if exists
+        if ($task->assignee_id) {
+            $recipientIds->push($task->assignee_id);
+        }
+
+        // Add all watchers
+        $watcherIds = $task->watchers()->pluck('users.id');
+        $recipientIds = $recipientIds->merge($watcherIds);
+
+        // Add mentioned users
+        if (!empty($mentionedUserIds)) {
+            $recipientIds = $recipientIds->merge($mentionedUserIds);
+        }
+
+        // Remove duplicates and exclude the commenter
+        $recipientIds = $recipientIds->unique()->filter(fn($id) => $id !== $commenter->id);
+
+        if ($recipientIds->isEmpty()) {
+            return;
+        }
+
+        // Load task relationships for email
+        $task->load(['workspace', 'status']);
+
+        // Get users and send emails
+        $recipients = User::whereIn('id', $recipientIds)->get();
+
+        foreach ($recipients as $recipient) {
+            try {
+                Mail::to($recipient->email)->send(new TaskCommentMail($task, $comment, $recipient, $commenter));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send task comment email: ' . $e->getMessage());
+            }
+        }
     }
 
     /**

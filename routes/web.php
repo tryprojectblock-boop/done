@@ -106,6 +106,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/billing/subscribe/{plan}', [SettingsController::class, 'subscribe'])->name('settings.billing.subscribe');
     Route::post('/settings/billing/apply-coupon', [SettingsController::class, 'applyCoupon'])->name('settings.billing.apply-coupon');
 
+    // Mail Logs routes (Admin/Owner only)
+    Route::get('/settings/mail-logs', [SettingsController::class, 'mailLogs'])->name('settings.mail-logs');
+    Route::get('/settings/mail-logs/{mailLog}', [SettingsController::class, 'showMailLog'])->name('settings.mail-logs.show');
+    Route::delete('/settings/mail-logs/{mailLog}', [SettingsController::class, 'deleteMailLog'])->name('settings.mail-logs.delete');
+    Route::delete('/settings/mail-logs', [SettingsController::class, 'clearMailLogs'])->name('settings.mail-logs.clear');
+
     // Marketplace routes (Admin/Owner only)
     Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
     Route::get('/marketplace/two-factor', [MarketplaceController::class, 'twoFactor'])->name('marketplace.two-factor');

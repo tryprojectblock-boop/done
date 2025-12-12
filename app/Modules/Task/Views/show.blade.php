@@ -36,8 +36,8 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <!-- On Hold Button -->
-                    @if(!$task->isClosed())
+                    <!-- On Hold Button (only for creator, assignee, and admins) -->
+                    @if(!$task->isClosed() && $task->canManageHold($user))
                         @if($task->isOnHold())
                             <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
                                 <span class="icon-[tabler--player-play] size-4"></span>

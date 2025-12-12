@@ -171,6 +171,22 @@
                         </div>
                     </div>
                 </a>
+
+                <!-- Mail Logs (Admin/Owner only) -->
+                <a href="{{ route('settings.mail-logs') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                    <div class="card-body">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                                <span class="icon-[tabler--mail] size-6 text-cyan-500"></span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-base-content">Mail Logs</h3>
+                                <p class="text-sm text-base-content/60">View all emails triggered by the application</p>
+                            </div>
+                            <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
+                        </div>
+                    </div>
+                </a>
                 @endif
             </div>
 

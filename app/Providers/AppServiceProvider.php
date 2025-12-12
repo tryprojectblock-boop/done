@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\LogOutgoingMail;
 use App\View\Composers\PlanLimitsComposer;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -42,6 +45,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register view composer for plan limits (shared with navigation)
         View::composer('partials.navigation', PlanLimitsComposer::class);
+
+        // Register mail logging listener
+        Event::listen(MessageSending::class, LogOutgoingMail::class);
     }
 
     /**
