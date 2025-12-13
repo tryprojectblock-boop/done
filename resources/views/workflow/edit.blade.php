@@ -33,6 +33,34 @@
                         Workflow Settings
                     </h2>
 
+                    <!-- Workflow Type (read-only) -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-medium">Workflow Type</span>
+                        </label>
+                        <div class="flex items-center gap-2 px-3 py-2 bg-base-200/50 rounded-lg border border-base-300">
+                            @if($workflow->type === 'classic')
+                            <span class="icon-[tabler--layout-list] size-5 text-blue-500"></span>
+                            <span class="font-medium">Classic Workflow</span>
+                            <span class="badge badge-sm badge-outline badge-info ml-auto">Classic Workspace</span>
+                            @elseif($workflow->type === 'product')
+                            <span class="icon-[tabler--box] size-5 text-purple-500"></span>
+                            <span class="font-medium">Product Workflow</span>
+                            <span class="badge badge-sm badge-outline badge-secondary ml-auto">Product Workspace</span>
+                            @elseif($workflow->type === 'inbox')
+                            <span class="icon-[tabler--inbox] size-5 text-orange-500"></span>
+                            <span class="font-medium">Inbox Workflow</span>
+                            <span class="badge badge-sm badge-outline badge-warning ml-auto">Inbox Workspace</span>
+                            @else
+                            <span class="icon-[tabler--layout-list] size-5 text-base-content/60"></span>
+                            <span class="font-medium">Classic Workflow</span>
+                            @endif
+                        </div>
+                        <span class="label">
+                            <span class="label-text-alt text-base-content/50">Workflow type cannot be changed after creation</span>
+                        </span>
+                    </div>
+
                     <!-- Workflow Name -->
                     <div class="form-control mb-4">
                         <label class="label" for="workflow-name">

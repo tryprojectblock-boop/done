@@ -27,6 +27,34 @@ class Workflow extends Model
     ];
 
     /**
+     * Workflow types.
+     */
+    public const TYPE_CLASSIC = 'classic';
+    public const TYPE_PRODUCT = 'product';
+    public const TYPE_INBOX = 'inbox';
+
+    /**
+     * Workflow type labels.
+     */
+    public const TYPES = [
+        self::TYPE_CLASSIC => [
+            'label' => 'Classic Workflow',
+            'description' => 'Best for Classic Workspace - simple Open/Closed workflow',
+            'workspace' => 'Classic',
+        ],
+        self::TYPE_PRODUCT => [
+            'label' => 'Product Workflow',
+            'description' => 'Best for Product Workspace - includes Backlog for planning',
+            'workspace' => 'Product',
+        ],
+        self::TYPE_INBOX => [
+            'label' => 'Inbox Workflow',
+            'description' => 'Best for Inbox Workspace - includes Unassigned for triage',
+            'workspace' => 'Inbox',
+        ],
+    ];
+
+    /**
      * Extended color palette for statuses.
      */
     public const COLORS = [
@@ -56,6 +84,7 @@ class Workflow extends Model
         'workspace_id',
         'name',
         'description',
+        'type',
         'is_default',
         'is_archived',
         'created_by',
@@ -181,9 +210,30 @@ class Workflow extends Model
     }
 
     /**
-     * Create default statuses for a new workflow.
+     * Create default statuses for a new workflow based on type.
      */
     public function createDefaultStatuses(?int $createdBy = null): void
+    {
+        $workflowType = $this->type ?? self::TYPE_CLASSIC;
+
+        switch ($workflowType) {
+            case self::TYPE_PRODUCT:
+                $this->createProductWorkflowStatuses($createdBy);
+                break;
+            case self::TYPE_INBOX:
+                $this->createInboxWorkflowStatuses($createdBy);
+                break;
+            case self::TYPE_CLASSIC:
+            default:
+                $this->createClassicWorkflowStatuses($createdBy);
+                break;
+        }
+    }
+
+    /**
+     * Create statuses for Classic workflow (Open, Closed).
+     */
+    protected function createClassicWorkflowStatuses(?int $createdBy = null): void
     {
         // Open status (active)
         WorkflowStatus::create([
@@ -212,6 +262,114 @@ class Workflow extends Model
             'is_active' => false,
             'created_by' => $createdBy,
         ]);
+    }
+
+    /**
+     * Create statuses for Product workflow (Backlog, Open, Closed).
+     */
+    protected function createProductWorkflowStatuses(?int $createdBy = null): void
+    {
+        // Backlog status (active) - like Open but named Backlog for product planning
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Backlog',
+            'color' => 'purple',
+            'description' => 'Items waiting to be worked on',
+            'is_default' => true,
+            'type' => WorkflowStatus::TYPE_OPEN,
+            'sort_order' => 0,
+            'is_active' => true,
+            'responsibility' => WorkflowStatus::RESPONSIBILITY_CREATOR,
+            'created_by' => $createdBy,
+        ]);
+
+        // Open status (active)
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Open',
+            'color' => 'blue',
+            'description' => 'Tasks being actively worked on',
+            'is_default' => false,
+            'type' => WorkflowStatus::TYPE_ACTIVE,
+            'sort_order' => 1,
+            'is_active' => true,
+            'responsibility' => WorkflowStatus::RESPONSIBILITY_ASSIGNEE,
+            'created_by' => $createdBy,
+        ]);
+
+        // Closed status (inactive)
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Closed',
+            'color' => 'slate',
+            'description' => 'Completed tasks',
+            'is_default' => true,
+            'type' => WorkflowStatus::TYPE_CLOSED,
+            'sort_order' => 999,
+            'is_active' => false,
+            'created_by' => $createdBy,
+        ]);
+    }
+
+    /**
+     * Create statuses for Inbox workflow (Unassigned, Open, Closed).
+     */
+    protected function createInboxWorkflowStatuses(?int $createdBy = null): void
+    {
+        // Unassigned status (active) - like Open but named Unassigned for inbox triage
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Unassigned',
+            'color' => 'orange',
+            'description' => 'Items waiting to be assigned',
+            'is_default' => true,
+            'type' => WorkflowStatus::TYPE_OPEN,
+            'sort_order' => 0,
+            'is_active' => true,
+            'responsibility' => WorkflowStatus::RESPONSIBILITY_CREATOR,
+            'created_by' => $createdBy,
+        ]);
+
+        // Open status (active)
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Open',
+            'color' => 'blue',
+            'description' => 'Tasks being worked on',
+            'is_default' => false,
+            'type' => WorkflowStatus::TYPE_ACTIVE,
+            'sort_order' => 1,
+            'is_active' => true,
+            'responsibility' => WorkflowStatus::RESPONSIBILITY_ASSIGNEE,
+            'created_by' => $createdBy,
+        ]);
+
+        // Closed status (inactive)
+        WorkflowStatus::create([
+            'workflow_id' => $this->id,
+            'workspace_id' => $this->workspace_id,
+            'name' => 'Closed',
+            'color' => 'slate',
+            'description' => 'Completed tasks',
+            'is_default' => true,
+            'type' => WorkflowStatus::TYPE_CLOSED,
+            'sort_order' => 999,
+            'is_active' => false,
+            'created_by' => $createdBy,
+        ]);
+    }
+
+    /**
+     * Get the workflow type label.
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TYPES[$this->type]['label'] ?? 'Classic Workflow';
     }
 
     /**

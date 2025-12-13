@@ -750,15 +750,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="page-icon icon-[tabler--file-text] size-4"></span>
                 <span class="page-title" title="${page.title}">${page.title}</span>
                 <span class="page-number">${index + 1}</span>
+                ${canEdit ? `<button type="button" class="page-edit-btn btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100" title="Rename page">
+                    <span class="icon-[tabler--edit] size-3"></span>
+                </button>` : ''}
             `;
 
-            item.addEventListener('click', () => switchToPage(page.uuid));
+            // Add hover class for showing edit button
+            item.classList.add('group');
 
-            // Context menu for rename/delete
-            item.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                showPageContextMenu(e, page);
+            item.addEventListener('click', (e) => {
+                // Don't switch page if clicking the edit button
+                if (e.target.closest('.page-edit-btn')) return;
+                switchToPage(page.uuid);
             });
+
+            // Edit button click handler
+            const editBtn = item.querySelector('.page-edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openRenamePageModal(page);
+                });
+            }
+
+            // Context menu for rename/delete (right-click)
+            if (canEdit) {
+                item.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showPageContextMenu(e, page);
+                });
+            }
+
+            // Double-click to rename
+            if (canEdit) {
+                item.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                    openRenamePageModal(page);
+                });
+            }
 
             pagesList.appendChild(item);
         });
@@ -912,6 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Rename a page
     async function renamePage(pageUuid, newTitle) {
         try {
+            console.log('Renaming page:', pageUuid, 'to:', newTitle);
             const response = await fetch(`${pagesUrl}/${pageUuid}`, {
                 method: 'PATCH',
                 headers: {
@@ -921,6 +951,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ title: newTitle })
             });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Rename failed:', response.status, errorText);
+                alert('Failed to rename page. Please try again.');
+                return false;
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -932,9 +970,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentPage.title = newTitle;
                 }
                 renderPages();
+                console.log('Page renamed successfully');
+                return true;
+            } else {
+                console.error('Rename failed:', result.error || 'Unknown error');
+                alert(result.error || 'Failed to rename page.');
+                return false;
             }
         } catch (error) {
             console.error('Failed to rename page:', error);
+            alert('Failed to rename page. Please check your connection and try again.');
+            return false;
         }
     }
 
@@ -1901,6 +1947,19 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.75rem;
     color: oklch(var(--bc) / 0.4);
     font-weight: 500;
+    margin-right: 4px;
+}
+
+/* Page edit button - visible on hover */
+.page-edit-btn {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.page-item:hover .page-edit-btn,
+.page-item.active .page-edit-btn {
+    opacity: 1;
 }
 
 /* Context menu styles */

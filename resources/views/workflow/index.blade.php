@@ -59,6 +59,24 @@
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1 min-w-0">
                                 <h3 class="font-semibold text-lg text-base-content truncate">{{ $workflow->name }}</h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    @if($workflow->type === 'classic')
+                                    <span class="badge badge-sm badge-outline badge-info">
+                                        <span class="icon-[tabler--layout-list] size-3 mr-1"></span>
+                                        Classic
+                                    </span>
+                                    @elseif($workflow->type === 'product')
+                                    <span class="badge badge-sm badge-outline badge-secondary">
+                                        <span class="icon-[tabler--box] size-3 mr-1"></span>
+                                        Product
+                                    </span>
+                                    @elseif($workflow->type === 'inbox')
+                                    <span class="badge badge-sm badge-outline badge-warning">
+                                        <span class="icon-[tabler--inbox] size-3 mr-1"></span>
+                                        Inbox
+                                    </span>
+                                    @endif
+                                </div>
                                 @if($workflow->description)
                                     <p class="text-sm text-base-content/60 line-clamp-2 mt-1">{{ $workflow->description }}</p>
                                 @endif

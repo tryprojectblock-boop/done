@@ -124,7 +124,7 @@ class WorkspaceController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'type' => ['required', 'string', 'in:classic,product'],
+            'type' => ['required', 'string', 'in:classic,product,inbox'],
             'workflow_id' => ['required', 'exists:workflows,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'start_date' => ['nullable', 'date'],

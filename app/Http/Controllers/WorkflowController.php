@@ -50,6 +50,7 @@ class WorkflowController extends Controller
 
         return view('workflow.create', [
             'colors' => Workflow::COLORS,
+            'workflowTypes' => Workflow::TYPES,
         ]);
     }
 
@@ -73,6 +74,7 @@ class WorkflowController extends Controller
                 Rule::unique('workflows')->where(fn ($query) => $query->where('company_id', $companyId)),
             ],
             'description' => ['nullable', 'string', 'max:500'],
+            'type' => ['required', Rule::in([Workflow::TYPE_CLASSIC, Workflow::TYPE_PRODUCT, Workflow::TYPE_INBOX])],
             'statuses' => ['required', 'array', 'min:1'],
             'statuses.*.name' => ['required', 'string', 'max:40'],
             'statuses.*.color' => ['required', Rule::in(array_keys(Workflow::COLORS))],
@@ -95,6 +97,7 @@ class WorkflowController extends Controller
             'workspace_id' => null,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'type' => $validated['type'],
             'is_default' => false,
             'created_by' => $request->user()->id,
         ]);

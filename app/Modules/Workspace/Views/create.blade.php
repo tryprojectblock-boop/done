@@ -40,55 +40,93 @@
                     </h2>
                     <p class="text-sm text-base-content/60 mb-4">Choose the type of workspace that best fits your needs.</p>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Classic Workspace -->
-                        <label class="cursor-pointer">
-                            <input type="radio" name="type" value="classic" class="hidden peer" {{ old('type', 'classic') === 'classic' ? 'checked' : '' }}>
-                            <div class="card bg-base-200 border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-base-300">
-                                <div class="card-body">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center text-white">
-                                            <span class="icon-[tabler--briefcase] size-6"></span>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-semibold text-base-content">Classic Workspace</h3>
-                                            <span class="badge badge-primary badge-sm">Recommended</span>
-                                        </div>
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="type" value="classic" class="peer sr-only workspace-type-radio" {{ old('type', 'classic') === 'classic' ? 'checked' : '' }}>
+                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                                        hover:border-blue-400 hover:shadow-lg
+                                        peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-lg peer-checked:shadow-blue-500/20
+                                        dark:peer-checked:bg-blue-950/40">
+                                <div class="absolute -top-2 -right-2 scale-0 peer-checked:scale-100 transition-transform duration-200">
+                                    <span class="flex items-center justify-center w-7 h-7 rounded-full bg-blue-500 text-white shadow-lg ring-2 ring-white dark:ring-base-100">
+                                        <span class="icon-[tabler--check] size-4"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50">
+                                        <span class="icon-[tabler--briefcase] size-7 text-blue-600 dark:text-blue-400"></span>
                                     </div>
-                                    <p class="text-sm text-base-content/60">Perfect for small teams. Includes message boards, to-dos, docs & files, chat, and scheduling.</p>
-                                    <div class="flex flex-wrap gap-1 mt-3">
-                                        <span class="badge badge-ghost badge-xs">Message Board</span>
-                                        <span class="badge badge-ghost badge-xs">To-dos</span>
-                                        <span class="badge badge-ghost badge-xs">Docs & Files</span>
-                                        <span class="badge badge-ghost badge-xs">Chat</span>
-                                        <span class="badge badge-ghost badge-xs">Schedule</span>
+                                    <div>
+                                        <span class="font-bold text-base text-base-content block">Classic</span>
+                                        <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">Recommended</span>
                                     </div>
+                                </div>
+                                <p class="text-sm text-base-content/60 mb-3">For small teams with message boards, to-dos, docs & files.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
+                                    <span class="badge badge-ghost badge-xs">To-dos</span>
+                                    <span class="badge badge-ghost badge-xs">Docs</span>
+                                    <span class="badge badge-ghost badge-xs">Chat</span>
                                 </div>
                             </div>
                         </label>
 
                         <!-- Product Workspace -->
-                        <label class="cursor-not-allowed opacity-60">
-                            <input type="radio" name="type" value="product" class="hidden peer" disabled>
-                            <div class="card bg-base-200 border-2 border-transparent transition-all">
-                                <div class="card-body">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <div class="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center text-white">
-                                            <span class="icon-[tabler--rocket] size-6"></span>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-semibold text-base-content">Product Workspace</h3>
-                                            <span class="badge badge-warning badge-sm">Coming Soon</span>
-                                        </div>
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="type" value="product" class="peer sr-only workspace-type-radio" {{ old('type') === 'product' ? 'checked' : '' }}>
+                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                                        hover:border-purple-400 hover:shadow-lg
+                                        peer-checked:border-purple-500 peer-checked:bg-purple-50 peer-checked:shadow-lg peer-checked:shadow-purple-500/20
+                                        dark:peer-checked:bg-purple-950/40">
+                                <div class="absolute -top-2 -right-2 scale-0 peer-checked:scale-100 transition-transform duration-200">
+                                    <span class="flex items-center justify-center w-7 h-7 rounded-full bg-purple-500 text-white shadow-lg ring-2 ring-white dark:ring-base-100">
+                                        <span class="icon-[tabler--check] size-4"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/50">
+                                        <span class="icon-[tabler--rocket] size-7 text-purple-600 dark:text-purple-400"></span>
                                     </div>
-                                    <p class="text-sm text-base-content/60">For product teams. Includes backlog, epics, sprints, roadmap, user stories, and changelog.</p>
-                                    <div class="flex flex-wrap gap-1 mt-3">
-                                        <span class="badge badge-ghost badge-xs">Backlog</span>
-                                        <span class="badge badge-ghost badge-xs">Epics</span>
-                                        <span class="badge badge-ghost badge-xs">Sprints</span>
-                                        <span class="badge badge-ghost badge-xs">Roadmap</span>
-                                        <span class="badge badge-ghost badge-xs">Changelog</span>
+                                    <div>
+                                        <span class="font-bold text-base text-base-content block">Product</span>
+                                        <span class="text-xs text-purple-600 dark:text-purple-400 font-medium">For Agile Teams</span>
                                     </div>
+                                </div>
+                                <p class="text-sm text-base-content/60 mb-3">For product teams with backlog, sprints, and roadmap.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
+                                    <span class="badge badge-ghost badge-xs">Backlog</span>
+                                    <span class="badge badge-ghost badge-xs">Sprints</span>
+                                    <span class="badge badge-ghost badge-xs">Roadmap</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Inbox Workspace -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="type" value="inbox" class="peer sr-only workspace-type-radio" {{ old('type') === 'inbox' ? 'checked' : '' }}>
+                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                                        hover:border-orange-400 hover:shadow-lg
+                                        peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:shadow-lg peer-checked:shadow-orange-500/20
+                                        dark:peer-checked:bg-orange-950/40">
+                                <div class="absolute -top-2 -right-2 scale-0 peer-checked:scale-100 transition-transform duration-200">
+                                    <span class="flex items-center justify-center w-7 h-7 rounded-full bg-orange-500 text-white shadow-lg ring-2 ring-white dark:ring-base-100">
+                                        <span class="icon-[tabler--check] size-4"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/50">
+                                        <span class="icon-[tabler--inbox] size-7 text-orange-600 dark:text-orange-400"></span>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-base text-base-content block">Inbox</span>
+                                        <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">For Support Teams</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-base-content/60 mb-3">For help desks with triage, assignments, and SLA tracking.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
+                                    <span class="badge badge-ghost badge-xs">Triage</span>
+                                    <span class="badge badge-ghost badge-xs">Assign</span>
+                                    <span class="badge badge-ghost badge-xs">SLA</span>
                                 </div>
                             </div>
                         </label>
@@ -125,14 +163,21 @@
                         <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required aria-describedby="workflow-select-hint @error('workflow_id') workflow-select-error @enderror">
                             <option value="">Select a workflow...</option>
                             @foreach($workflows as $workflow)
-                                <option value="{{ $workflow->id }}" {{ old('workflow_id') == $workflow->id ? 'selected' : '' }}>
+                                <option value="{{ $workflow->id }}"
+                                        data-type="{{ $workflow->type ?? 'classic' }}"
+                                        {{ old('workflow_id') == $workflow->id ? 'selected' : '' }}>
                                     {{ $workflow->name }}
-                                    @if($workflow->isBuiltIn()) (Built-in) @endif
+                                    @if($workflow->type === 'product')
+                                        (Product)
+                                    @elseif($workflow->type === 'inbox')
+                                        (Inbox)
+                                    @endif
+                                    @if($workflow->isBuiltIn()) - Built-in @endif
                                 </option>
                             @endforeach
                         </select>
                         <div class="label" id="workflow-select-hint">
-                            <span class="label-text-alt text-base-content/60">Choose a workflow to manage task statuses in this workspace</span>
+                            <span class="label-text-alt text-base-content/60">Workflows are filtered based on workspace type. <span id="workflow-type-hint" class="font-medium text-primary"></span></span>
                         </div>
                         @error('workflow_id')
                             <div class="label" id="workflow-select-error">
@@ -587,6 +632,56 @@ function closeCalendar(type) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Workflow filtering by workspace type
+    const workspaceTypeRadios = document.querySelectorAll('.workspace-type-radio');
+    const workflowSelect = document.getElementById('workflow-select');
+    const workflowTypeHint = document.getElementById('workflow-type-hint');
+    const allWorkflowOptions = Array.from(workflowSelect.querySelectorAll('option[data-type]'));
+
+    function filterWorkflowsByType(selectedType) {
+        // Reset select
+        workflowSelect.value = '';
+
+        // Show/hide options based on type
+        allWorkflowOptions.forEach(option => {
+            const optionType = option.dataset.type;
+            if (optionType === selectedType) {
+                option.style.display = '';
+                option.disabled = false;
+            } else {
+                option.style.display = 'none';
+                option.disabled = true;
+            }
+        });
+
+        // Auto-select first matching workflow
+        const firstMatch = allWorkflowOptions.find(opt => opt.dataset.type === selectedType);
+        if (firstMatch) {
+            workflowSelect.value = firstMatch.value;
+        }
+
+        // Update hint
+        const typeLabels = {
+            'classic': 'Showing Classic workflows',
+            'product': 'Showing Product workflows',
+            'inbox': 'Showing Inbox workflows'
+        };
+        workflowTypeHint.textContent = typeLabels[selectedType] || '';
+    }
+
+    // Handle workspace type change
+    workspaceTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            filterWorkflowsByType(this.value);
+        });
+    });
+
+    // Initialize with current selection
+    const initialType = document.querySelector('.workspace-type-radio:checked');
+    if (initialType) {
+        filterWorkflowsByType(initialType.value);
+    }
+
     // Calendar toggle buttons
     document.getElementById('start-date-btn').addEventListener('click', function(e) {
         e.stopPropagation();

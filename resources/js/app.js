@@ -46,14 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
  * Live Notification Polling System
  */
 (function initNotificationPolling() {
-    console.log('[Notifications] Initializing from app.js...');
-
     // Check if user is authenticated by looking for CSRF token and auth indicator
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-    const authCheck = document.body.dataset.authenticated === 'true';
-
-    console.log('[Notifications] CSRF token exists:', !!csrfToken);
-    console.log('[Notifications] Auth check from body data:', authCheck);
 
     // Only poll if there's a way to determine authentication
     // We'll make the first request and if it fails with 401/403, we stop
@@ -66,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
         isPolling = true;
 
         try {
-            console.log('[Notifications] Polling...', { lastTs });
             const url = `/notifications/poll?last_ts=${encodeURIComponent(lastTs)}`;
             const response = await fetch(url, {
                 credentials: 'same-origin',
@@ -77,11 +70,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            console.log('[Notifications] Response status:', response.status);
-
             // If unauthorized, stop polling
             if (response.status === 401 || response.status === 403) {
-                console.log('[Notifications] Unauthorized, stopping polling');
                 return;
             }
 
@@ -91,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            console.log('[Notifications] Poll response:', data);
 
             // Update last timestamp
             if (data.last_ts) lastTs = data.last_ts;
@@ -105,19 +94,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show toasts for new notifications
             if (data.notifications && data.notifications.length > 0) {
-                console.log('[Notifications] Showing', data.notifications.length, 'new notifications');
                 data.notifications.forEach(notification => {
-                    console.log('[Notifications] Creating toast for:', notification);
                     showLiveToast(notification);
                 });
-            } else {
-                console.log('[Notifications] No new notifications to show');
             }
 
             // Schedule next poll
             setTimeout(pollNotifications, POLL_INTERVAL);
         } catch (error) {
-            console.error('[Notifications] Poll error:', error);
             // Retry after interval even on error
             setTimeout(pollNotifications, POLL_INTERVAL);
         } finally {
@@ -126,13 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLiveToast(notification) {
-        console.log('[Notifications] showLiveToast called with:', notification);
         const container = document.getElementById('toast-container');
-        console.log('[Notifications] Toast container:', container);
-        if (!container) {
-            console.warn('[Notifications] Toast container not found');
-            return;
-        }
+        if (!container) return;
 
         const colors = {
             task_comment: 'info',
@@ -166,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         container.appendChild(toast);
-        console.log('[Notifications] Toast shown:', notification.title);
 
         // Auto remove after 15 seconds
         setTimeout(() => {
@@ -178,12 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start polling when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Notifications] DOM ready, starting polling...');
-            pollNotifications();
-        });
+        document.addEventListener('DOMContentLoaded', () => pollNotifications());
     } else {
-        console.log('[Notifications] DOM already ready, starting polling...');
         pollNotifications();
     }
 })();
