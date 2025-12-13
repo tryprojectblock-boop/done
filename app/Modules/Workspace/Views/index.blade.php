@@ -137,13 +137,6 @@
                         @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => false])
                     @endforeach
                 </div>
-
-                <!-- Pagination -->
-                @if($workspaces->hasPages())
-                    <div class="mt-6">
-                        {{ $workspaces->links() }}
-                    </div>
-                @endif
             @endif
         @endif
 
@@ -198,6 +191,7 @@
                 </div>
             </div>
         @endif
+
     </div>
 </div>
 

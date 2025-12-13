@@ -10,7 +10,6 @@ use App\Modules\Workspace\DTOs\InviteMemberDTO;
 use App\Modules\Workspace\Enums\WorkspaceRole;
 use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceInvitation;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 interface WorkspaceServiceInterface
@@ -27,7 +26,7 @@ interface WorkspaceServiceInterface
 
     public function findByUuid(string $uuid): ?Workspace;
 
-    public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator;
+    public function getForUser(User $user, int $perPage = 15): Collection;
 
     public function getOtherCompanyWorkspaces(User $user): Collection;
 

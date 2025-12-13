@@ -12,6 +12,7 @@ use App\Modules\Drive\Models\DriveAttachment;
 use App\Modules\Drive\Models\DriveAttachmentTag;
 use App\Modules\Task\Models\TaskAttachment;
 use App\Modules\Task\Models\TaskCommentAttachment;
+use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -203,11 +204,30 @@ class DriveController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Get user's workspaces (active only)
+        $workspaces = Workspace::where(function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhereHas('members', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+            })
+            ->whereHas('owner', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            })
+            ->where('status', \App\Modules\Workspace\Enums\WorkspaceStatus::ACTIVE)
+            ->orderBy('name')
+            ->get();
+
+        // Pre-selected workspace (if coming from workspace page)
+        $selectedWorkspaceId = $request->get('workspace_id');
+
         return view('drive::create', compact(
             'teamMembers',
             'existingTags',
             'storageUsed',
-            'storageRemaining'
+            'storageRemaining',
+            'workspaces',
+            'selectedWorkspaceId'
         ));
     }
 
@@ -233,6 +253,7 @@ class DriveController extends Controller
             'tags.*' => ['string', 'max:50'],
             'share_with' => ['nullable', 'array'],
             'share_with.*' => ['integer', 'exists:users,id'],
+            'workspace_id' => ['nullable', 'exists:workspaces,uuid'],
         ]);
 
         // Check storage limit
@@ -265,9 +286,17 @@ class DriveController extends Controller
             'public'
         );
 
+        // Get workspace ID if provided
+        $workspaceId = null;
+        if ($request->input('workspace_id')) {
+            $workspace = Workspace::where('uuid', $request->input('workspace_id'))->first();
+            $workspaceId = $workspace?->id;
+        }
+
         // Create attachment record
         $attachment = DriveAttachment::create([
             'company_id' => $companyId,
+            'workspace_id' => $workspaceId,
             'uploaded_by' => $user->id,
             'name' => $request->input('name'),
             'description' => $request->input('description'),
@@ -298,6 +327,13 @@ class DriveController extends Controller
                     $attachment->shareWith($shareUser, $user);
                 }
             }
+        }
+
+        // Redirect back to workspace if file was linked to one
+        if ($workspaceId && $workspace) {
+            return redirect()
+                ->route('workspace.show', ['workspace' => $workspace, 'tab' => 'files'])
+                ->with('success', 'File uploaded successfully!');
         }
 
         return redirect()

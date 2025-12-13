@@ -1,18 +1,20 @@
 @php
     $isGuest = $isGuest ?? false;
     $isOtherCompany = $isOtherCompany ?? false;
+    $isArchived = $workspace->status === \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED;
     $route = $isGuest ? route('workspace.guest-view', $workspace) : route('workspace.show', $workspace);
     $hoverColor = $isGuest ? 'warning' : ($isOtherCompany ? 'info' : 'primary');
     $taskCount = $workspace->tasks_count ?? 0;
     $discussionCount = $workspace->discussions_count ?? 0;
     $borderClass = $isGuest ? 'border-l-4 border-l-warning' : ($isOtherCompany ? 'border-l-4 border-l-info' : '');
+    $archivedClass = $isArchived ? 'opacity-60 hover:opacity-90' : '';
 @endphp
-<a href="{{ $route }}" class="block group">
-    <div class="bg-base-100 border border-base-200 rounded-xl p-4 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 h-full {{ $borderClass }}">
+<a href="{{ $route }}" class="block group {{ $archivedClass }}">
+    <div class="bg-base-100 border border-base-200 rounded-xl p-4 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 h-full {{ $borderClass }} {{ $isArchived ? 'bg-base-200/30' : '' }}">
         <!-- Header -->
         <div class="flex items-start gap-3 mb-3">
             <!-- Workspace Icon -->
-            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white flex-shrink-0" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : '#3b82f6') }}">
+            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white flex-shrink-0 {{ $isArchived ? 'grayscale' : '' }}" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : '#3b82f6') }}">
                 <span class="icon-[{{ $workspace->type->icon() ?? 'tabler--briefcase' }}] size-5"></span>
             </div>
             <div class="flex-1 min-w-0">

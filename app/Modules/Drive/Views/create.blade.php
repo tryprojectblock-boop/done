@@ -95,6 +95,75 @@
                         @enderror
                     </div>
 
+                    <!-- Workspace -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-medium">
+                                Link to Workspace
+                                <span class="text-base-content/40 font-normal ml-1">(Optional)</span>
+                            </span>
+                        </label>
+                        <input type="hidden" name="workspace_id" id="workspace-id-input" value="{{ old('workspace_id', $selectedWorkspaceId) }}" />
+                        <div class="relative">
+                            <div id="workspace-select-container" class="min-h-12 px-4 py-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-3 bg-base-100 hover:border-primary transition-colors">
+                                <span class="icon-[tabler--briefcase] size-5 text-base-content/40"></span>
+                                <div class="flex-1" id="workspace-selected-display">
+                                    <span class="text-base-content/50">Select a workspace...</span>
+                                </div>
+                                <span id="workspace-chevron" class="icon-[tabler--chevron-down] size-4 text-base-content/40 transition-transform"></span>
+                            </div>
+                            <div id="workspace-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-72 overflow-hidden hidden">
+                                <!-- Search -->
+                                <div class="p-2 border-b border-base-200">
+                                    <div class="relative">
+                                        <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"></span>
+                                        <input type="text" id="workspace-search" class="input input-sm input-bordered w-full pl-9" placeholder="Search workspaces..." autocomplete="off" />
+                                    </div>
+                                </div>
+                                <!-- Options -->
+                                <div id="workspace-options" class="overflow-y-auto max-h-52">
+                                    <!-- No workspace option -->
+                                    <div class="workspace-option flex items-center gap-3 px-4 py-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-100"
+                                         data-value=""
+                                         data-name="No workspace">
+                                        <div class="w-9 h-9 rounded-lg bg-base-200 flex items-center justify-center flex-shrink-0">
+                                            <span class="icon-[tabler--file] size-5 text-base-content/40"></span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-sm">Personal File</p>
+                                            <p class="text-xs text-base-content/50">Don't link to any workspace</p>
+                                        </div>
+                                        <span class="workspace-check icon-[tabler--check] size-5 text-primary hidden"></span>
+                                    </div>
+                                    @foreach($workspaces as $workspace)
+                                        <div class="workspace-option flex items-center gap-3 px-4 py-3 hover:bg-base-200 cursor-pointer transition-colors"
+                                             data-value="{{ $workspace->uuid }}"
+                                             data-name="{{ $workspace->name }}"
+                                             data-search="{{ strtolower($workspace->name) }}">
+                                            <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style="background-color: {{ $workspace->color ?? '#3b82f6' }}">
+                                                <span class="icon-[{{ $workspace->type->icon() }}] size-5"></span>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-sm truncate">{{ $workspace->name }}</p>
+                                                <p class="text-xs text-base-content/50">{{ $workspace->type->label() }} &bull; {{ $workspace->members->count() }} members</p>
+                                            </div>
+                                            <span class="workspace-check icon-[tabler--check] size-5 text-primary hidden"></span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <span class="label">
+                            <span class="label-text-alt text-base-content/50">
+                                <span class="icon-[tabler--info-circle] size-3.5 inline-block mr-1"></span>
+                                If selected, this file will appear in the workspace's Files tab
+                            </span>
+                        </span>
+                        @error('workspace_id')
+                            <span class="label"><span class="label-text-alt text-error">{{ $message }}</span></span>
+                        @enderror
+                    </div>
+
                     <!-- Tags -->
                     <div class="form-control mb-4">
                         <label class="label" for="tag-input">
@@ -294,6 +363,92 @@ document.getElementById('upload-form').addEventListener('submit', function() {
     btn.disabled = true;
     btn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Uploading...';
 });
+
+// Workspace Selector
+const workspaceContainer = document.getElementById('workspace-select-container');
+const workspaceDropdown = document.getElementById('workspace-dropdown');
+const workspaceSearch = document.getElementById('workspace-search');
+const workspaceOptions = document.querySelectorAll('.workspace-option');
+const workspaceIdInput = document.getElementById('workspace-id-input');
+const workspaceSelectedDisplay = document.getElementById('workspace-selected-display');
+const workspaceChevron = document.getElementById('workspace-chevron');
+
+let isWorkspaceDropdownOpen = false;
+
+// Toggle dropdown
+workspaceContainer.addEventListener('click', () => {
+    isWorkspaceDropdownOpen = !isWorkspaceDropdownOpen;
+    workspaceDropdown.classList.toggle('hidden', !isWorkspaceDropdownOpen);
+    workspaceChevron.classList.toggle('rotate-180', isWorkspaceDropdownOpen);
+    if (isWorkspaceDropdownOpen) {
+        workspaceSearch.focus();
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!workspaceContainer.contains(e.target) && !workspaceDropdown.contains(e.target)) {
+        isWorkspaceDropdownOpen = false;
+        workspaceDropdown.classList.add('hidden');
+        workspaceChevron.classList.remove('rotate-180');
+    }
+});
+
+// Search functionality
+workspaceSearch.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    workspaceOptions.forEach(option => {
+        const searchText = option.dataset.search || option.dataset.name.toLowerCase();
+        option.style.display = searchText.includes(query) || query === '' ? '' : 'none';
+    });
+});
+
+// Select option
+workspaceOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        const value = option.dataset.value;
+        const name = option.dataset.name;
+
+        // Update hidden input
+        workspaceIdInput.value = value;
+
+        // Update display
+        if (value === '') {
+            workspaceSelectedDisplay.innerHTML = '<span class="text-base-content/50">Select a workspace...</span>';
+        } else {
+            const icon = option.querySelector('.w-9').cloneNode(true);
+            icon.classList.remove('w-9', 'h-9');
+            icon.classList.add('w-6', 'h-6');
+            workspaceSelectedDisplay.innerHTML = `
+                <div class="flex items-center gap-2">
+                    ${icon.outerHTML}
+                    <span class="font-medium text-sm">${name}</span>
+                </div>
+            `;
+        }
+
+        // Update checkmarks
+        workspaceOptions.forEach(opt => {
+            opt.querySelector('.workspace-check').classList.toggle('hidden', opt.dataset.value !== value);
+        });
+
+        // Close dropdown
+        isWorkspaceDropdownOpen = false;
+        workspaceDropdown.classList.add('hidden');
+        workspaceChevron.classList.remove('rotate-180');
+        workspaceSearch.value = '';
+        workspaceOptions.forEach(opt => opt.style.display = '');
+    });
+});
+
+// Initialize with pre-selected value
+const initialValue = workspaceIdInput.value;
+if (initialValue) {
+    const initialOption = document.querySelector(`.workspace-option[data-value="${initialValue}"]`);
+    if (initialOption) {
+        initialOption.click();
+    }
+}
 </script>
 @endpush
 @endsection

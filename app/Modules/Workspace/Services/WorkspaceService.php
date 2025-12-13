@@ -19,7 +19,6 @@ use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceInvitation;
 use App\Services\PlanLimitService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -73,7 +72,18 @@ final class WorkspaceService implements WorkspaceServiceInterface
 
     public function archive(Workspace $workspace): void
     {
-        $workspace->update(['status' => WorkspaceStatus::ARCHIVED]);
+        DB::transaction(function () use ($workspace) {
+            // Update workspace status to archived
+            $workspace->update(['status' => WorkspaceStatus::ARCHIVED]);
+
+            // Close all open tasks in this workspace
+            $workspace->tasks()
+                ->whereNull('closed_at')
+                ->update([
+                    'closed_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
     }
 
     public function restore(Workspace $workspace): void
@@ -86,9 +96,10 @@ final class WorkspaceService implements WorkspaceServiceInterface
         return Workspace::findByUuid($uuid);
     }
 
-    public function getForUser(User $user, int $perPage = 15): LengthAwarePaginator
+    public function getForUser(User $user, int $perPage = 15): Collection
     {
         // Get workspaces from user's own company only (where they are owner or member)
+        // Includes both active and archived workspaces
         return Workspace::where(function ($query) use ($user) {
                 $query->where('owner_id', $user->id)
                     ->orWhereHas('members', function ($q) use ($user) {
@@ -98,25 +109,26 @@ final class WorkspaceService implements WorkspaceServiceInterface
             ->whereHas('owner', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             })
+            ->whereIn('status', [WorkspaceStatus::ACTIVE, WorkspaceStatus::ARCHIVED])
             ->with(['owner.company', 'members'])
             ->withCount(['tasks', 'discussions'])
-            ->active()
             ->latest()
-            ->paginate($perPage);
+            ->get();
     }
 
     public function getOtherCompanyWorkspaces(User $user): Collection
     {
         // Get workspaces from OTHER companies where user is a member
+        // Includes both active and archived workspaces
         return Workspace::whereHas('members', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->whereHas('owner', function ($q) use ($user) {
                 $q->where('company_id', '!=', $user->company_id);
             })
+            ->whereIn('status', [WorkspaceStatus::ACTIVE, WorkspaceStatus::ARCHIVED])
             ->with(['owner.company', 'members'])
             ->withCount(['tasks', 'discussions'])
-            ->active()
             ->latest()
             ->get();
     }

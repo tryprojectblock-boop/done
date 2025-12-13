@@ -27,10 +27,59 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('workspace.settings', $workspace) }}" class="btn btn-ghost">
-                        <span class="icon-[tabler--settings] size-5"></span>
-                        Settings
+                    @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
+                    <!-- Add Task Button (only for active workspaces) -->
+                    <a href="{{ route('tasks.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-primary">
+                        <span class="icon-[tabler--plus] size-5"></span>
+                        Add Task
                     </a>
+
+                    <!-- Add File Button (only for active workspaces) -->
+                    <a href="{{ route('drive.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-outline btn-primary">
+                        <span class="icon-[tabler--file-upload] size-5"></span>
+                        Add File
+                    </a>
+
+                    <!-- Settings Dropdown (for active workspaces) -->
+                    <div class="dropdown dropdown-end">
+                        <button id="workspace-settings-dropdown" type="button" class="dropdown-toggle btn btn-ghost" aria-haspopup="menu" aria-expanded="false" aria-label="Settings">
+                            <span class="icon-[tabler--settings] size-5"></span>
+                            Settings
+                            <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-48" role="menu" aria-orientation="vertical" aria-labelledby="workspace-settings-dropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('workspace.settings', $workspace) }}">
+                                    <span class="icon-[tabler--settings] size-5"></span>
+                                    Workspace Settings
+                                </a>
+                            </li>
+                            <li class="dropdown-divider"></li>
+                            <li>
+                                <button type="button" class="dropdown-item" onclick="openModal('archiveModal')">
+                                    <span class="icon-[tabler--archive] size-5"></span>
+                                    Archive Workflow
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item text-error" onclick="openModal('deleteModal')">
+                                    <span class="icon-[tabler--trash] size-5"></span>
+                                    Delete Workflow
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    @else
+                    <!-- Archived workspace actions -->
+                    <button type="button" class="btn btn-success" onclick="openModal('restoreModal')">
+                        <span class="icon-[tabler--archive-off] size-5"></span>
+                        Restore Workflow
+                    </button>
+                    <button type="button" class="btn btn-error btn-outline" onclick="openModal('deleteModal')">
+                        <span class="icon-[tabler--trash] size-5"></span>
+                        Delete
+                    </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -48,6 +97,17 @@
                 <span class="icon-[tabler--x] size-5"></span>
                 <span>{{ session('error') }}</span>
             </div>
+        @endif
+
+        <!-- Archived Banner -->
+        @if($workspace->status === \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
+        <div class="alert alert-warning mb-4">
+            <span class="icon-[tabler--archive] size-6"></span>
+            <div>
+                <h4 class="font-bold">This workspace is archived</h4>
+                <p class="text-sm">This workspace is in read-only mode. You cannot add tasks, discussions, or make changes. Restore the workflow to enable editing.</p>
+            </div>
+        </div>
         @endif
 
         <!-- Description -->
@@ -101,7 +161,9 @@
                class="tab tab-lg {{ request('tab') === 'files' ? 'tab-active' : '' }}">
                 <span class="icon-[tabler--files] size-5 mr-2"></span>
                 Files
-                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+                @if($files->count() > 0)
+                    <span class="badge badge-ghost badge-xs ml-2">{{ $files->count() }}</span>
+                @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'time']) }}"
                class="tab tab-lg {{ request('tab') === 'time' ? 'tab-active' : '' }}">
@@ -127,7 +189,7 @@
         @elseif(request('tab') === 'milestones')
             @include('workspace::partials.tab-coming-soon', ['title' => 'Milestones', 'icon' => 'tabler--flag', 'description' => 'Track project milestones and key deliverables.'])
         @elseif(request('tab') === 'files')
-            @include('workspace::partials.tab-coming-soon', ['title' => 'Files', 'icon' => 'tabler--files', 'description' => 'Store and share files with your team.'])
+            @include('workspace::partials.tab-files')
         @elseif(request('tab') === 'time')
             @include('workspace::partials.tab-coming-soon', ['title' => 'Time Management', 'icon' => 'tabler--clock', 'description' => 'Track time spent on tasks and projects.'])
         @elseif(request('tab') === 'people')
@@ -135,4 +197,164 @@
         @endif
     </div>
 </div>
+
+<!-- Modal Styles -->
+<style>
+.workspace-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+}
+.workspace-modal.open {
+    display: flex !important;
+}
+.workspace-modal-box {
+    position: relative;
+    z-index: 2;
+    animation: workspaceModalSlideIn 0.2s ease-out;
+    max-width: 28rem;
+    width: 90%;
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+@keyframes workspaceModalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+</style>
+
+<!-- Archive Workflow Modal -->
+<div id="archiveModal" class="workspace-modal" role="dialog">
+    <div class="workspace-modal-box bg-base-100 shadow-xl">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center">
+                <span class="icon-[tabler--archive] size-6 text-warning"></span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold">Archive Workflow</h3>
+                <p class="text-sm text-base-content/60">This action will close all tasks</p>
+            </div>
+        </div>
+        <p class="text-base-content/70 mb-3">
+            Are you sure you want to archive this workflow? Archiving will set the workspace status to closed, and all associated tasks will be marked as closed.
+        </p>
+        <p class="text-sm text-base-content/60 mb-4">
+            You can restore the workflow later if needed.
+        </p>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('archiveModal')">Cancel</button>
+            <form action="{{ route('workspace.archive', $workspace) }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="btn btn-warning">
+                    <span class="icon-[tabler--archive] size-5"></span>
+                    Archive Workflow
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Workflow Modal -->
+<div id="restoreModal" class="workspace-modal" role="dialog">
+    <div class="workspace-modal-box bg-base-100 shadow-xl">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center">
+                <span class="icon-[tabler--archive-off] size-6 text-success"></span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold">Restore Workflow</h3>
+                <p class="text-sm text-base-content/60">Reactivate this workspace</p>
+            </div>
+        </div>
+        <p class="text-base-content/70 mb-4">
+            Are you sure you want to restore this workflow? This will set the workspace status back to active.
+        </p>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('restoreModal')">Cancel</button>
+            <form action="{{ route('workspace.restore', $workspace) }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="btn btn-success">
+                    <span class="icon-[tabler--archive-off] size-5"></span>
+                    Restore Workflow
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Workflow Modal -->
+<div id="deleteModal" class="workspace-modal" role="dialog">
+    <div class="workspace-modal-box bg-base-100 shadow-xl">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full bg-error/20 flex items-center justify-center">
+                <span class="icon-[tabler--trash] size-6 text-error"></span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold">Delete Workflow</h3>
+                <p class="text-sm text-base-content/60">This action cannot be undone</p>
+            </div>
+        </div>
+        <p class="text-base-content/70 mb-4">
+            Are you sure you want to permanently delete this workflow? This will delete all tasks, discussions, milestones, and files associated with this workspace.
+        </p>
+        <div class="alert alert-error mb-4">
+            <span class="icon-[tabler--alert-triangle] size-5"></span>
+            <span>This action is irreversible. All data will be permanently lost.</span>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+            <form action="{{ route('workspace.destroy', $workspace) }}" method="POST" class="inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-error">
+                    <span class="icon-[tabler--trash] size-5"></span>
+                    Delete Permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Close modal when clicking outside
+document.querySelectorAll('.workspace-modal').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal(this.id);
+        }
+    });
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.workspace-modal.open').forEach(modal => {
+            closeModal(modal.id);
+        });
+    }
+});
+</script>
 @endsection

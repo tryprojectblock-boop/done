@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Drive\Models;
 
 use App\Models\User;
+use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ class DriveAttachment extends Model
     protected $fillable = [
         'uuid',
         'company_id',
+        'workspace_id',
         'uploaded_by',
         'name',
         'description',
@@ -64,6 +66,11 @@ class DriveAttachment extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
     }
 
     public function tags(): BelongsToMany

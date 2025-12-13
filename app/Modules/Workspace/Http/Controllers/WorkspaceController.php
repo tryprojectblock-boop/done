@@ -36,7 +36,7 @@ class WorkspaceController extends Controller
     {
         $user = $request->user();
 
-        // Get workspaces from user's own company
+        // Get all workspaces from user's own company (active + archived)
         $workspaces = $this->workspaceService->getForUser($user);
 
         // Get workspaces from other companies where user is a member
@@ -245,10 +245,17 @@ class WorkspaceController extends Controller
             ->limit(20)
             ->get();
 
+        // Load files (drive attachments) for this workspace
+        $files = \App\Modules\Drive\Models\DriveAttachment::where('workspace_id', $workspace->id)
+            ->with(['uploader', 'tags'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('workspace::show', [
             'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow', 'guests']),
             'tasks' => $tasks,
             'discussions' => $discussions,
+            'files' => $files,
         ]);
     }
 

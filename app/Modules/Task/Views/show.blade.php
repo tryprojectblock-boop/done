@@ -36,6 +36,12 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
+                    <!-- Back to Workspace Tasks -->
+                    <a href="{{ route('workspace.show', ['workspace' => $task->workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost btn-sm">
+                        <span class="icon-[tabler--arrow-left] size-4"></span>
+                        Back to Workspace Tasks
+                    </a>
+
                     <!-- On Hold Button (only for creator, assignee, and admins) -->
                     @if(!$task->isClosed() && $task->canManageHold($user))
                         @if($task->isOnHold())
