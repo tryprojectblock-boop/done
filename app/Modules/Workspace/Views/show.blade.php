@@ -32,13 +32,13 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <!-- Workspace Icon/Color -->
-                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white" style="background-color: {{ $workspace->color ?? '#3b82f6' }}">
+                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white" style="background-color: {{ $workspace->color ?? $workspace->type->themeColor() }}">
                         <span class="icon-[{{ $workspace->type->icon() }}] size-8"></span>
                     </div>
                     <div>
                         <h1 class="text-2xl font-bold text-base-content">{{ $workspace->name }}</h1>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="badge badge-primary">{{ $workspace->type->label() }}</span>
+                            <span class="badge badge-{{ $workspace->type->badgeColor() }}">{{ $workspace->type->label() }}</span>
                             <span class="badge badge-{{ $workspace->status->color() }}">{{ $workspace->status->label() }}</span>
                         </div>
                     </div>

@@ -42,7 +42,16 @@ enum WorkspaceType: string
         return match ($this) {
             self::CLASSIC => 'primary',
             self::PRODUCT => 'secondary',
-            self::INBOX => 'accent',
+            self::INBOX => 'info',
+        };
+    }
+
+    public function themeColor(): string
+    {
+        return match ($this) {
+            self::CLASSIC => '#3b82f6', // blue
+            self::PRODUCT => '#8b5cf6', // purple
+            self::INBOX => '#06b6d4',   // cyan
         };
     }
 

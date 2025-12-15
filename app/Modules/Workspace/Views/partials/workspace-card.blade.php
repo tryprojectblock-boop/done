@@ -14,7 +14,7 @@
     <div class="bg-base-100 border border-base-200 rounded-xl px-4 py-3 hover:border-{{ $hoverColor }}/30 hover:shadow-md transition-all duration-200 {{ $borderClass }} {{ $isArchived ? 'bg-base-200/30' : '' }}">
         <div class="flex items-center gap-4">
             <!-- Workspace Icon -->
-            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0 {{ $isArchived ? 'grayscale' : '' }}" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : '#3b82f6') }}">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0 {{ $isArchived ? 'grayscale' : '' }}" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : $workspace->type->themeColor()) }}">
                 <span class="icon-[{{ $workspace->type->icon() ?? 'tabler--briefcase' }}] size-5"></span>
             </div>
 

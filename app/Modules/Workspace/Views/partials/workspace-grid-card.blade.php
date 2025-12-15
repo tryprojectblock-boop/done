@@ -14,7 +14,7 @@
         <!-- Header -->
         <div class="flex items-start gap-3 mb-3">
             <!-- Workspace Icon -->
-            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white flex-shrink-0 {{ $isArchived ? 'grayscale' : '' }}" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : '#3b82f6') }}">
+            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white flex-shrink-0 {{ $isArchived ? 'grayscale' : '' }}" style="background-color: {{ $workspace->color ?? ($isGuest ? '#f59e0b' : $workspace->type->themeColor()) }}">
                 <span class="icon-[{{ $workspace->type->icon() ?? 'tabler--briefcase' }}] size-5"></span>
             </div>
             <div class="flex-1 min-w-0">
