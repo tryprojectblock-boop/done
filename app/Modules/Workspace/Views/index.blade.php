@@ -3,6 +3,10 @@
 @php
     $user = auth()->user();
     $isGuestOnly = $user->role === \App\Models\User::ROLE_GUEST && !$user->company_id;
+
+    // Separate active and archived workspaces
+    $activeWorkspaces = $workspaces->filter(fn($w) => $w->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED);
+    $archivedWorkspaces = $workspaces->filter(fn($w) => $w->status === \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED);
 @endphp
 
 @section('content')
@@ -77,7 +81,7 @@
 
         <!-- Count & View Toggle -->
         @php
-            $totalCount = $workspaces->count() + $otherCompanyWorkspaces->count() + $guestWorkspaces->count();
+            $totalCount = $activeWorkspaces->count() + $otherCompanyWorkspaces->count() + $guestWorkspaces->count() + $archivedWorkspaces->count();
         @endphp
         <div class="flex items-center justify-between mb-4">
             <div id="workspace-count" class="text-sm text-base-content/60">
@@ -94,7 +98,7 @@
         </div>
 
         <!-- Workspaces List -->
-        @if($workspaces->isEmpty() && $otherCompanyWorkspaces->isEmpty() && $guestWorkspaces->isEmpty())
+        @if($activeWorkspaces->isEmpty() && $otherCompanyWorkspaces->isEmpty() && $guestWorkspaces->isEmpty() && $archivedWorkspaces->isEmpty())
             <div class="card bg-base-100 shadow">
                 <div class="card-body text-center py-12">
                     <div class="flex justify-center mb-4">
@@ -123,17 +127,17 @@
                 </div>
             </div>
         @else
-            @if($workspaces->isNotEmpty())
+            @if($activeWorkspaces->isNotEmpty())
                 <!-- Grid View -->
                 <div id="workspaces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @foreach($workspaces as $workspace)
+                    @foreach($activeWorkspaces as $workspace)
                         @include('workspace::partials.workspace-grid-card', ['workspace' => $workspace, 'isGuest' => false])
                     @endforeach
                 </div>
 
                 <!-- List View -->
                 <div id="workspaces-list" class="space-y-3 hidden">
-                    @foreach($workspaces as $workspace)
+                    @foreach($activeWorkspaces as $workspace)
                         @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => false])
                     @endforeach
                 </div>
@@ -192,6 +196,32 @@
             </div>
         @endif
 
+        <!-- Archived Workspaces Section -->
+        @if($archivedWorkspaces->isNotEmpty())
+            <div class="mt-8">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="icon-[tabler--archive] size-5 text-base-content/50"></span>
+                    <h2 class="text-xl font-bold text-base-content/70">Archived</h2>
+                    <span class="badge badge-ghost">{{ $archivedWorkspaces->count() }}</span>
+                </div>
+                <p class="text-base-content/50 mb-4">Workspaces that have been archived</p>
+
+                <!-- Grid View -->
+                <div id="archived-workspaces-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($archivedWorkspaces as $workspace)
+                        @include('workspace::partials.workspace-grid-card', ['workspace' => $workspace, 'isGuest' => false])
+                    @endforeach
+                </div>
+
+                <!-- List View -->
+                <div id="archived-workspaces-list" class="space-y-3 hidden">
+                    @foreach($archivedWorkspaces as $workspace)
+                        @include('workspace::partials.workspace-card', ['workspace' => $workspace, 'isGuest' => false])
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
     </div>
 </div>
 
@@ -206,6 +236,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const otherCompanyList = document.getElementById('other-company-workspaces-list');
     const guestGrid = document.getElementById('guest-workspaces-grid');
     const guestList = document.getElementById('guest-workspaces-list');
+    const archivedGrid = document.getElementById('archived-workspaces-grid');
+    const archivedList = document.getElementById('archived-workspaces-list');
     const searchInput = document.getElementById('workspace-search');
     const workspaceCount = document.getElementById('workspace-count');
 
@@ -279,6 +311,24 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // Filter archived grid view items
+        if (archivedGrid) {
+            archivedGrid.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const match = name.includes(query);
+                card.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+        }
+
+        // Filter archived list view items
+        if (archivedList) {
+            archivedList.querySelectorAll(':scope > a').forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+
         // Update count
         if (workspaceCount) {
             workspaceCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'workspace' : 'workspaces'}`;
@@ -300,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (otherCompanyList) otherCompanyList.classList.add('hidden');
             if (guestGrid) guestGrid.classList.remove('hidden');
             if (guestList) guestList.classList.add('hidden');
+            if (archivedGrid) archivedGrid.classList.remove('hidden');
+            if (archivedList) archivedList.classList.add('hidden');
         } else {
             viewListBtn.classList.add('btn-active', 'btn-primary');
             viewListBtn.classList.remove('btn-ghost');
@@ -312,6 +364,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (otherCompanyList) otherCompanyList.classList.remove('hidden');
             if (guestGrid) guestGrid.classList.add('hidden');
             if (guestList) guestList.classList.remove('hidden');
+            if (archivedGrid) archivedGrid.classList.add('hidden');
+            if (archivedList) archivedList.classList.remove('hidden');
         }
     }
 });

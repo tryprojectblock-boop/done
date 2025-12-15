@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('workspace_inbox_settings', function (Blueprint $table) {
+            $table->unsignedInteger('idle_ticket_hours')->nullable()->after('sla_rules_configured_at');
+            $table->unsignedBigInteger('idle_ticket_reply_status_id')->nullable()->after('idle_ticket_hours');
+            $table->timestamp('idle_rules_configured_at')->nullable()->after('idle_ticket_reply_status_id');
+
+            $table->foreign('idle_ticket_reply_status_id')->references('id')->on('workflow_statuses')->onDelete('set null');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('workspace_inbox_settings', function (Blueprint $table) {
+            $table->dropForeign(['idle_ticket_reply_status_id']);
+            $table->dropColumn(['idle_ticket_hours', 'idle_ticket_reply_status_id', 'idle_rules_configured_at']);
+        });
+    }
+};

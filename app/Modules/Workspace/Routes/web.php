@@ -29,6 +29,47 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/archive', [WorkspaceController::class, 'archive'])->name('archive');
             Route::post('/restore', [WorkspaceController::class, 'restore'])->name('restore');
             Route::post('/logo', [WorkspaceController::class, 'updateLogo'])->name('logo.update');
+            Route::post('/verify-email', [WorkspaceController::class, 'verifyInboundEmail'])->name('verify-email');
+            Route::post('/update-working-hours', [WorkspaceController::class, 'updateWorkingHours'])->name('update-working-hours');
+
+            // Inbox Settings Pages
+            Route::prefix('inbox')->name('inbox.')->group(function () {
+                Route::get('/working-hours', [WorkspaceController::class, 'workingHoursPage'])->name('working-hours');
+                Route::get('/departments', [WorkspaceController::class, 'departmentsPage'])->name('departments');
+                Route::get('/priorities', [WorkspaceController::class, 'prioritiesPage'])->name('priorities');
+                Route::get('/holidays', [WorkspaceController::class, 'holidaysPage'])->name('holidays');
+                Route::get('/sla-settings', [WorkspaceController::class, 'slaSettingsPage'])->name('sla-settings');
+                Route::get('/ticket-rules', [WorkspaceController::class, 'ticketRulesPage'])->name('ticket-rules');
+                Route::get('/sla-rules', [WorkspaceController::class, 'slaRulesPage'])->name('sla-rules');
+                Route::get('/idle-settings', [WorkspaceController::class, 'idleSettingsPage'])->name('idle-settings');
+                Route::get('/email-templates', [WorkspaceController::class, 'emailTemplatesPage'])->name('email-templates');
+            });
+
+            // Departments (Inbox)
+            Route::post('/departments', [WorkspaceController::class, 'addDepartment'])->name('add-department');
+            Route::put('/departments/{departmentId}', [WorkspaceController::class, 'updateDepartment'])->name('update-department');
+            Route::delete('/departments/{departmentId}', [WorkspaceController::class, 'deleteDepartment'])->name('delete-department');
+
+            // Priorities (Inbox)
+            Route::post('/priorities', [WorkspaceController::class, 'savePriorities'])->name('save-priorities');
+
+            // Holidays (Inbox)
+            Route::post('/holidays', [WorkspaceController::class, 'saveHolidays'])->name('save-holidays');
+
+            // SLA Settings (Inbox)
+            Route::post('/sla-settings', [WorkspaceController::class, 'saveSlaSettings'])->name('save-sla-settings');
+
+            // Ticket Rules (Inbox)
+            Route::post('/ticket-rules', [WorkspaceController::class, 'saveTicketRules'])->name('save-ticket-rules');
+
+            // SLA Rules (Inbox)
+            Route::post('/sla-rules', [WorkspaceController::class, 'saveSlaRules'])->name('save-sla-rules');
+
+            // Idle Settings (Inbox)
+            Route::post('/idle-settings', [WorkspaceController::class, 'saveIdleSettings'])->name('save-idle-settings');
+
+            // Email Templates (Inbox)
+            Route::post('/email-templates', [WorkspaceController::class, 'saveEmailTemplate'])->name('save-email-template');
 
             // Members
             Route::prefix('members')->name('members.')->group(function () {

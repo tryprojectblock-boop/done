@@ -1,6 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    // Check if inbox checklist is completed
+    $inboxChecklistCompleted = false;
+    if ($workspace->type->value === 'inbox' && $workspace->inboxSettings) {
+        $inboxSettings = $workspace->inboxSettings;
+        $inboxChecklistCompleted =
+            $inboxSettings->working_hours_configured_at !== null &&
+            $inboxSettings->departments_configured_at !== null &&
+            $inboxSettings->priorities_configured_at !== null &&
+            $inboxSettings->holidays_configured_at !== null &&
+            $inboxSettings->sla_configured_at !== null &&
+            $inboxSettings->ticket_rules_configured_at !== null &&
+            $inboxSettings->sla_rules_configured_at !== null &&
+            $inboxSettings->idle_rules_configured_at !== null &&
+            $inboxSettings->email_templates_configured_at !== null;
+    }
+@endphp
 <div class="p-4 md:p-6">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
@@ -28,17 +45,19 @@
                 </div>
                 <div class="flex items-center gap-2">
                     @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
-                    <!-- Add Task Button (only for active workspaces) -->
+                    @if($workspace->type->value !== 'inbox' || $inboxChecklistCompleted)
+                    <!-- Add Task Button -->
                     <a href="{{ route('tasks.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-primary">
                         <span class="icon-[tabler--plus] size-5"></span>
                         Add Task
                     </a>
 
-                    <!-- Add File Button (only for active workspaces) -->
+                    <!-- Add File Button -->
                     <a href="{{ route('drive.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-outline btn-primary">
                         <span class="icon-[tabler--file-upload] size-5"></span>
                         Add File
                     </a>
+                    @endif
 
                     <!-- Settings Dropdown (for active workspaces) -->
                     <div class="dropdown dropdown-end">
@@ -119,27 +138,29 @@
             </div>
         @endif
 
-        <!-- Module Tabs -->
-        <div class="tabs tabs-bordered mb-6">
+        <!-- Module Tabs (Pill Style) -->
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6 flex-wrap gap-1">
             <a href="{{ route('workspace.show', $workspace) }}"
-               class="tab tab-lg {{ !request()->has('tab') || request('tab') === 'overview' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--home] size-5 mr-2"></span>
-                Overview
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ !request()->has('tab') || request('tab') === 'overview' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--home] size-5"></span>
+                <span>Overview</span>
             </a>
+            @if($workspace->type->value !== 'inbox' || $inboxChecklistCompleted)
+            {{-- Workspace tabs (shown for non-inbox OR completed inbox checklist) --}}
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}"
-               class="tab tab-lg {{ request('tab') === 'tasks' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--list-check] size-5 mr-2"></span>
-                Tasks
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'tasks' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--list-check] size-5"></span>
+                <span>Tasks</span>
                 @if($tasks->count() > 0)
-                    <span class="badge badge-ghost badge-xs ml-2">{{ $tasks->count() }}</span>
+                    <span class="badge badge-sm {{ request('tab') === 'tasks' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $tasks->count() }}</span>
                 @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'discussions']) }}"
-               class="tab tab-lg {{ request('tab') === 'discussions' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--messages] size-5 mr-2"></span>
-                Discussions
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'discussions' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--messages] size-5"></span>
+                <span>Discussions</span>
                 @if($discussions->count() > 0)
-                    <span class="badge badge-ghost badge-xs ml-2">{{ $discussions->count() }}</span>
+                    <span class="badge badge-sm {{ request('tab') === 'discussions' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $discussions->count() }}</span>
                 @endif
             </a>
             @php
@@ -149,33 +170,35 @@
             @endphp
             @if($showMilestonesTab)
             <a href="{{ route('milestones.index', $workspace->uuid) }}"
-               class="tab tab-lg {{ request('tab') === 'milestones' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--flag] size-5 mr-2"></span>
-                Milestones
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'milestones' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--flag] size-5"></span>
+                <span>Milestones</span>
                 @if(!$milestonesEnabled)
-                    <span class="badge badge-ghost badge-xs ml-2">Disabled</span>
+                    <span class="badge badge-sm badge-ghost">Disabled</span>
                 @endif
             </a>
             @endif
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'files']) }}"
-               class="tab tab-lg {{ request('tab') === 'files' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--files] size-5 mr-2"></span>
-                Files
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'files' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--files] size-5"></span>
+                <span>Files</span>
                 @if($files->count() > 0)
-                    <span class="badge badge-ghost badge-xs ml-2">{{ $files->count() }}</span>
+                    <span class="badge badge-sm {{ request('tab') === 'files' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $files->count() }}</span>
                 @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'time']) }}"
-               class="tab tab-lg {{ request('tab') === 'time' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--clock] size-5 mr-2"></span>
-                Time
-                <span class="badge badge-warning badge-xs ml-2">Soon</span>
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'time' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--clock] size-5"></span>
+                <span>Time</span>
+                <span class="badge badge-sm badge-warning">Soon</span>
             </a>
+            @endif
+            {{-- People tab - available for all workspace types --}}
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'people']) }}"
-               class="tab tab-lg {{ request('tab') === 'people' ? 'tab-active' : '' }}">
-                <span class="icon-[tabler--users] size-5 mr-2"></span>
-                People
-                <span class="badge badge-ghost badge-xs ml-2">{{ $workspace->members->count() + $workspace->guests->count() }}</span>
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'people' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--users] size-5"></span>
+                <span>People</span>
+                <span class="badge badge-sm {{ request('tab') === 'people' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $workspace->members->count() + $workspace->guests->count() }}</span>
             </a>
         </div>
 

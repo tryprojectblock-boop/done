@@ -1,6 +1,12 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main Content -->
     <div class="lg:col-span-2 space-y-6">
+
+        @if($workspace->type->value === 'inbox')
+            {{-- Inbox Workspace Setup Checklist --}}
+            @include('workspace::partials.inbox.setup-checklist')
+        @endif
+
         <!-- Quick Actions -->
         <div class="card bg-base-100 shadow">
             <div class="card-body">
@@ -78,6 +84,42 @@
                         <span>{{ \Carbon\Carbon::parse($workspace->settings['end_date'])->format('M d, Y') }}</span>
                     </div>
                     @endif
+
+                    @if($workspace->type->value === 'inbox' && $workspace->inboxSettings && $workspace->inboxSettings->inbound_email)
+                    <!-- Inbound Email for Inbox Workspace -->
+                    <div class="pt-3 mt-3 border-t border-base-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-base-content/60 text-sm">Inbound Email</span>
+                            @if($workspace->inboxSettings->email_verified)
+                                <span class="badge badge-success badge-xs gap-1">
+                                    <span class="icon-[tabler--check] size-3"></span>
+                                    Verified
+                                </span>
+                            @else
+                                <span class="badge badge-warning badge-xs gap-1">
+                                    <span class="icon-[tabler--alert-circle] size-3"></span>
+                                    Unverified
+                                </span>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
+                            <span class="icon-[tabler--mail] size-4 text-orange-500 shrink-0"></span>
+                            <code class="text-xs font-mono text-base-content/80 truncate flex-1">{{ $workspace->inboxSettings->inbound_email }}</code>
+                            <button type="button" class="btn btn-ghost btn-xs btn-square" onclick="copyInboundEmail()" title="Copy email">
+                                <span class="icon-[tabler--copy] size-4"></span>
+                            </button>
+                        </div>
+
+                        @if(!$workspace->inboxSettings->email_verified)
+                        <!-- Verify Email Button -->
+                        <button type="button" class="btn btn-outline btn-primary btn-sm w-full mt-3 gap-2" onclick="openVerifyEmailModal()">
+                            <span class="icon-[tabler--mail-check] size-4"></span>
+                            Verify Email Setup
+                        </button>
+                        <p class="text-xs text-base-content/50 mt-2">Send a test email to verify your forwarding is working correctly.</p>
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -149,3 +191,20 @@
         @endif
     </div>
 </div>
+
+{{-- Inbox Workspace Drawers & Modals --}}
+@if($workspace->type->value === 'inbox')
+    @include('workspace::partials.inbox.drawers.working-hours')
+    @include('workspace::partials.inbox.drawers.departments')
+    @include('workspace::partials.inbox.drawers.priorities')
+    @include('workspace::partials.inbox.drawers.holidays')
+    @include('workspace::partials.inbox.drawers.sla-settings')
+    @include('workspace::partials.inbox.drawers.ticket-rules')
+    @include('workspace::partials.inbox.drawers.sla-rules')
+    {{-- Future drawers will be included here --}}
+    {{-- @include('workspace::partials.inbox.drawers.idle-rules') --}}
+    {{-- @include('workspace::partials.inbox.drawers.email-templates') --}}
+    {{-- @include('workspace::partials.inbox.drawers.form-page') --}}
+
+    @include('workspace::partials.inbox.verify-email-modal')
+@endif

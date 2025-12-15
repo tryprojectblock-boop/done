@@ -134,8 +134,150 @@
                 </div>
             </div>
 
-            <!-- Card 2: Workspace Details -->
-            <div class="card bg-base-100 shadow mb-6">
+            <!-- Card: Inbox Workspace Settings (Only shown when inbox type is selected) -->
+            <div id="inbox-settings-card" class="card bg-base-100 shadow mb-6 hidden">
+                <div class="card-body">
+                    <h2 class="card-title text-lg mb-2">
+                        <span class="icon-[tabler--inbox] size-5 text-orange-500"></span>
+                        Inbox Workspace Setup
+                    </h2>
+                    <p class="text-sm text-base-content/60 mb-6">Configure your inbox workspace to receive and manage incoming requests via email.</p>
+
+                    <!-- Workspace Name -->
+                    <div class="form-control mb-4">
+                        <label class="label" for="inbox-workspace-name">
+                            <span class="label-text font-medium">Workspace Name <span class="text-error">*</span></span>
+                        </label>
+                        <input type="text" name="inbox_name" id="inbox-workspace-name" class="input input-bordered" placeholder="e.g. Customer Support, Help Desk" value="{{ old('inbox_name') }}" maxlength="100" disabled>
+                        <div class="label">
+                            <span class="label-text-alt text-base-content/50">Give your inbox a descriptive name</span>
+                        </div>
+                    </div>
+
+                    <!-- Workspace Owner (Searchable Dropdown) -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-medium">Workspace Owner <span class="text-error">*</span></span>
+                        </label>
+                        <div class="relative">
+                            <div id="inbox-owner-container" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-2 bg-base-100 hover:border-primary transition-colors">
+                                <div id="inbox-owner-selected" class="flex items-center gap-2 flex-1">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
+                                            <span class="text-xs">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-sm truncate">{{ auth()->user()->name }} (You)</p>
+                                        <p class="text-xs text-base-content/50 truncate">{{ auth()->user()->email }}</p>
+                                    </div>
+                                </div>
+                                <span id="inbox-owner-chevron" class="icon-[tabler--chevron-down] size-5 text-base-content/50 transition-transform"></span>
+                            </div>
+                            <div id="inbox-owner-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg hidden">
+                                <!-- Search Input -->
+                                <div class="p-2 border-b border-base-300">
+                                    <div class="relative">
+                                        <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
+                                        <input type="text" id="inbox-owner-search" class="input input-bordered input-sm w-full pl-9" placeholder="Search team members..." autocomplete="off">
+                                    </div>
+                                </div>
+                                <!-- Options List -->
+                                <div id="inbox-owner-options" class="max-h-60 overflow-y-auto">
+                                    <!-- Current User (Default) -->
+                                    <div class="inbox-owner-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors bg-primary/10"
+                                         data-id="{{ auth()->id() }}"
+                                         data-name="{{ auth()->user()->name }}"
+                                         data-email="{{ auth()->user()->email }}"
+                                         data-initials="{{ substr(auth()->user()->name, 0, 1) }}"
+                                         data-is-you="true"
+                                         data-search="{{ strtolower(auth()->user()->name . ' ' . auth()->user()->email) }}">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center">
+                                                <span class="text-xs">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-sm truncate">{{ auth()->user()->name }} (You)</p>
+                                            <p class="text-xs text-base-content/50 truncate">{{ auth()->user()->email }}</p>
+                                        </div>
+                                        <span class="inbox-owner-check icon-[tabler--check] size-5 text-primary"></span>
+                                    </div>
+                                    <!-- Team Members -->
+                                    @foreach($teamMembers as $member)
+                                        <div class="inbox-owner-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
+                                             data-id="{{ $member->id }}"
+                                             data-name="{{ $member->name }}"
+                                             data-email="{{ $member->email }}"
+                                             data-avatar="{{ $member->avatar_url }}"
+                                             data-initials="{{ $member->initials }}"
+                                             data-is-you="false"
+                                             data-search="{{ strtolower($member->name . ' ' . $member->email) }}">
+                                            <div class="avatar {{ $member->avatar_url ? '' : 'placeholder' }}">
+                                                @if($member->avatar_url)
+                                                    <div class="w-8 rounded-full">
+                                                        <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" class="object-cover">
+                                                    </div>
+                                                @else
+                                                    <div class="bg-neutral text-neutral-content rounded-full w-8 h-8 flex items-center justify-center">
+                                                        <span class="text-xs">{{ $member->initials }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-sm truncate">{{ $member->name }}</p>
+                                                <p class="text-xs text-base-content/50 truncate">{{ $member->email }}</p>
+                                            </div>
+                                            <span class="inbox-owner-check icon-[tabler--check] size-5 text-primary hidden"></span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div id="inbox-owner-no-results" class="p-3 text-center text-base-content/50 text-sm hidden">No members found</div>
+                            </div>
+                            <input type="hidden" name="inbox_owner_id" id="inbox-owner-input" value="{{ auth()->id() }}" disabled>
+                        </div>
+                        <div class="label">
+                            <span class="label-text-alt text-base-content/50">The owner has full control over this inbox workspace</span>
+                        </div>
+                    </div>
+
+                    <!-- Unique Inbound Email Address -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-medium">Unique Inbound Email Address</span>
+                        </label>
+                        <div class="join w-full">
+                            <input type="text" id="inbound-email-prefix" name="inbound_email_prefix" class="input input-bordered join-item flex-1 font-mono text-sm" value="{{ old('inbound_email_prefix', '') }}" placeholder="auto-generated" readonly disabled>
+                            <span class="btn btn-neutral join-item no-animation cursor-default font-mono text-sm">@inbound.findmypool.net</span>
+                            <button type="button" id="copy-inbound-email" class="btn btn-primary join-item" title="Copy email address">
+                                <span class="icon-[tabler--copy] size-5"></span>
+                            </button>
+                        </div>
+                        <input type="hidden" name="inbound_email" id="inbound-email-full" value="">
+                        <div class="label">
+                            <span class="label-text-alt text-base-content/50">Forward emails to this address to automatically create tickets/tasks in this workspace</span>
+                        </div>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-lg">
+                        <div class="flex gap-3">
+                            <span class="icon-[tabler--mail-forward] size-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"></span>
+                            <div class="text-sm">
+                                <p class="font-medium text-orange-800 dark:text-orange-200 mb-1">How it works</p>
+                                <ul class="text-orange-700 dark:text-orange-300 space-y-1 list-disc list-inside">
+                                    <li>Forward your support email (e.g., support@yourcompany.com) to this unique address</li>
+                                    <li>Incoming emails are automatically parsed and created as tickets</li>
+                                    <li>Replies are threaded to the original conversation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Workspace Details (Hidden for inbox type) -->
+            <div id="workspace-details-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
                     <h2 class="card-title text-lg mb-4">
                         <span class="icon-[tabler--settings] size-5"></span>
@@ -287,8 +429,8 @@
                 </div>
             </div>
 
-            <!-- Card 3: Invite Team Members -->
-            <div class="card bg-base-100 shadow mb-6">
+            <!-- Card 3: Invite Team Members (Hidden for inbox type) -->
+            <div id="team-members-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
                     <h2 class="card-title text-lg mb-4">
                         <span class="icon-[tabler--users] size-5"></span>
@@ -369,8 +511,8 @@
                 </div>
             </div>
 
-            <!-- Card 4: Invite Guests -->
-            <div class="card bg-base-100 shadow mb-6">
+            <!-- Card 4: Invite Guests (Hidden for inbox type) -->
+            <div id="guests-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
                     <h2 class="card-title text-lg mb-4">
                         <span class="icon-[tabler--user-plus] size-5"></span>
@@ -1060,6 +1202,284 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') {
             e.preventDefault();
             addGuestBtn.click();
+        }
+    });
+
+    // ========================================
+    // Inbox Workspace Settings
+    // ========================================
+
+    const inboxSettingsCard = document.getElementById('inbox-settings-card');
+    const workspaceDetailsCard = document.getElementById('workspace-details-card');
+    const teamMembersCard = document.getElementById('team-members-card');
+    const guestsCard = document.getElementById('guests-card');
+    const inboxWorkspaceName = document.getElementById('inbox-workspace-name');
+    const inboundEmailPrefix = document.getElementById('inbound-email-prefix');
+    const inboundEmailFull = document.getElementById('inbound-email-full');
+    const copyInboundEmailBtn = document.getElementById('copy-inbound-email');
+
+    // Generate unique email prefix
+    function generateInboundEmailPrefix() {
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let prefix = 'inbox-';
+        for (let i = 0; i < 8; i++) {
+            prefix += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return prefix;
+    }
+
+    // Update the full inbound email
+    function updateInboundEmail() {
+        const prefix = inboundEmailPrefix.value;
+        const fullEmail = prefix + '@inbound.findmypool.net';
+        inboundEmailFull.value = fullEmail;
+    }
+
+    // Toggle form sections based on workspace type
+    function toggleWorkspaceTypeCards(selectedType) {
+        // Get form fields that need required/disabled toggling
+        const classicNameField = document.getElementById('workspace-name');
+        const classicWorkflowField = document.getElementById('workflow-select');
+        const classicDescriptionField = document.getElementById('workspace-description');
+        const inboxNameField = document.getElementById('inbox-workspace-name');
+        const inboxOwnerField = document.getElementById('inbox-owner-input');
+        const inboxEmailField = document.getElementById('inbound-email-prefix');
+
+        if (selectedType === 'inbox') {
+            // Show inbox settings, hide other cards
+            inboxSettingsCard.classList.remove('hidden');
+            workspaceDetailsCard.classList.add('hidden');
+            teamMembersCard.classList.add('hidden');
+            guestsCard.classList.add('hidden');
+
+            // Disable classic fields to prevent validation
+            if (classicNameField) {
+                classicNameField.removeAttribute('required');
+                classicNameField.disabled = true;
+            }
+            if (classicWorkflowField) {
+                classicWorkflowField.removeAttribute('required');
+                classicWorkflowField.disabled = true;
+            }
+            if (classicDescriptionField) {
+                classicDescriptionField.disabled = true;
+            }
+
+            // Enable inbox fields
+            if (inboxNameField) {
+                inboxNameField.setAttribute('required', 'required');
+                inboxNameField.disabled = false;
+            }
+            if (inboxOwnerField) inboxOwnerField.disabled = false;
+            if (inboxEmailField) inboxEmailField.disabled = false;
+
+            // Generate unique email if not already set
+            if (!inboundEmailPrefix.value) {
+                inboundEmailPrefix.value = generateInboundEmailPrefix();
+                updateInboundEmail();
+            }
+
+            // Smooth scroll to inbox settings
+            setTimeout(() => {
+                inboxSettingsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        } else {
+            // Hide inbox settings, show other cards
+            inboxSettingsCard.classList.add('hidden');
+            workspaceDetailsCard.classList.remove('hidden');
+            teamMembersCard.classList.remove('hidden');
+            guestsCard.classList.remove('hidden');
+
+            // Enable classic fields
+            if (classicNameField) {
+                classicNameField.setAttribute('required', 'required');
+                classicNameField.disabled = false;
+            }
+            if (classicWorkflowField) {
+                classicWorkflowField.setAttribute('required', 'required');
+                classicWorkflowField.disabled = false;
+            }
+            if (classicDescriptionField) {
+                classicDescriptionField.disabled = false;
+            }
+
+            // Disable inbox fields
+            if (inboxNameField) {
+                inboxNameField.removeAttribute('required');
+                inboxNameField.disabled = true;
+            }
+            if (inboxOwnerField) inboxOwnerField.disabled = true;
+            if (inboxEmailField) inboxEmailField.disabled = true;
+        }
+    }
+
+    // Add toggle to workspace type radio change
+    workspaceTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            toggleWorkspaceTypeCards(this.value);
+        });
+    });
+
+    // Initialize on page load
+    if (initialType) {
+        toggleWorkspaceTypeCards(initialType.value);
+    }
+
+    // Copy inbound email to clipboard
+    if (copyInboundEmailBtn) {
+        copyInboundEmailBtn.addEventListener('click', function() {
+            const fullEmail = inboundEmailPrefix.value + '@inbound.findmypool.net';
+            navigator.clipboard.writeText(fullEmail).then(() => {
+                // Show success feedback
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<span class="icon-[tabler--check] size-5"></span>';
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-success');
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-primary');
+                }, 2000);
+            });
+        });
+    }
+
+    // ========================================
+    // Inbox Owner Searchable Dropdown
+    // ========================================
+
+    const inboxOwnerContainer = document.getElementById('inbox-owner-container');
+    const inboxOwnerDropdown = document.getElementById('inbox-owner-dropdown');
+    const inboxOwnerSearch = document.getElementById('inbox-owner-search');
+    const inboxOwnerOptions = document.querySelectorAll('.inbox-owner-option');
+    const inboxOwnerInput = document.getElementById('inbox-owner-input');
+    const inboxOwnerSelected = document.getElementById('inbox-owner-selected');
+    const inboxOwnerChevron = document.getElementById('inbox-owner-chevron');
+    const inboxOwnerNoResults = document.getElementById('inbox-owner-no-results');
+
+    function showInboxOwnerDropdown() {
+        if (inboxOwnerDropdown) {
+            inboxOwnerDropdown.classList.remove('hidden');
+            inboxOwnerChevron.classList.add('rotate-180');
+            inboxOwnerContainer.classList.add('ring-2', 'ring-primary', 'ring-offset-1');
+            if (inboxOwnerSearch) {
+                inboxOwnerSearch.focus();
+            }
+        }
+    }
+
+    function hideInboxOwnerDropdown() {
+        if (inboxOwnerDropdown) {
+            inboxOwnerDropdown.classList.add('hidden');
+            inboxOwnerChevron.classList.remove('rotate-180');
+            inboxOwnerContainer.classList.remove('ring-2', 'ring-primary', 'ring-offset-1');
+            if (inboxOwnerSearch) {
+                inboxOwnerSearch.value = '';
+                // Reset search filter
+                inboxOwnerOptions.forEach(opt => opt.classList.remove('hidden'));
+                if (inboxOwnerNoResults) inboxOwnerNoResults.classList.add('hidden');
+            }
+        }
+    }
+
+    function selectInboxOwner(option) {
+        const id = option.dataset.id;
+        const name = option.dataset.name;
+        const email = option.dataset.email;
+        const initials = option.dataset.initials;
+        const avatar = option.dataset.avatar;
+        const isYou = option.dataset.isYou === 'true';
+
+        // Update hidden input
+        inboxOwnerInput.value = id;
+
+        // Update selected display
+        const displayName = isYou ? `${name} (You)` : name;
+        const avatarHtml = avatar
+            ? `<div class="w-8 rounded-full"><img src="${avatar}" alt="${name}" class="object-cover"></div>`
+            : `<div class="bg-primary text-primary-content rounded-full w-8 h-8 flex items-center justify-center"><span class="text-xs">${initials}</span></div>`;
+
+        inboxOwnerSelected.innerHTML = `
+            <div class="avatar ${avatar ? '' : 'placeholder'}">
+                ${avatarHtml}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm truncate">${displayName}</p>
+                <p class="text-xs text-base-content/50 truncate">${email}</p>
+            </div>
+        `;
+
+        // Update checkmarks
+        inboxOwnerOptions.forEach(opt => {
+            const check = opt.querySelector('.inbox-owner-check');
+            if (opt.dataset.id === id) {
+                check.classList.remove('hidden');
+                opt.classList.add('bg-primary/10');
+            } else {
+                check.classList.add('hidden');
+                opt.classList.remove('bg-primary/10');
+            }
+        });
+
+        hideInboxOwnerDropdown();
+    }
+
+    // Toggle dropdown on container click
+    if (inboxOwnerContainer) {
+        inboxOwnerContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (inboxOwnerDropdown.classList.contains('hidden')) {
+                showInboxOwnerDropdown();
+            } else {
+                hideInboxOwnerDropdown();
+            }
+        });
+    }
+
+    // Search functionality
+    if (inboxOwnerSearch) {
+        inboxOwnerSearch.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        inboxOwnerSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
+
+            inboxOwnerOptions.forEach(option => {
+                const searchData = option.dataset.search;
+                if (searchData.includes(searchTerm)) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            if (inboxOwnerNoResults) {
+                inboxOwnerNoResults.classList.toggle('hidden', visibleCount > 0);
+            }
+        });
+
+        inboxOwnerSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideInboxOwnerDropdown();
+            }
+        });
+    }
+
+    // Select option on click
+    inboxOwnerOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectInboxOwner(this);
+        });
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (inboxOwnerContainer && inboxOwnerDropdown && !inboxOwnerContainer.contains(e.target) && !inboxOwnerDropdown.contains(e.target)) {
+            hideInboxOwnerDropdown();
         }
     });
 });

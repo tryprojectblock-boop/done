@@ -1,6 +1,11 @@
 import './bootstrap';
 import 'flyonui/flyonui';
 import { createApp } from 'vue';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+
+// Make flatpickr available globally
+window.flatpickr = flatpickr;
 
 // Import components
 import SignUpWizard from './components/auth/SignUpWizard.vue';

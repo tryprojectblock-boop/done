@@ -37,6 +37,15 @@ enum WorkspaceType: string
         };
     }
 
+    public function badgeColor(): string
+    {
+        return match ($this) {
+            self::CLASSIC => 'primary',
+            self::PRODUCT => 'secondary',
+            self::INBOX => 'accent',
+        };
+    }
+
     public function workflowType(): string
     {
         return match ($this) {

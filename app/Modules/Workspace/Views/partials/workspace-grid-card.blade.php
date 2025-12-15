@@ -25,7 +25,7 @@
                     @endif
                 </div>
                 <div class="flex items-center gap-2 mt-1">
-                    <span class="badge badge-primary badge-xs">{{ $workspace->type->label() }}</span>
+                    <span class="badge badge-{{ $workspace->type->badgeColor() }} badge-xs">{{ $workspace->type->label() }}</span>
                     @if($workspace->owner?->company)
                         <span class="text-xs text-base-content/50 truncate flex items-center gap-1">
                             <span class="icon-[tabler--building] size-3"></span>

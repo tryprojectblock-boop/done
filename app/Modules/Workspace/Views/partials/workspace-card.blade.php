@@ -22,7 +22,7 @@
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                     <h3 class="font-medium text-base-content group-hover:text-{{ $hoverColor }} transition-colors truncate">{{ $workspace->name }}</h3>
-                    <span class="badge badge-primary badge-xs">{{ $workspace->type->label() }}</span>
+                    <span class="badge badge-{{ $workspace->type->badgeColor() }} badge-xs">{{ $workspace->type->label() }}</span>
                     @if($isGuest)
                         <span class="badge badge-warning badge-xs">Guest</span>
                     @endif

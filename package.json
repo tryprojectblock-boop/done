@@ -19,6 +19,7 @@
     "dependencies": {
         "@vitejs/plugin-vue": "^6.0.2",
         "@yaireo/tagify": "^4.35.6",
+        "flatpickr": "^4.6.13",
         "flyonui": "^2.4.1",
         "vue": "^3.5.25"
     }

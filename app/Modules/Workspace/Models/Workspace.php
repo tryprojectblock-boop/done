@@ -17,6 +17,7 @@ use App\Modules\Workspace\Enums\WorkspaceType;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Workspace extends BaseModel
 {
@@ -113,6 +114,87 @@ class Workspace extends BaseModel
     public function milestones(): HasMany
     {
         return $this->hasMany(\App\Models\Milestone::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inbox Workspace Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(WorkspaceDepartment::class)->orderBy('sort_order');
+    }
+
+    public function priorities(): HasMany
+    {
+        return $this->hasMany(WorkspacePriority::class)->orderBy('sort_order');
+    }
+
+    public function workingHours(): HasMany
+    {
+        return $this->hasMany(WorkspaceWorkingHour::class);
+    }
+
+    public function inboxSettings(): HasOne
+    {
+        return $this->hasOne(WorkspaceInboxSetting::class);
+    }
+
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(WorkspaceHoliday::class)->orderBy('date');
+    }
+
+    public function slaSettings(): HasMany
+    {
+        return $this->hasMany(WorkspaceSlaSetting::class);
+    }
+
+    public function ticketRules(): HasMany
+    {
+        return $this->hasMany(WorkspaceTicketRule::class)->orderBy('sort_order');
+    }
+
+    public function slaRules(): HasMany
+    {
+        return $this->hasMany(WorkspaceSlaRule::class)->orderBy('sort_order');
+    }
+
+    public function emailTemplates(): HasMany
+    {
+        return $this->hasMany(WorkspaceEmailTemplate::class);
+    }
+
+    /**
+     * Check if this is an inbox workspace.
+     */
+    public function isInbox(): bool
+    {
+        return $this->type === WorkspaceType::INBOX;
+    }
+
+    /**
+     * Initialize default inbox settings, priorities, and working hours.
+     */
+    public function initializeInboxDefaults(string $inboundEmail, string $inboundEmailPrefix): void
+    {
+        if (!$this->isInbox()) {
+            return;
+        }
+
+        // Create inbox settings
+        $this->inboxSettings()->create([
+            'inbound_email' => $inboundEmail,
+            'inbound_email_prefix' => $inboundEmailPrefix,
+        ]);
+
+        // Create default priorities
+        WorkspacePriority::createDefaults($this);
+
+        // Create default working hours
+        WorkspaceWorkingHour::createDefaults($this);
     }
 
     /**
