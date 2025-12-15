@@ -290,19 +290,106 @@ class WorkspaceMemberController extends Controller
     /**
      * Remove a guest from the workspace.
      */
-    public function removeGuest(Request $request, Workspace $workspace, ClientCrm $guest): RedirectResponse
+    public function removeGuest(Request $request, Workspace $workspace, User $guest): RedirectResponse
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
         $this->authorizeManageMembers($request, $workspace);
 
         // Check if guest is associated with this workspace
-        if (!$workspace->guests()->where('client_crm.id', $guest->id)->exists()) {
+        if (!$workspace->guests()->where('users.id', $guest->id)->exists()) {
             return back()->with('error', 'Guest is not associated with this workspace.');
         }
 
         $workspace->guests()->detach($guest->id);
 
+        $label = $workspace->type->value === 'inbox' ? 'Client' : 'Guest';
         return back()->with('success', "{$guest->full_name} has been removed from the workspace.");
+    }
+
+    /**
+     * Add an existing user as a guest to the workspace.
+     */
+    public function storeGuest(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+        $this->authorizeManageMembers($request, $workspace);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->input('user_id'));
+
+        // Check if already a guest
+        if ($workspace->guests()->where('users.id', $user->id)->exists()) {
+            return back()->with('error', "{$user->full_name} is already a guest of this workspace.");
+        }
+
+        // Check if already a member
+        if ($workspace->members()->where('users.id', $user->id)->exists()) {
+            return back()->with('error', "{$user->full_name} is already a member of this workspace.");
+        }
+
+        $workspace->guests()->attach($user->id, ['invited_by' => $request->user()->id]);
+
+        $label = $workspace->type->value === 'inbox' ? 'client' : 'guest';
+        return back()->with('success', "{$user->full_name} has been added as a {$label}.");
+    }
+
+    /**
+     * Invite a new guest to the workspace by email.
+     */
+    public function inviteGuest(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+        $this->authorizeManageMembers($request, $workspace);
+
+        $request->validate([
+            'email' => 'required|email',
+            'name' => 'nullable|string|max:255',
+        ]);
+
+        $email = $request->input('email');
+        $name = $request->input('name');
+
+        // Check if user already exists
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            // User exists - check if already a guest or member
+            if ($workspace->guests()->where('users.id', $user->id)->exists()) {
+                return back()->with('error', "{$user->full_name} is already a guest of this workspace.");
+            }
+            if ($workspace->members()->where('users.id', $user->id)->exists()) {
+                return back()->with('error', "{$user->full_name} is already a member of this workspace.");
+            }
+
+            // Add as guest
+            $workspace->guests()->attach($user->id, ['invited_by' => $request->user()->id]);
+            $label = $workspace->type->value === 'inbox' ? 'client' : 'guest';
+            return back()->with('success', "{$user->full_name} has been added as a {$label}.");
+        }
+
+        // Create new guest user
+        $invitationToken = \Illuminate\Support\Str::random(64);
+        $user = User::create([
+            'email' => $email,
+            'name' => $name ?: explode('@', $email)[0],
+            'password' => bcrypt(\Illuminate\Support\Str::random(32)),
+            'role' => User::ROLE_GUEST,
+            'is_guest' => true,
+            'status' => User::STATUS_INVITED,
+            'invitation_token' => $invitationToken,
+            'invitation_expires_at' => now()->addDays(30),
+        ]);
+
+        // Add as guest to workspace
+        $workspace->guests()->attach($user->id, ['invited_by' => $request->user()->id]);
+
+        // TODO: Send invitation email to the new guest
+
+        $label = $workspace->type->value === 'inbox' ? 'Client' : 'Guest';
+        return back()->with('success', "{$label} invitation sent to {$email}.");
     }
 
     /**

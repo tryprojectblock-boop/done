@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/sla-rules', [WorkspaceController::class, 'slaRulesPage'])->name('sla-rules');
                 Route::get('/idle-settings', [WorkspaceController::class, 'idleSettingsPage'])->name('idle-settings');
                 Route::get('/email-templates', [WorkspaceController::class, 'emailTemplatesPage'])->name('email-templates');
+                Route::post('/toggle-client-portal', [WorkspaceController::class, 'toggleClientPortal'])->name('toggle-client-portal');
             });
 
             // Departments (Inbox)
@@ -82,6 +83,8 @@ Route::middleware(['auth'])->group(function () {
 
             // Guests
             Route::prefix('guests')->name('guests.')->group(function () {
+                Route::post('/', [WorkspaceMemberController::class, 'storeGuest'])->name('store');
+                Route::post('/invite', [WorkspaceMemberController::class, 'inviteGuest'])->name('invite');
                 Route::delete('/{guest}', [WorkspaceMemberController::class, 'removeGuest'])->name('remove');
             });
 

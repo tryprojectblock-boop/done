@@ -2,6 +2,12 @@
 
 @php
     $user = auth()->user();
+    // isClient = true only for inbox workspace guests (not regular workspace guests)
+    // A client is a guest user viewing a ticket in an inbox workspace where they are a guest
+    $isInboxWorkspace = $task->workspace->type->value === 'inbox';
+    $isGuestUser = $user->is_guest || $user->role === \App\Models\User::ROLE_GUEST;
+    $isWorkspaceGuest = $task->workspace->guests()->where('users.id', $user->id)->exists();
+    $isClient = $isInboxWorkspace && $isGuestUser && $isWorkspaceGuest;
 @endphp
 
 @section('content')
@@ -36,63 +42,71 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <!-- Back to Workspace Tasks -->
-                    <a href="{{ route('workspace.show', ['workspace' => $task->workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost btn-sm">
-                        <span class="icon-[tabler--arrow-left] size-4"></span>
-                        Back to Workspace Tasks
-                    </a>
-
-                    <!-- On Hold Button (only for creator, assignee, and admins) -->
-                    @if(!$task->isClosed() && $task->canManageHold($user))
-                        @if($task->isOnHold())
-                            <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
-                                <span class="icon-[tabler--player-play] size-4"></span>
-                                Resume Task
-                            </button>
-                        @else
-                            <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
-                                <span class="icon-[tabler--player-pause] size-4"></span>
-                                On Hold
-                            </button>
-                        @endif
-                    @endif
-
-                    <!-- Watch Button -->
-                    <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost btn-sm">
-                            @if($task->isWatcher($user))
-                                <span class="icon-[tabler--eye-off] size-4"></span>
-                                Unwatch
-                            @else
-                                <span class="icon-[tabler--eye] size-4"></span>
-                                Watch
-                            @endif
-                        </button>
-                    </form>
-
-                    @if($task->isOwner($user) && !$task->isOnHold())
-                        <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
-                            <span class="icon-[tabler--edit] size-4"></span>
-                            Edit
+                    @if($isClient)
+                        <!-- Client: Simple back button -->
+                        <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm">
+                            <span class="icon-[tabler--arrow-left] size-4"></span>
+                            Back to My Tickets
+                        </a>
+                    @else
+                        <!-- Back to Workspace Tasks -->
+                        <a href="{{ route('workspace.show', ['workspace' => $task->workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost btn-sm">
+                            <span class="icon-[tabler--arrow-left] size-4"></span>
+                            Back to Workspace Tasks
                         </a>
 
-                        @if($task->isClosed())
-                            <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm">
-                                    <span class="icon-[tabler--refresh] size-4"></span>
-                                    Reopen
+                        <!-- On Hold Button (only for creator, assignee, and admins) -->
+                        @if(!$task->isClosed() && $task->canManageHold($user))
+                            @if($task->isOnHold())
+                                <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
+                                    <span class="icon-[tabler--player-play] size-4"></span>
+                                    Resume Task
                                 </button>
-                            </form>
-                        @else
-                            <form action="{{ route('tasks.close', $task) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="btn btn-warning btn-sm">
-                                    <span class="icon-[tabler--check] size-4"></span>
-                                    Close Task
+                            @else
+                                <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
+                                    <span class="icon-[tabler--player-pause] size-4"></span>
+                                    On Hold
                                 </button>
-                            </form>
+                            @endif
+                        @endif
+
+                        <!-- Watch Button -->
+                        <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="btn btn-ghost btn-sm">
+                                @if($task->isWatcher($user))
+                                    <span class="icon-[tabler--eye-off] size-4"></span>
+                                    Unwatch
+                                @else
+                                    <span class="icon-[tabler--eye] size-4"></span>
+                                    Watch
+                                @endif
+                            </button>
+                        </form>
+
+                        @if($task->isOwner($user) && !$task->isOnHold())
+                            <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
+                                <span class="icon-[tabler--edit] size-4"></span>
+                                Edit
+                            </a>
+
+                            @if($task->isClosed())
+                                <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <span class="icon-[tabler--refresh] size-4"></span>
+                                        Reopen
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('tasks.close', $task) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <span class="icon-[tabler--check] size-4"></span>
+                                        Close Task
+                                    </button>
+                                </form>
+                            @endif
                         @endif
                     @endif
                 </div>
@@ -274,6 +288,7 @@
                                         id="comment-editor"
                                         placeholder="Add a comment..."
                                         height="100px"
+                                        :mentions="!$isClient"
                                     />
                                     <div class="flex justify-end mt-2">
                                         <button type="submit" class="btn btn-primary btn-sm">
@@ -377,6 +392,98 @@
                                 </form>
                                 @endif
                             </div>
+
+                            <!-- Department (Inbox workspaces only) -->
+                            @if($task->workspace->type->value === 'inbox')
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Department</label>
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('department')" title="Edit department">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="department-display" class="mt-2">
+                                    @if($task->department)
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm bg-info/10 text-info">
+                                            <span class="icon-[tabler--building] size-4"></span>
+                                            {{ $task->department->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-base-content/40 text-sm">Not assigned</span>
+                                    @endif
+                                </div>
+                                <!-- Edit Mode -->
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
+                                <form id="department-edit" action="{{ route('tasks.update-department', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="department_id" class="select select-bordered select-sm w-full">
+                                        <option value="">No Department</option>
+                                        @foreach($departments as $department)
+                                            <option value="{{ $department->id }}" {{ $task->department_id == $department->id ? 'selected' : '' }}>
+                                                {{ $department->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('department')">Cancel</button>
+                                    </div>
+                                </form>
+                                @endif
+                            </div>
+
+                            <!-- Workspace Priority (Inbox workspaces only) -->
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Priority</label>
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('workspace-priority')" title="Edit priority">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="workspace-priority-display" class="mt-2">
+                                    @if($task->workspacePriority)
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm" style="background-color: {{ $task->workspacePriority->color }}15; color: {{ $task->workspacePriority->color }}">
+                                            <span class="icon-[tabler--flag] size-4"></span>
+                                            {{ $task->workspacePriority->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-base-content/40 text-sm">Not set</span>
+                                    @endif
+                                </div>
+                                <!-- Edit Mode -->
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
+                                <form id="workspace-priority-edit" action="{{ route('tasks.update-workspace-priority', $task) }}" method="POST" class="hidden mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="workspace_priority_id" class="select select-bordered select-sm w-full">
+                                        <option value="">No Priority</option>
+                                        @foreach($workspacePriorities as $wsPriority)
+                                            <option value="{{ $wsPriority->id }}" {{ $task->workspace_priority_id == $wsPriority->id ? 'selected' : '' }}>
+                                                {{ $wsPriority->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" class="btn btn-primary btn-xs">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('workspace-priority')">Cancel</button>
+                                    </div>
+                                </form>
+                                @endif
+                            </div>
+                            @endif
 
                             <!-- Assignee -->
                             <div class="py-3">
@@ -737,7 +844,8 @@
                     </div>
                 </div>
 
-                <!-- Watchers -->
+                <!-- Watchers (hide for clients) -->
+                @if(!$isClient)
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
                         <h2 class="card-title text-lg">
@@ -772,6 +880,7 @@
 
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>

@@ -25,44 +25,118 @@ class WorkspaceEmailTemplate extends Model
     ];
 
     /**
+     * Template categories.
+     */
+    public const CATEGORIES = [
+        'user' => [
+            'name' => 'For User',
+            'description' => 'Emails sent to customers/users',
+            'icon' => 'tabler--user',
+        ],
+        'operator' => [
+            'name' => 'For Operator',
+            'description' => 'Emails sent to agents/operators',
+            'icon' => 'tabler--headset',
+        ],
+        'custom' => [
+            'name' => 'Custom',
+            'description' => 'Custom email templates',
+            'icon' => 'tabler--template',
+        ],
+    ];
+
+    /**
      * Available template types with their descriptions.
      */
     public const TYPES = [
-        'ticket_created' => [
-            'name' => 'Ticket Created',
+        // For User templates
+        'user_ticket_opened' => [
+            'name' => 'New Ticket Opened',
             'description' => 'Sent to customer when a new ticket is created',
             'icon' => 'tabler--ticket',
             'color' => 'primary',
+            'category' => 'user',
         ],
-        'ticket_assigned' => [
-            'name' => 'Ticket Assigned',
-            'description' => 'Sent to agent when a ticket is assigned to them',
-            'icon' => 'tabler--user-check',
+        'user_ticket_reply' => [
+            'name' => 'New Ticket Reply',
+            'description' => 'Sent to customer when an agent replies',
+            'icon' => 'tabler--message-reply',
             'color' => 'info',
+            'category' => 'user',
         ],
-        'ticket_resolved' => [
-            'name' => 'Ticket Resolved',
-            'description' => 'Sent to customer when their ticket is resolved',
+        'user_new_reply' => [
+            'name' => 'New User Reply',
+            'description' => 'Confirmation when user submits a reply',
+            'icon' => 'tabler--send',
+            'color' => 'secondary',
+            'category' => 'user',
+        ],
+        'user_ticket_closed' => [
+            'name' => 'Ticket Closed',
+            'description' => 'Sent to customer when ticket is closed',
             'icon' => 'tabler--check',
             'color' => 'success',
+            'category' => 'user',
         ],
-        'ticket_reply' => [
-            'name' => 'Ticket Reply',
-            'description' => 'Sent to customer when an agent replies to their ticket',
-            'icon' => 'tabler--message-reply',
-            'color' => 'secondary',
+        'user_portal_access' => [
+            'name' => 'Client Portal Access',
+            'description' => 'Sent to customer with login credentials for client portal',
+            'icon' => 'tabler--login',
+            'color' => 'accent',
+            'category' => 'user',
         ],
-        'sla_warning' => [
-            'name' => 'SLA Warning',
-            'description' => 'Sent to agent when a ticket is approaching SLA breach',
-            'icon' => 'tabler--alert-triangle',
+
+        // For Operator templates
+        'operator_assigned' => [
+            'name' => 'Assigned to Ticket',
+            'description' => 'Sent when ticket is assigned to operator',
+            'icon' => 'tabler--user-check',
+            'color' => 'primary',
+            'category' => 'operator',
+        ],
+        'operator_new_comment' => [
+            'name' => 'New Comment Posted',
+            'description' => 'Sent when a new comment is posted on ticket',
+            'icon' => 'tabler--message',
+            'color' => 'info',
+            'category' => 'operator',
+        ],
+        'operator_internal_message' => [
+            'name' => 'New Internal Message',
+            'description' => 'Sent for internal team messages',
+            'icon' => 'tabler--lock',
             'color' => 'warning',
+            'category' => 'operator',
         ],
-        'sla_breach' => [
-            'name' => 'SLA Breach',
-            'description' => 'Sent to agent/manager when a ticket has breached SLA',
-            'icon' => 'tabler--alert-circle',
+        'operator_internal_ticket' => [
+            'name' => 'New Internal Ticket',
+            'description' => 'Sent when internal ticket is created',
+            'icon' => 'tabler--ticket',
+            'color' => 'secondary',
+            'category' => 'operator',
+        ],
+        'operator_ticket_opened' => [
+            'name' => 'New Ticket Opened',
+            'description' => 'Notification when new ticket arrives',
+            'icon' => 'tabler--bell',
+            'color' => 'accent',
+            'category' => 'operator',
+        ],
+        'operator_ticket_reply' => [
+            'name' => 'New Ticket Reply',
+            'description' => 'Notification when customer replies',
+            'icon' => 'tabler--message-reply',
+            'color' => 'info',
+            'category' => 'operator',
+        ],
+
+        // Custom templates
+        'custom_high_demand' => [
+            'name' => 'High Demand',
+            'description' => 'Auto-reply during high volume periods',
+            'icon' => 'tabler--flame',
             'color' => 'error',
+            'category' => 'custom',
         ],
     ];
 
@@ -82,7 +156,22 @@ class WorkspaceEmailTemplate extends Model
         '{{ticket_url}}' => 'Link to Ticket',
         '{{created_date}}' => 'Ticket Created Date',
         '{{sla_due_date}}' => 'SLA Due Date/Time',
+        '{{portal_url}}' => 'Client Portal Login URL',
+        '{{set_password_url}}' => 'Set Password URL',
     ];
+
+    /**
+     * Get templates grouped by category.
+     */
+    public static function getTypesByCategory(): array
+    {
+        $grouped = [];
+        foreach (self::TYPES as $type => $info) {
+            $category = $info['category'] ?? 'custom';
+            $grouped[$category][$type] = $info;
+        }
+        return $grouped;
+    }
 
     /**
      * Default template content.
@@ -90,35 +179,70 @@ class WorkspaceEmailTemplate extends Model
     public static function getDefaultTemplates(): array
     {
         return [
-            'ticket_created' => [
-                'name' => 'Default - Ticket Created',
+            // For User templates
+            'user_ticket_opened' => [
+                'name' => 'New Ticket Opened',
                 'subject' => 'Ticket #{{ticket_id}} - {{ticket_subject}}',
                 'body' => "Hello {{customer_name}},\n\nThank you for contacting us. Your ticket has been created successfully.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Department: {{ticket_department}}\n\nOur team will review your request and get back to you as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
             ],
-            'ticket_assigned' => [
-                'name' => 'Default - Ticket Assigned',
-                'subject' => '[Action Required] Ticket #{{ticket_id}} assigned to you',
-                'body' => "Hello {{agent_name}},\n\nA new ticket has been assigned to you.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Customer: {{customer_name}}\n\nPlease review and respond to this ticket.\n\nView ticket: {{ticket_url}}",
-            ],
-            'ticket_resolved' => [
-                'name' => 'Default - Ticket Resolved',
-                'subject' => 'Ticket #{{ticket_id}} has been resolved',
-                'body' => "Hello {{customer_name}},\n\nYour ticket has been marked as resolved.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n\nIf you have any further questions or if the issue persists, please reply to this email or create a new ticket.\n\nThank you for choosing us!\n\nBest regards,\n{{workspace_name}} Support Team",
-            ],
-            'ticket_reply' => [
-                'name' => 'Default - Ticket Reply',
+            'user_ticket_reply' => [
+                'name' => 'New Ticket Reply',
                 'subject' => 'Re: Ticket #{{ticket_id}} - {{ticket_subject}}',
                 'body' => "Hello {{customer_name}},\n\nYou have received a new reply on your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nTo view the full conversation and respond, please visit:\n{{ticket_url}}\n\nBest regards,\n{{workspace_name}} Support Team",
             ],
-            'sla_warning' => [
-                'name' => 'Default - SLA Warning',
-                'subject' => '[SLA Warning] Ticket #{{ticket_id}} approaching deadline',
-                'body' => "Hello {{agent_name}},\n\n**SLA Warning:** The following ticket is approaching its SLA deadline.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Customer: {{customer_name}}\n- SLA Due: {{sla_due_date}}\n\nPlease take action immediately to avoid SLA breach.\n\nView ticket: {{ticket_url}}",
+            'user_new_reply' => [
+                'name' => 'New User Reply',
+                'subject' => 'Re: Ticket #{{ticket_id}} - Your reply has been received',
+                'body' => "Hello {{customer_name}},\n\nThank you for your reply. We have received your message regarding ticket #{{ticket_id}}.\n\nOur team will review and respond as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
             ],
-            'sla_breach' => [
-                'name' => 'Default - SLA Breach',
-                'subject' => '[URGENT] SLA Breach - Ticket #{{ticket_id}}',
-                'body' => "**URGENT: SLA Breach Alert**\n\nTicket #{{ticket_id}} has breached its SLA.\n\n**Ticket Details:**\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Customer: {{customer_name}}\n- Assigned To: {{agent_name}}\n- SLA Due: {{sla_due_date}}\n\nImmediate attention required.\n\nView ticket: {{ticket_url}}",
+            'user_ticket_closed' => [
+                'name' => 'Ticket Closed',
+                'subject' => 'Ticket #{{ticket_id}} has been closed',
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been closed.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n\nIf you have any further questions or if the issue persists, please reply to this email or create a new ticket.\n\nThank you for choosing us!\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+            'user_portal_access' => [
+                'name' => 'Client Portal Access',
+                'subject' => 'Your Client Portal Access - {{workspace_name}}',
+                'body' => "Hello {{customer_name}},\n\nYou now have access to our Client Portal where you can view and manage your support tickets.\n\n**Your Login Credentials:**\n- Email: {{customer_email}}\n- Password: Please set your password using the link below\n\n**Set Your Password:**\n{{set_password_url}}\n\n**Access Client Portal:**\n{{portal_url}}\n\nOnce you've set your password, you can log in to view all your tickets, track progress, and communicate with our support team.\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+
+            // For Operator templates
+            'operator_assigned' => [
+                'name' => 'Assigned to Ticket',
+                'subject' => '[Action Required] Ticket #{{ticket_id}} assigned to you',
+                'body' => "Hello {{agent_name}},\n\nA ticket has been assigned to you.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Customer: {{customer_name}}\n\nPlease review and respond to this ticket.\n\nView ticket: {{ticket_url}}",
+            ],
+            'operator_new_comment' => [
+                'name' => 'New Comment Posted',
+                'subject' => 'New comment on Ticket #{{ticket_id}}',
+                'body' => "Hello {{agent_name}},\n\nA new comment has been posted on ticket #{{ticket_id}}.\n\n**Ticket:** {{ticket_subject}}\n\nView ticket: {{ticket_url}}",
+            ],
+            'operator_internal_message' => [
+                'name' => 'New Internal Message',
+                'subject' => '[Internal] New message on Ticket #{{ticket_id}}',
+                'body' => "Hello {{agent_name}},\n\nA new internal message has been posted on ticket #{{ticket_id}}.\n\n**Ticket:** {{ticket_subject}}\n\nThis is an internal note not visible to the customer.\n\nView ticket: {{ticket_url}}",
+            ],
+            'operator_internal_ticket' => [
+                'name' => 'New Internal Ticket',
+                'subject' => '[Internal] New internal ticket #{{ticket_id}}',
+                'body' => "Hello {{agent_name}},\n\nA new internal ticket has been created.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n\nView ticket: {{ticket_url}}",
+            ],
+            'operator_ticket_opened' => [
+                'name' => 'New Ticket Opened',
+                'subject' => '[New Ticket] #{{ticket_id}} - {{ticket_subject}}',
+                'body' => "Hello,\n\nA new ticket has been received.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Customer: {{customer_name}}\n- Department: {{ticket_department}}\n\nView ticket: {{ticket_url}}",
+            ],
+            'operator_ticket_reply' => [
+                'name' => 'New Ticket Reply',
+                'subject' => '[Customer Reply] Ticket #{{ticket_id}} - {{ticket_subject}}',
+                'body' => "Hello {{agent_name}},\n\nThe customer has replied to ticket #{{ticket_id}}.\n\n**Ticket:** {{ticket_subject}}\n**Customer:** {{customer_name}}\n\nView ticket: {{ticket_url}}",
+            ],
+
+            // Custom templates
+            'custom_high_demand' => [
+                'name' => 'High Demand',
+                'subject' => 'Ticket #{{ticket_id}} - We received your request',
+                'body' => "Hello {{customer_name}},\n\nThank you for contacting us. We're currently experiencing higher than normal volume.\n\n**Your Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nOur team is working hard to respond to all inquiries. We appreciate your patience and will get back to you as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
             ],
         ];
     }
@@ -157,22 +281,25 @@ class WorkspaceEmailTemplate extends Model
     }
 
     /**
-     * Create default templates for a workspace.
+     * Create default templates for a workspace (only creates missing templates).
      */
     public static function createDefaults(Workspace $workspace): void
     {
         $defaults = self::getDefaultTemplates();
+        $existingTypes = $workspace->emailTemplates()->pluck('type')->toArray();
 
         foreach ($defaults as $type => $template) {
-            self::create([
-                'workspace_id' => $workspace->id,
-                'type' => $type,
-                'name' => $template['name'],
-                'subject' => $template['subject'],
-                'body' => $template['body'],
-                'is_active' => true,
-                'is_default' => true,
-            ]);
+            if (!in_array($type, $existingTypes)) {
+                self::create([
+                    'workspace_id' => $workspace->id,
+                    'type' => $type,
+                    'name' => $template['name'],
+                    'subject' => $template['subject'],
+                    'body' => $template['body'],
+                    'is_active' => true,
+                    'is_default' => true,
+                ]);
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="p-4 md:p-6">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
@@ -18,8 +18,8 @@
                         <span class="icon-[tabler--arrow-left] size-5"></span>
                     </a>
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                            <span class="icon-[tabler--mail] size-6 text-accent"></span>
+                        <div class="w-12 h-12 rounded-lg bg-info/10 flex items-center justify-center">
+                            <span class="icon-[tabler--mail] size-6 text-info"></span>
                         </div>
                         <div>
                             <h1 class="text-2xl font-bold text-base-content">Email Templates</h1>
@@ -45,81 +45,117 @@
             </div>
         @endif
 
-        <!-- Placeholders Info -->
-        <div class="alert alert-info mb-6">
-            <span class="icon-[tabler--info-circle] size-5"></span>
-            <div>
-                <p class="font-medium">Available Placeholders</p>
-                <p class="text-sm mt-1">Use these placeholders in your templates. They will be replaced with actual values when emails are sent.</p>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    @foreach($placeholders as $placeholder => $description)
-                        <span class="badge badge-ghost font-mono text-xs" title="{{ $description }}">{{ $placeholder }}</span>
-                    @endforeach
-                </div>
-            </div>
+        <!-- Category Tabs -->
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6">
+            @foreach($templateCategories as $categoryKey => $category)
+                <button type="button"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $loop->first ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}"
+                        onclick="showCategory('{{ $categoryKey }}')"
+                        id="tab-{{ $categoryKey }}">
+                    <span class="icon-[{{ $category['icon'] }}] size-5"></span>
+                    <span>{{ $category['name'] }}</span>
+                    <span class="badge badge-sm {{ $loop->first ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ count($typesByCategory[$categoryKey] ?? []) }}</span>
+                </button>
+            @endforeach
         </div>
 
-        <!-- Templates Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            @foreach($templateTypes as $type => $typeInfo)
-                @php
-                    $template = $templates[$type]->first() ?? null;
-                @endphp
-                <div class="card bg-base-100 shadow template-card" data-type="{{ $type }}">
-                    <div class="card-body">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-{{ $typeInfo['color'] }}/10 flex items-center justify-center">
-                                    <span class="icon-[{{ $typeInfo['icon'] }}] size-5 text-{{ $typeInfo['color'] }}"></span>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold">{{ $typeInfo['name'] }}</h3>
-                                    <p class="text-xs text-base-content/60">{{ $typeInfo['description'] }}</p>
-                                </div>
-                            </div>
-                            @if($template)
-                                <label class="swap">
-                                    <input type="checkbox" {{ $template->is_active ? 'checked' : '' }} onchange="toggleTemplate({{ $template->id }}, this)">
-                                    <span class="swap-on badge badge-success badge-sm gap-1">
-                                        <span class="icon-[tabler--check] size-3"></span> Active
-                                    </span>
-                                    <span class="swap-off badge badge-ghost badge-sm gap-1">
-                                        <span class="icon-[tabler--x] size-3"></span> Disabled
-                                    </span>
-                                </label>
-                            @endif
-                        </div>
-
-                        @if($template)
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-xs text-base-content/60">Subject</label>
-                                    <p class="text-sm font-mono bg-base-200 p-2 rounded truncate">{{ $template->subject }}</p>
-                                </div>
-                                <div>
-                                    <label class="text-xs text-base-content/60">Preview</label>
-                                    <p class="text-sm text-base-content/70 line-clamp-2">{{ Str::limit(strip_tags($template->body), 100) }}</p>
-                                </div>
-                            </div>
-
-                            <div class="card-actions justify-end mt-4">
-                                <button class="btn btn-ghost btn-sm gap-1" onclick="resetTemplate({{ $template->id }}, '{{ $typeInfo['name'] }}')">
-                                    <span class="icon-[tabler--refresh] size-4"></span>
-                                    Reset
-                                </button>
-                                <button class="btn btn-primary btn-sm gap-1" onclick="editTemplate({{ $template->id }})">
-                                    <span class="icon-[tabler--edit] size-4"></span>
-                                    Edit
-                                </button>
-                            </div>
-                        @else
-                            <div class="text-center py-4 text-base-content/50">
-                                <p>No template configured</p>
-                            </div>
-                        @endif
+        <!-- Category Content -->
+        @foreach($templateCategories as $categoryKey => $category)
+            <div id="category-{{ $categoryKey }}" class="category-content {{ !$loop->first ? 'hidden' : '' }}">
+                <!-- Templates Table -->
+                <div class="card bg-base-100 shadow-sm border border-base-200">
+                    <div class="overflow-x-auto">
+                        <table class="table">
+                            <thead>
+                                <tr class="bg-base-200/50">
+                                    <th class="w-12"></th>
+                                    <th>Template</th>
+                                    <th>Subject</th>
+                                    <th class="w-24 text-center">Status</th>
+                                    <th class="w-32 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($typesByCategory[$categoryKey] ?? [] as $type => $typeInfo)
+                                    @php
+                                        $template = $templates[$type]->first() ?? null;
+                                    @endphp
+                                    <tr class="hover:bg-base-200/30">
+                                        <td>
+                                            <div class="w-9 h-9 rounded-lg bg-{{ $typeInfo['color'] }}/10 flex items-center justify-center">
+                                                <span class="icon-[{{ $typeInfo['icon'] }}] size-4 text-{{ $typeInfo['color'] }}"></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="font-medium">{{ $typeInfo['name'] }}</div>
+                                                <div class="text-xs text-base-content/50">{{ $typeInfo['description'] }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($template)
+                                                <code class="text-xs bg-base-200 px-2 py-1 rounded font-mono">{{ Str::limit($template->subject, 40) }}</code>
+                                            @else
+                                                <span class="text-base-content/40 text-sm">Not configured</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($template)
+                                                <label class="swap swap-flip">
+                                                    <input type="checkbox" {{ $template->is_active ? 'checked' : '' }} onchange="toggleTemplate({{ $template->id }}, this)">
+                                                    <span class="swap-on badge badge-success badge-sm gap-1">
+                                                        <span class="icon-[tabler--check] size-3"></span> Active
+                                                    </span>
+                                                    <span class="swap-off badge badge-ghost badge-sm gap-1">
+                                                        <span class="icon-[tabler--x] size-3"></span> Off
+                                                    </span>
+                                                </label>
+                                            @else
+                                                <span class="badge badge-ghost badge-sm">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-right">
+                                            @if($template)
+                                                <div class="flex justify-end gap-1">
+                                                    <button class="btn btn-ghost btn-xs btn-square" onclick="resetTemplate({{ $template->id }}, '{{ $typeInfo['name'] }}')" title="Reset to default">
+                                                        <span class="icon-[tabler--refresh] size-4"></span>
+                                                    </button>
+                                                    <button class="btn btn-primary btn-xs gap-1" onclick="editTemplate({{ $template->id }})">
+                                                        <span class="icon-[tabler--edit] size-3"></span>
+                                                        Edit
+                                                    </button>
+                                                </div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            @endforeach
+            </div>
+        @endforeach
+
+        <!-- Placeholders Reference (Collapsible) -->
+        <div class="mt-8">
+            <div class="collapse collapse-arrow bg-base-200 rounded-lg">
+                <input type="checkbox">
+                <div class="collapse-title font-medium flex items-center gap-2">
+                    <span class="icon-[tabler--code] size-5"></span>
+                    Available Placeholders
+                </div>
+                <div class="collapse-content">
+                    <p class="text-sm text-base-content/60 mb-3">Use these placeholders in your templates. They will be replaced with actual values when emails are sent.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        @foreach($placeholders as $placeholder => $description)
+                            <div class="flex items-center gap-2 p-2 bg-base-100 rounded">
+                                <code class="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">{{ $placeholder }}</code>
+                                <span class="text-base-content/60 text-xs truncate" title="{{ $description }}">{{ $description }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -231,8 +267,37 @@ let resetTemplateId = null;
 // Template data for editing
 const templateData = @json($templates->flatten()->keyBy('id'));
 
+// Tab switching
+function showCategory(category) {
+    // Hide all category content
+    document.querySelectorAll('.category-content').forEach(el => el.classList.add('hidden'));
+
+    // Reset all tabs to inactive state
+    document.querySelectorAll('[id^="tab-"]').forEach(el => {
+        el.classList.remove('bg-primary', 'text-primary-content', 'shadow-sm');
+        el.classList.add('text-base-content/60', 'hover:text-primary', 'hover:bg-primary/10');
+        // Update badge styling
+        const badge = el.querySelector('.badge');
+        if (badge) {
+            badge.classList.remove('bg-primary-content/20', 'text-primary-content', 'border-0');
+            badge.classList.add('badge-ghost');
+        }
+    });
+
+    // Show selected category and activate tab
+    document.getElementById('category-' + category).classList.remove('hidden');
+    const activeTab = document.getElementById('tab-' + category);
+    activeTab.classList.add('bg-primary', 'text-primary-content', 'shadow-sm');
+    activeTab.classList.remove('text-base-content/60', 'hover:text-primary', 'hover:bg-primary/10');
+    // Update badge styling for active tab
+    const activeBadge = activeTab.querySelector('.badge');
+    if (activeBadge) {
+        activeBadge.classList.add('bg-primary-content/20', 'text-primary-content', 'border-0');
+        activeBadge.classList.remove('badge-ghost');
+    }
+}
+
 function editTemplate(templateId) {
-    // Convert to string for JSON key lookup
     const template = templateData[String(templateId)];
     if (!template) {
         console.error('Template not found:', templateId, templateData);
@@ -246,7 +311,6 @@ function editTemplate(templateId) {
     document.getElementById('edit-template-active').checked = template.is_active;
     document.getElementById('edit-form-error').classList.add('hidden');
 
-    // Open modal
     document.getElementById('editTemplateModal').classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
 }

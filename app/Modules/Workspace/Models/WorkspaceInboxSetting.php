@@ -11,6 +11,7 @@ class WorkspaceInboxSetting extends Model
 {
     protected $fillable = [
         'workspace_id',
+        'from_email',
         'inbound_email',
         'inbound_email_prefix',
         'email_verified',
@@ -29,6 +30,7 @@ class WorkspaceInboxSetting extends Model
         'idle_ticket_reply_status_id',
         'idle_rules_configured_at',
         'email_templates_configured_at',
+        'client_portal_enabled',
     ];
 
     protected $casts = [
@@ -44,6 +46,7 @@ class WorkspaceInboxSetting extends Model
         'idle_ticket_hours' => 'integer',
         'idle_rules_configured_at' => 'datetime',
         'email_templates_configured_at' => 'datetime',
+        'client_portal_enabled' => 'boolean',
     ];
 
     public function workspace(): BelongsTo

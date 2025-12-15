@@ -1,13 +1,20 @@
+@php
+    $isInbox = $workspace->type->value === 'inbox';
+    $taskLabel = $isInbox ? 'Ticket' : 'Task';
+    $tasksLabel = $isInbox ? 'Tickets' : 'Tasks';
+    $taskLabelLower = $isInbox ? 'ticket' : 'task';
+    $tasksLabelLower = $isInbox ? 'tickets' : 'tasks';
+@endphp
 <div class="space-y-4">
     <!-- Header with Actions -->
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-lg font-semibold">Tasks</h2>
-            <p class="text-sm text-base-content/60">{{ $tasks->count() }} {{ Str::plural('task', $tasks->count()) }} in this workspace</p>
+            <h2 class="text-lg font-semibold">{{ $tasksLabel }}</h2>
+            <p class="text-sm text-base-content/60">{{ $tasks->count() }} {{ $tasks->count() === 1 ? $taskLabelLower : $tasksLabelLower }} in this workspace</p>
         </div>
         <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary btn-sm">
             <span class="icon-[tabler--plus] size-4"></span>
-            New Task
+            New {{ $taskLabel }}
         </a>
     </div>
 
@@ -49,7 +56,7 @@
                     <thead>
                         <tr>
                             <th class="w-16">#</th>
-                            <th>Task</th>
+                            <th>{{ $taskLabel }}</th>
                             <th>Status</th>
                             <th>Priority</th>
                             <th>Assignee</th>
@@ -120,7 +127,7 @@
         <!-- View All Link -->
         <div class="text-center">
             <a href="{{ route('tasks.index', ['workspace' => $workspace->uuid]) }}" class="btn btn-ghost btn-sm">
-                View all tasks
+                View all {{ $tasksLabelLower }}
                 <span class="icon-[tabler--arrow-right] size-4"></span>
             </a>
         </div>
@@ -128,12 +135,12 @@
         <!-- Empty State -->
         <div class="card bg-base-100 shadow">
             <div class="card-body items-center text-center py-12">
-                <span class="icon-[tabler--list-check] size-16 text-base-content/20 mb-4"></span>
-                <h3 class="text-lg font-semibold">No tasks yet</h3>
-                <p class="text-base-content/60 mb-4">Create your first task to start tracking work in this workspace.</p>
+                <span class="icon-[{{ $isInbox ? 'tabler--ticket' : 'tabler--list-check' }}] size-16 text-base-content/20 mb-4"></span>
+                <h3 class="text-lg font-semibold">No {{ $tasksLabelLower }} yet</h3>
+                <p class="text-base-content/60 mb-4">Create your first {{ $taskLabelLower }} to start tracking work in this workspace.</p>
                 <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary">
                     <span class="icon-[tabler--plus] size-4"></span>
-                    Create First Task
+                    Create First {{ $taskLabel }}
                 </a>
             </div>
         </div>

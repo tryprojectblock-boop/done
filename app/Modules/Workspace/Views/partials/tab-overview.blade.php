@@ -13,8 +13,8 @@
                 <h2 class="card-title text-lg mb-4">Quick Actions</h2>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost flex-col h-auto py-4">
-                        <span class="icon-[tabler--list-check] size-6 text-primary"></span>
-                        <span class="text-sm mt-1">Tasks</span>
+                        <span class="icon-[{{ $workspace->type->value === 'inbox' ? 'tabler--ticket' : 'tabler--list-check' }}] size-6 text-primary"></span>
+                        <span class="text-sm mt-1">{{ $workspace->type->value === 'inbox' ? 'Tickets' : 'Tasks' }}</span>
                     </a>
                     <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'discussions']) }}" class="btn btn-ghost flex-col h-auto py-4">
                         <span class="icon-[tabler--messages] size-6 text-success"></span>

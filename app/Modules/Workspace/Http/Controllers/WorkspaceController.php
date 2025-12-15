@@ -500,26 +500,55 @@ class WorkspaceController extends Controller
             return back()->with('error', 'This feature is only available for inbox workspaces.');
         }
 
-        // Check if inbound email is configured
+        // Validate from_email
+        $validated = $request->validate([
+            'from_email' => ['required', 'email', 'max:255'],
+        ]);
+
+        // Get or create inbox settings
         $inboxSettings = $workspace->inboxSettings;
-        if (!$inboxSettings || empty($inboxSettings->inbound_email)) {
+        if (!$inboxSettings) {
+            return back()->with('error', 'Inbox settings not found for this workspace.');
+        }
+
+        // Check if inbound email is configured
+        if (empty($inboxSettings->inbound_email)) {
             return back()->with('error', 'Inbound email is not configured for this workspace.');
         }
 
-        // TODO: Implement actual verification logic with Mailgun
-        // For now, we'll check if any emails have been received
-        // This could involve:
-        // 1. Checking Mailgun logs for the inbound email
-        // 2. Checking if any tickets/tasks have been created from email
-        // 3. Sending a test email and waiting for webhook
-
-        // For now, mark as verified (placeholder implementation)
+        // Save from_email (don't mark as verified yet)
         $inboxSettings->update([
-            'email_verified' => true,
-            'email_verified_at' => now(),
+            'from_email' => $validated['from_email'],
+            'email_verified' => false,
+            'email_verified_at' => null,
         ]);
 
-        return back()->with('success', 'Email setup verified successfully! Your inbox is ready to receive emails.');
+        // Send verification email to the from_email address
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "This is a verification email for your inbox workspace.\n\n" .
+                "Workspace: {$workspace->name}\n" .
+                "Inbound Email: {$inboxSettings->inbound_email}\n\n" .
+                "To complete verification, please forward this email (or any email) to:\n" .
+                "{$inboxSettings->inbound_email}\n\n" .
+                "Once we receive an email at the inbound address, your inbox will be verified automatically.\n\n" .
+                "Thank you!",
+                function ($message) use ($validated, $workspace) {
+                    $message->to($validated['from_email'])
+                        ->subject("Verify your inbox: {$workspace->name}");
+                }
+            );
+
+            return back()->with('success', 'Verification email sent to ' . $validated['from_email'] . '! Please forward it to ' . $inboxSettings->inbound_email . ' to complete verification.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send verification email', [
+                'workspace_id' => $workspace->id,
+                'from_email' => $validated['from_email'],
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('warning', 'Email configuration saved, but we could not send the verification email. Please send any email to ' . $inboxSettings->inbound_email . ' to verify.');
+        }
     }
 
     /**
@@ -1410,10 +1439,8 @@ class WorkspaceController extends Controller
             abort(404, 'This feature is only available for inbox workspaces.');
         }
 
-        // Initialize default templates if none exist
-        if ($workspace->emailTemplates()->count() === 0) {
-            \App\Modules\Workspace\Models\WorkspaceEmailTemplate::createDefaults($workspace);
-        }
+        // Initialize default templates (creates any missing template types)
+        \App\Modules\Workspace\Models\WorkspaceEmailTemplate::createDefaults($workspace);
 
         $templates = $workspace->emailTemplates()->orderBy('type')->get()->groupBy('type');
 
@@ -1421,6 +1448,8 @@ class WorkspaceController extends Controller
             'workspace' => $workspace,
             'templates' => $templates,
             'templateTypes' => \App\Modules\Workspace\Models\WorkspaceEmailTemplate::TYPES,
+            'templateCategories' => \App\Modules\Workspace\Models\WorkspaceEmailTemplate::CATEGORIES,
+            'typesByCategory' => \App\Modules\Workspace\Models\WorkspaceEmailTemplate::getTypesByCategory(),
             'placeholders' => \App\Modules\Workspace\Models\WorkspaceEmailTemplate::PLACEHOLDERS,
         ]);
     }
@@ -1505,6 +1534,36 @@ class WorkspaceController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Invalid action.']);
+    }
+
+    /**
+     * Toggle client portal access for inbox workspace.
+     */
+    public function toggleClientPortal(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            return back()->with('error', 'This feature is only available for inbox workspaces.');
+        }
+
+        $validated = $request->validate([
+            'enabled' => ['required', 'in:0,1'],
+        ]);
+
+        $inboxSettings = $workspace->inboxSettings;
+        if (!$inboxSettings) {
+            $inboxSettings = $workspace->inboxSettings()->create([]);
+        }
+
+        $enabled = (bool) $validated['enabled'];
+        $inboxSettings->update(['client_portal_enabled' => $enabled]);
+
+        $message = $enabled
+            ? 'Client portal enabled. Guests can now log in to view their tickets.'
+            : 'Client portal disabled. Guests cannot log in.';
+
+        return back()->with('success', $message);
     }
 
     /**

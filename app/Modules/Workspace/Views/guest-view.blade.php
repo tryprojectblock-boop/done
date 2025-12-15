@@ -68,15 +68,15 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Content -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Placeholder for Tasks/Content -->
+                <!-- Placeholder for Tasks/Tickets Content -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body text-center py-12">
                         <div class="flex justify-center mb-4">
-                            <span class="icon-[tabler--list-check] size-16 text-base-content/20"></span>
+                            <span class="icon-[{{ $workspace->type->value === 'inbox' ? 'tabler--ticket' : 'tabler--list-check' }}] size-16 text-base-content/20"></span>
                         </div>
                         <h2 class="text-xl font-semibold mb-2">Shared Content</h2>
                         <p class="text-base-content/60 max-w-md mx-auto">
-                            Tasks, discussions, and files shared with you will appear here.
+                            {{ $workspace->type->value === 'inbox' ? 'Tickets' : 'Tasks' }}, discussions, and files shared with you will appear here.
                             This feature is coming soon.
                         </p>
                     </div>

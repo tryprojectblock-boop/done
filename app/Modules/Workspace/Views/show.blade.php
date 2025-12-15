@@ -2,10 +2,12 @@
 
 @section('content')
 @php
-    // Check if inbox checklist is completed
+    // Check if inbox checklist is completed or email is verified
     $inboxChecklistCompleted = false;
+    $inboxEmailVerified = false;
     if ($workspace->type->value === 'inbox' && $workspace->inboxSettings) {
         $inboxSettings = $workspace->inboxSettings;
+        $inboxEmailVerified = $inboxSettings->email_verified ?? false;
         $inboxChecklistCompleted =
             $inboxSettings->working_hours_configured_at !== null &&
             $inboxSettings->departments_configured_at !== null &&
@@ -17,6 +19,13 @@
             $inboxSettings->idle_rules_configured_at !== null &&
             $inboxSettings->email_templates_configured_at !== null;
     }
+    // Show tabs if email is verified OR checklist is complete
+    $showInboxTabs = $inboxEmailVerified || $inboxChecklistCompleted;
+
+    // Use "Ticket" for inbox workspaces, "Task" for others
+    $isInbox = $workspace->type->value === 'inbox';
+    $taskLabel = $isInbox ? 'Ticket' : 'Task';
+    $tasksLabel = $isInbox ? 'Tickets' : 'Tasks';
 @endphp
 <div class="p-4 md:p-6">
     <div class="max-w-6xl mx-auto">
@@ -45,11 +54,11 @@
                 </div>
                 <div class="flex items-center gap-2">
                     @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
-                    @if($workspace->type->value !== 'inbox' || $inboxChecklistCompleted)
-                    <!-- Add Task Button -->
+                    @if($workspace->type->value !== 'inbox' || $showInboxTabs)
+                    <!-- Add Task/Ticket Button -->
                     <a href="{{ route('tasks.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-primary">
                         <span class="icon-[tabler--plus] size-5"></span>
-                        Add Task
+                        Add {{ $taskLabel }}
                     </a>
 
                     <!-- Add File Button -->
@@ -145,12 +154,12 @@
                 <span class="icon-[tabler--home] size-5"></span>
                 <span>Overview</span>
             </a>
-            @if($workspace->type->value !== 'inbox' || $inboxChecklistCompleted)
-            {{-- Workspace tabs (shown for non-inbox OR completed inbox checklist) --}}
+            @if($workspace->type->value !== 'inbox' || $showInboxTabs)
+            {{-- Workspace tabs (shown for non-inbox OR verified inbox email OR completed checklist) --}}
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'tasks' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
-                <span class="icon-[tabler--list-check] size-5"></span>
-                <span>Tasks</span>
+                <span class="icon-[{{ $isInbox ? 'tabler--ticket' : 'tabler--list-check' }}] size-5"></span>
+                <span>{{ $tasksLabel }}</span>
                 @if($tasks->count() > 0)
                     <span class="badge badge-sm {{ request('tab') === 'tasks' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $tasks->count() }}</span>
                 @endif

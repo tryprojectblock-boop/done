@@ -86,6 +86,14 @@
             'completed' => $inboxSettings && $inboxSettings->email_templates_configured_at !== null,
             'route' => route('workspace.inbox.email-templates', $workspace),
         ],
+        'client_portal' => [
+            'label' => 'Client Portal',
+            'description' => 'Enable guest login access for clients to view their tickets',
+            'icon' => 'tabler--users',
+            'color' => 'info',
+            'completed' => $inboxSettings && $inboxSettings->client_portal_enabled,
+            'is_toggle' => true,
+        ],
         'form_page' => [
             'label' => 'Form Page',
             'description' => 'Create a public form for ticket submissions',
@@ -127,7 +135,46 @@
         <!-- Checklist Items -->
         <div class="space-y-2">
             @foreach($checklist as $key => $item)
-            <a href="{{ $item['route'] }}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors group {{ $item['completed'] ? 'bg-success/5' : '' }} {{ $item['route'] === '#' ? 'pointer-events-none opacity-60' : '' }}">
+            @if(isset($item['is_toggle']) && $item['is_toggle'])
+            {{-- Toggle Item (Client Portal) --}}
+            <div class="flex items-center gap-3 p-3 rounded-lg {{ $item['completed'] ? 'bg-success/5' : '' }}">
+                <!-- Checkbox Circle -->
+                <div class="flex-shrink-0">
+                    @if($item['completed'])
+                        <div class="w-8 h-8 rounded-full bg-success flex items-center justify-center">
+                            <span class="icon-[tabler--check] size-5 text-success-content"></span>
+                        </div>
+                    @else
+                        <div class="w-8 h-8 rounded-full border-2 border-base-300 flex items-center justify-center">
+                            <span class="icon-[{{ $item['icon'] }}] size-4 text-base-content/40"></span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium text-sm">{{ $item['label'] }}</span>
+                    </div>
+                    <p class="text-xs text-base-content/50 truncate">{{ $item['description'] }}</p>
+                </div>
+
+                <!-- Toggle Switch -->
+                <div class="flex-shrink-0">
+                    <form id="client-portal-toggle-form" action="{{ route('workspace.inbox.toggle-client-portal', $workspace) }}" method="POST" class="inline">
+                        @csrf
+                        <input type="hidden" name="enabled" value="{{ $item['completed'] ? '0' : '1' }}">
+                        <input type="checkbox"
+                               class="toggle toggle-info"
+                               {{ $item['completed'] ? 'checked' : '' }}
+                               onchange="this.form.submit()"
+                               title="{{ $item['completed'] ? 'Disable client portal' : 'Enable client portal' }}">
+                    </form>
+                </div>
+            </div>
+            @else
+            {{-- Regular Link Item --}}
+            <a href="{{ $item['route'] ?? '#' }}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors group {{ $item['completed'] ? 'bg-success/5' : '' }} {{ ($item['route'] ?? '#') === '#' ? 'pointer-events-none opacity-60' : '' }}">
                 <!-- Checkbox Circle -->
                 <div class="flex-shrink-0">
                     @if($item['completed'])
@@ -159,6 +206,7 @@
                     <span class="icon-[tabler--chevron-right] size-5 text-base-content/30 group-hover:text-base-content/60 transition-colors"></span>
                 </div>
             </a>
+            @endif
             @endforeach
         </div>
 

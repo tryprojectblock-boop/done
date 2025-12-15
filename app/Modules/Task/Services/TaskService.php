@@ -12,9 +12,11 @@ use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskActivity;
 use App\Modules\Task\Models\TaskComment;
 use App\Models\Notification;
+use App\Services\InboxEmailService;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TaskService implements TaskServiceInterface
 {
@@ -306,6 +308,20 @@ class TaskService implements TaskServiceInterface
             $task->milestone?->recalculateProgress();
         }
 
+        // Send ticket closed email for inbox workspaces
+        $task->load(['workspace', 'creator']);
+        if ($task->workspace && $task->workspace->type->value === 'inbox') {
+            Log::info('Sending ticket closed email', [
+                'task_id' => $task->id,
+                'workspace_id' => $task->workspace_id,
+                'source_email' => $task->source_email,
+                'creator_email' => $task->creator?->email,
+            ]);
+            $emailService = app(InboxEmailService::class);
+            $result = $emailService->sendTicketClosedEmail($task);
+            Log::info('Ticket closed email result', ['success' => $result]);
+        }
+
         return $task->fresh();
     }
 
@@ -342,6 +358,25 @@ class TaskService implements TaskServiceInterface
             ['id' => $oldStatus?->id, 'name' => $oldStatus?->name],
             ['id' => $newStatus?->id, 'name' => $newStatus?->name]
         );
+
+        // Send ticket closed email for inbox workspaces when status changes to closed type
+        $task->load(['workspace', 'creator']);
+        if ($task->workspace && $task->workspace->type->value === 'inbox') {
+            $wasClosedType = $oldStatus && $oldStatus->type === 'closed';
+            $isClosedType = $newStatus && $newStatus->type === 'closed';
+
+            // Only send email when transitioning TO closed status (not already closed)
+            if (!$wasClosedType && $isClosedType) {
+                Log::info('Sending ticket closed email (status change)', [
+                    'task_id' => $task->id,
+                    'source_email' => $task->source_email,
+                    'creator_email' => $task->creator?->email,
+                ]);
+                $emailService = app(InboxEmailService::class);
+                $result = $emailService->sendTicketClosedEmail($task);
+                Log::info('Ticket closed email result (status change)', ['success' => $result]);
+            }
+        }
 
         return $task;
     }

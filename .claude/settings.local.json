@@ -10,7 +10,8 @@
       "Bash(cat:*)",
       "Bash(grep:*)",
       "WebSearch",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl -s -X POST \"https://noncultured-electrolytically-chung.ngrok-free.dev/api/webhooks/mailgun/inbound\" )"
     ],
     "deny": [],
     "ask": []

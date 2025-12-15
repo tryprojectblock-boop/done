@@ -25,6 +25,7 @@ class TaskComment extends Model
         'edited_at',
         'is_edited',
         'is_auto_response',
+        'source',
     ];
 
     protected function casts(): array

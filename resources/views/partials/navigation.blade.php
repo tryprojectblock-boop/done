@@ -3,7 +3,11 @@
     // A guest-only user is someone with guest role and no company_id (not a team member anywhere)
     $isGuestOnly = $user->role === \App\Models\User::ROLE_GUEST && !$user->company_id;
     // Check if guest has any workspace access
-    $hasGuestWorkspaces = $isGuestOnly && $user->guestWorkspaces()->exists();
+    $guestWorkspaces = $isGuestOnly ? $user->guestWorkspaces()->get() : collect();
+    $hasGuestWorkspaces = $guestWorkspaces->isNotEmpty();
+    // Check if guest has inbox workspaces (they are "clients")
+    $hasInboxWorkspaces = $guestWorkspaces->filter(fn($w) => $w->type->value === 'inbox')->isNotEmpty();
+    $guestLabel = $hasInboxWorkspaces ? 'Client' : 'Guest';
     // Plan limits info (passed by PlanLimitsComposer)
     $hasReachedLimit = $planLimits['has_reached_limit'] ?? false;
     $reachedLimits = $planLimits['reached_limits'] ?? [];
@@ -23,6 +27,22 @@
         @if($isGuestOnly)
             <!-- Guest-Only Navigation (simplified) -->
             <ul class="menu menu-horizontal px-1 gap-1 hidden lg:flex">
+                @if($hasInboxWorkspaces)
+                <li>
+                    <a href="/dashboard" class="{{ request()->is('dashboard') ? 'active' : '' }}">
+                        <span class="icon-[tabler--ticket] size-5"></span>
+                        My Tickets
+                    </a>
+                </li>
+                @if($hasGuestWorkspaces)
+                <li>
+                    <a href="{{ route('workspace.index') }}" class="{{ request()->is('workspaces*') ? 'active' : '' }}">
+                        <span class="icon-[tabler--briefcase] size-5"></span>
+                        Workspaces
+                    </a>
+                </li>
+                @endif
+                @else
                 <li>
                     <a href="/dashboard" class="{{ request()->is('dashboard') ? 'active' : '' }}">
                         <span class="icon-[tabler--home] size-5"></span>
@@ -36,6 +56,7 @@
                         Workspaces
                     </a>
                 </li>
+                @endif
                 @endif
             </ul>
         @else
@@ -227,7 +248,7 @@
                 @include('partials.user-avatar', ['user' => $user, 'size' => 'sm', 'showOOO' => true, 'compact' => true])
                 <span class="hidden md:inline text-sm font-medium">{{ $user->first_name ?? 'User' }}</span>
                 @if($isGuestOnly)
-                    <span class="badge badge-warning badge-xs hidden md:inline">Guest</span>
+                    <span class="badge badge-{{ $hasInboxWorkspaces ? 'primary' : 'warning' }} badge-xs hidden md:inline">{{ $guestLabel }}</span>
                 @endif
                 <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 hidden md:inline transition-transform"></span>
             </button>
@@ -235,7 +256,7 @@
                 <li class="dropdown-header px-3 py-2 border-b border-base-200 mb-2">
                     <p class="text-xs text-base-content/50">{{ $user->email ?? '' }}</p>
                     @if($isGuestOnly)
-                        <span class="badge badge-warning badge-xs mt-1">Guest Account</span>
+                        <span class="badge badge-{{ $hasInboxWorkspaces ? 'primary' : 'warning' }} badge-xs mt-1">{{ $guestLabel }} Account</span>
                     @endif
                 </li>
                 <li><a class="dropdown-item" href="/profile"><span class="icon-[tabler--user] size-4 me-2"></span>My Profile</a></li>
@@ -264,9 +285,16 @@
             </button>
             <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-56" role="menu" aria-orientation="vertical" aria-labelledby="mobile-menu-dropdown">
                 @if($isGuestOnly)
+                    @if($hasInboxWorkspaces)
+                    <li><a class="dropdown-item" href="/dashboard"><span class="icon-[tabler--ticket] size-4 me-2"></span>My Tickets</a></li>
+                    @if($hasGuestWorkspaces)
+                    <li><a class="dropdown-item" href="{{ route('workspace.index') }}"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspaces</a></li>
+                    @endif
+                    @else
                     <li><a class="dropdown-item" href="/dashboard"><span class="icon-[tabler--home] size-4 me-2"></span>Home</a></li>
                     @if($hasGuestWorkspaces)
                     <li><a class="dropdown-item" href="{{ route('workspace.index') }}"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspaces</a></li>
+                    @endif
                     @endif
                     <li><hr class="border-base-content/10 my-2"></li>
                     <li>

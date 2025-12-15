@@ -259,6 +259,8 @@ class TaskController extends Controller
             'attachments.uploader',
             'comments' => fn ($q) => $q->with(['user', 'replies.user'])->whereNull('parent_id'),
             'activities.user',
+            'department',
+            'workspacePriority',
         ]);
 
         $user = auth()->user();
@@ -269,7 +271,15 @@ class TaskController extends Controller
         $tags = Tag::where('company_id', $user->company_id)->get();
         $priorities = TaskPriority::cases();
 
-        return view('task::show', compact('task', 'statuses', 'users', 'tags', 'priorities'));
+        // Get departments and workspace priorities for inbox workspaces
+        $departments = collect();
+        $workspacePriorities = collect();
+        if ($task->workspace->type->value === 'inbox') {
+            $departments = $task->workspace->departments()->ordered()->get();
+            $workspacePriorities = $task->workspace->priorities()->ordered()->get();
+        }
+
+        return view('task::show', compact('task', 'statuses', 'users', 'tags', 'priorities', 'departments', 'workspacePriorities'));
     }
 
     public function edit(Task $task): View
@@ -484,5 +494,133 @@ class TaskController extends Controller
         $task->update(['type' => $types]);
 
         return back()->with('success', 'Type updated successfully.');
+    }
+
+    /**
+     * Update task department (inline edit for inbox workspaces).
+     * Applies ticket rules for the department (assignee, etc.)
+     */
+    public function updateDepartment(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to change the department.');
+        }
+
+        // Only allow department updates for inbox workspaces
+        if ($task->workspace->type->value !== 'inbox') {
+            return back()->with('error', 'Department can only be set for inbox workspaces.');
+        }
+
+        $request->validate([
+            'department_id' => 'nullable|exists:workspace_departments,id',
+        ]);
+
+        // Verify the department belongs to this workspace
+        $departmentId = $request->input('department_id');
+        $updateData = ['department_id' => $departmentId ?: null];
+        $appliedRules = [];
+
+        if ($departmentId) {
+            $department = $task->workspace->departments()->find($departmentId);
+            if (!$department) {
+                return back()->with('error', 'Invalid department selected.');
+            }
+
+            // Find and apply ticket rule for this department
+            $ticketRule = $task->workspace->ticketRules()
+                ->where('department_id', $departmentId)
+                ->where('is_active', true)
+                ->first();
+
+            if ($ticketRule) {
+                // Apply primary assignee from ticket rule
+                if ($ticketRule->assigned_user_id) {
+                    // Check if assignee is out of office, use backup if available
+                    $assignee = $ticketRule->assignedUser;
+                    if ($assignee && method_exists($assignee, 'isOutOfOffice') && $assignee->isOutOfOffice() && $ticketRule->backup_user_id) {
+                        $updateData['assignee_id'] = $ticketRule->backup_user_id;
+                        $appliedRules[] = 'backup assignee (primary is out of office)';
+                    } else {
+                        $updateData['assignee_id'] = $ticketRule->assigned_user_id;
+                        $appliedRules[] = 'primary assignee';
+                    }
+                }
+            }
+
+            // Find and apply SLA rule for this department
+            $slaRule = $task->workspace->slaRules()
+                ->where('department_id', $departmentId)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->first();
+
+            if ($slaRule) {
+                // Apply priority from SLA rule if set
+                if ($slaRule->priority_id) {
+                    $updateData['workspace_priority_id'] = $slaRule->priority_id;
+                    $priority = $slaRule->priority;
+                    $appliedRules[] = 'priority (' . ($priority?->name ?? 'set') . ')';
+                }
+
+                // Apply assignee from SLA rule if set (overrides ticket rule assignee)
+                if ($slaRule->assigned_user_id) {
+                    $updateData['assignee_id'] = $slaRule->assigned_user_id;
+                    // Remove duplicate if ticket rule also set assignee
+                    $appliedRules = array_filter($appliedRules, fn($r) => !str_contains($r, 'assignee'));
+                    $appliedRules[] = 'SLA assignee';
+                }
+
+                // Calculate due date based on resolution hours
+                if ($slaRule->resolution_hours) {
+                    $updateData['due_date'] = now()->addHours($slaRule->resolution_hours);
+                    $appliedRules[] = 'due date (' . $slaRule->getFormattedResolutionTime() . ')';
+                }
+            }
+        }
+
+        $task->update($updateData);
+
+        $message = 'Department updated successfully.';
+        if (!empty($appliedRules)) {
+            $message .= ' Applied: ' . implode(', ', $appliedRules) . '.';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Update task workspace priority (inline edit for inbox workspaces).
+     */
+    public function updateWorkspacePriority(Request $request, Task $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return back()->with('error', 'You do not have permission to change the priority.');
+        }
+
+        // Only allow workspace priority updates for inbox workspaces
+        if ($task->workspace->type->value !== 'inbox') {
+            return back()->with('error', 'Workspace priority can only be set for inbox workspaces.');
+        }
+
+        $request->validate([
+            'workspace_priority_id' => 'nullable|exists:workspace_priorities,id',
+        ]);
+
+        // Verify the priority belongs to this workspace
+        $priorityId = $request->input('workspace_priority_id');
+        if ($priorityId) {
+            $priority = $task->workspace->priorities()->find($priorityId);
+            if (!$priority) {
+                return back()->with('error', 'Invalid priority selected.');
+            }
+        }
+
+        $task->update(['workspace_priority_id' => $priorityId ?: null]);
+
+        return back()->with('success', 'Priority updated successfully.');
     }
 }

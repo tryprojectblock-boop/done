@@ -10,6 +10,8 @@ use App\Modules\Auth\Models\Company;
 use App\Modules\Task\Enums\TaskPriority;
 use App\Modules\Task\Enums\TaskType;
 use App\Modules\Workspace\Models\Workspace;
+use App\Modules\Workspace\Models\WorkspaceDepartment;
+use App\Modules\Workspace\Models\WorkspacePriority;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -53,6 +55,10 @@ class Task extends Model
         'google_event_id',
         'google_synced_at',
         'google_sync_source',
+        'source',
+        'source_email',
+        'department_id',
+        'workspace_priority_id',
     ];
 
     protected function casts(): array
@@ -163,6 +169,16 @@ class Task extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(WorkspaceDepartment::class, 'department_id');
+    }
+
+    public function workspacePriority(): BelongsTo
+    {
+        return $this->belongsTo(WorkspacePriority::class, 'workspace_priority_id');
     }
 
     public function company(): BelongsTo

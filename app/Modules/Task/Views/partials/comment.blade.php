@@ -1,5 +1,12 @@
 @php
     $user = auth()->user();
+    // isClient = true only for inbox workspace guests (not regular workspace guests)
+    $commentTask = $comment->task;
+    $commentWorkspace = $commentTask->workspace;
+    $isInboxWorkspace = $commentWorkspace->type->value === 'inbox';
+    $isGuestUser = $user->is_guest || $user->role === \App\Models\User::ROLE_GUEST;
+    $isWorkspaceGuest = $commentWorkspace->guests()->where('users.id', $user->id)->exists();
+    $isClient = $isInboxWorkspace && $isGuestUser && $isWorkspaceGuest;
     $editEditorId = 'edit-editor-' . $comment->id;
     $replyEditorId = 'reply-editor-' . $comment->id;
 @endphp
@@ -40,7 +47,7 @@
                              data-mentions-url="{{ route('mentions.search') }}"
                              data-csrf="{{ csrf_token() }}"
                              data-initial-content="{{ json_encode($comment->content) }}"
-                             data-enable-mentions="true"
+                             data-enable-mentions="{{ $isClient ? 'false' : 'true' }}"
                              data-enable-emoji="true"
                              style="min-height: 80px;"></div>
                     </div>
@@ -91,7 +98,7 @@
                          data-mentions-url="{{ route('mentions.search') }}"
                          data-csrf="{{ csrf_token() }}"
                          data-initial-content=""
-                         data-enable-mentions="true"
+                         data-enable-mentions="{{ $isClient ? 'false' : 'true' }}"
                          data-enable-emoji="true"
                          style="min-height: 60px;"></div>
                 </div>
