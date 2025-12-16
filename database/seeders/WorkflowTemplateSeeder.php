@@ -16,6 +16,7 @@ class WorkflowTemplateSeeder extends Seeder
         'basic_task_tracking' => [
             'name' => 'Basic Task Tracking',
             'description' => 'Simple workflow for general task management with basic statuses.',
+            'type' => 'classic',
             'is_default' => true,
             'statuses' => [
                 ['name' => 'Open', 'color' => 'blue', 'is_active' => true, 'type' => 'open', 'responsibility' => 'creator'],
@@ -27,6 +28,7 @@ class WorkflowTemplateSeeder extends Seeder
         'bug_tracking' => [
             'name' => 'Bug Tracking',
             'description' => 'Comprehensive workflow for tracking bugs and issues through their lifecycle.',
+            'type' => 'classic',
             'is_default' => true,
             'statuses' => [
                 ['name' => 'Open', 'color' => 'blue', 'is_active' => true, 'type' => 'open', 'responsibility' => 'creator'],
@@ -42,6 +44,36 @@ class WorkflowTemplateSeeder extends Seeder
                 ['name' => 'Fix Not Confirmed', 'color' => 'red', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
                 ['name' => 'Ready for Next Release', 'color' => 'emerald', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
                 ['name' => 'Closed', 'color' => 'indigo', 'is_active' => false, 'type' => 'closed', 'responsibility' => 'assignee'],
+            ],
+        ],
+        'inbox_support' => [
+            'name' => 'Support Ticket Workflow',
+            'description' => 'Workflow for managing support tickets and customer inquiries.',
+            'type' => 'inbox',
+            'is_default' => true,
+            'statuses' => [
+                ['name' => 'Unassigned', 'color' => 'slate', 'is_active' => true, 'is_default' => true, 'type' => 'open', 'responsibility' => 'creator'],
+                ['name' => 'Open', 'color' => 'blue', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'In Progress', 'color' => 'amber', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Waiting on Customer', 'color' => 'orange', 'is_active' => true, 'type' => 'active', 'responsibility' => 'creator'],
+                ['name' => 'On Hold', 'color' => 'yellow', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Resolved', 'color' => 'green', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Closed', 'color' => 'indigo', 'is_active' => false, 'type' => 'closed', 'responsibility' => 'assignee'],
+            ],
+        ],
+        'product_development' => [
+            'name' => 'Product Development',
+            'description' => 'Agile workflow for product teams with backlog and sprint management.',
+            'type' => 'product',
+            'is_default' => true,
+            'statuses' => [
+                ['name' => 'Backlog', 'color' => 'slate', 'is_active' => true, 'is_default' => true, 'type' => 'open', 'responsibility' => 'creator'],
+                ['name' => 'Ready for Development', 'color' => 'blue', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'In Development', 'color' => 'amber', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Code Review', 'color' => 'purple', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'QA Testing', 'color' => 'cyan', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Ready for Release', 'color' => 'emerald', 'is_active' => true, 'type' => 'active', 'responsibility' => 'assignee'],
+                ['name' => 'Released', 'color' => 'green', 'is_active' => false, 'type' => 'closed', 'responsibility' => 'assignee'],
             ],
         ],
     ];
@@ -80,6 +112,7 @@ class WorkflowTemplateSeeder extends Seeder
                 'workspace_id' => null, // Built-in workflows are company-wide
                 'name' => $template['name'],
                 'description' => $template['description'],
+                'type' => $template['type'] ?? 'classic',
                 'is_default' => $template['is_default'],
                 'is_archived' => false,
                 'created_by' => $createdBy,
@@ -93,6 +126,7 @@ class WorkflowTemplateSeeder extends Seeder
                     'name' => $statusData['name'],
                     'color' => $statusData['color'],
                     'is_active' => $statusData['is_active'],
+                    'is_default' => $statusData['is_default'] ?? ($index === 0),
                     'type' => $statusData['type'],
                     'responsibility' => $statusData['responsibility'] ?? 'assignee',
                     'sort_order' => $index,

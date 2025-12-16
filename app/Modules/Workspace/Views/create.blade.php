@@ -241,6 +241,27 @@
                         </div>
                     </div>
 
+                    <!-- Inbox Workflow Selection -->
+                    <div class="form-control mb-4">
+                        <label class="label" for="inbox-workflow-select">
+                            <span class="label-text font-medium">Workflow <span class="text-error">*</span></span>
+                        </label>
+                        <select name="inbox_workflow_id" id="inbox-workflow-select" class="select select-bordered" disabled>
+                            <option value="">Select a workflow...</option>
+                            @foreach($workflows as $workflow)
+                                @if($workflow->type === 'inbox')
+                                <option value="{{ $workflow->id }}" {{ old('inbox_workflow_id') == $workflow->id ? 'selected' : '' }}>
+                                    {{ $workflow->name }}
+                                    @if($workflow->isBuiltIn()) - Built-in @endif
+                                </option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <div class="label">
+                            <span class="label-text-alt text-base-content/50">Choose a workflow to manage ticket statuses</span>
+                        </div>
+                    </div>
+
                     <!-- Unique Inbound Email Address -->
                     <div class="form-control mb-4">
                         <label class="label">
@@ -1244,6 +1265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const inboxNameField = document.getElementById('inbox-workspace-name');
         const inboxOwnerField = document.getElementById('inbox-owner-input');
         const inboxEmailField = document.getElementById('inbound-email-prefix');
+        const inboxWorkflowField = document.getElementById('inbox-workflow-select');
 
         if (selectedType === 'inbox') {
             // Show inbox settings, hide other cards
@@ -1272,6 +1294,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (inboxOwnerField) inboxOwnerField.disabled = false;
             if (inboxEmailField) inboxEmailField.disabled = false;
+            if (inboxWorkflowField) {
+                inboxWorkflowField.setAttribute('required', 'required');
+                inboxWorkflowField.disabled = false;
+                // Auto-select first inbox workflow if none selected
+                if (!inboxWorkflowField.value) {
+                    const firstOption = inboxWorkflowField.querySelector('option[value]:not([value=""])');
+                    if (firstOption) {
+                        inboxWorkflowField.value = firstOption.value;
+                    }
+                }
+            }
 
             // Generate unique email if not already set
             if (!inboundEmailPrefix.value) {
@@ -1310,6 +1343,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (inboxOwnerField) inboxOwnerField.disabled = true;
             if (inboxEmailField) inboxEmailField.disabled = true;
+            if (inboxWorkflowField) {
+                inboxWorkflowField.removeAttribute('required');
+                inboxWorkflowField.disabled = true;
+            }
         }
     }
 

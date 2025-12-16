@@ -141,6 +141,7 @@ class WorkspaceController extends Controller
             $rules = array_merge($rules, [
                 'inbox_name' => ['required', 'string', 'max:100'],
                 'inbox_owner_id' => ['required', 'exists:users,id'],
+                'inbox_workflow_id' => ['required', 'exists:workflows,id'],
                 'inbound_email_prefix' => ['required', 'string', 'max:50', 'regex:/^[a-z0-9\-]+$/'],
             ]);
         } else {
@@ -165,11 +166,6 @@ class WorkspaceController extends Controller
 
         // Build DTO based on workspace type
         if ($validated['type'] === 'inbox') {
-            // Get inbox workflow automatically
-            $inboxWorkflow = Workflow::forCompany($request->user()->company_id)
-                ->where('type', 'inbox')
-                ->first();
-
             $inboundEmail = $validated['inbound_email_prefix'] . '@inbound.findmypool.net';
 
             $dto = new CreateWorkspaceDTO(
@@ -177,7 +173,7 @@ class WorkspaceController extends Controller
                 type: WorkspaceType::from($validated['type']),
                 ownerId: (int) $validated['inbox_owner_id'],
                 description: null,
-                workflowId: $inboxWorkflow?->id,
+                workflowId: (int) $validated['inbox_workflow_id'],
                 settings: [], // Settings now stored in separate tables
             );
         } else {

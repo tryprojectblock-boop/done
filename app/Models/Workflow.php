@@ -24,6 +24,8 @@ class Workflow extends Model
     public const BUILTIN_WORKFLOWS = [
         'Basic Task Tracking',
         'Bug Tracking',
+        'Support Ticket Workflow',
+        'Product Development',
     ];
 
     /**
