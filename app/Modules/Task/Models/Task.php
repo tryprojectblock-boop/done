@@ -57,6 +57,7 @@ class Task extends Model
         'google_sync_source',
         'source',
         'source_email',
+        'client_token',
         'department_id',
         'workspace_priority_id',
     ];
@@ -577,6 +578,31 @@ class Task extends Model
     public function scopeUpdatedWithinDays($query, int $days)
     {
         return $query->where('updated_at', '>=', now()->subDays($days));
+    }
+
+    /**
+     * Generate or get the client token for this task.
+     * Used for public client ticket view access.
+     */
+    public function getOrCreateClientToken(): string
+    {
+        if (!$this->client_token) {
+            $this->client_token = Str::random(64);
+            $this->save();
+        }
+
+        return $this->client_token;
+    }
+
+    /**
+     * Get the client ticket view URL.
+     */
+    public function getClientTicketUrl(): string
+    {
+        return route('client.ticket.show', [
+            'task' => $this->uuid,
+            'token' => $this->getOrCreateClientToken(),
+        ]);
     }
 
     /**

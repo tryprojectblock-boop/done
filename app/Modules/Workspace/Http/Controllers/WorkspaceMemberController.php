@@ -393,6 +393,45 @@ class WorkspaceMemberController extends Controller
     }
 
     /**
+     * Resend client portal access email.
+     */
+    public function resendPortalEmail(Request $request, Workspace $workspace, User $guest): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+        $this->authorizeManageMembers($request, $workspace);
+
+        // Check if guest is associated with this workspace
+        if (!$workspace->guests()->where('users.id', $guest->id)->exists()) {
+            return back()->with('error', 'Client is not associated with this workspace.');
+        }
+
+        // Check if user is already active
+        if ($guest->status === User::STATUS_ACTIVE) {
+            return back()->with('error', 'This client already has an active account.');
+        }
+
+        // Generate new invitation token
+        $invitationToken = Str::random(64);
+        $guest->update([
+            'invitation_token' => $invitationToken,
+            'invitation_expires_at' => now()->addDays(30),
+        ]);
+
+        // Find a ticket by this client in this workspace to send the email
+        $task = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
+            ->where('created_by', $guest->id)
+            ->first();
+
+        if ($task) {
+            // Use InboxEmailService to send the portal access email
+            $emailService = app(\App\Services\InboxEmailService::class);
+            $emailService->sendPortalAccessEmail($task, $guest);
+        }
+
+        return back()->with('success', "Portal access email has been resent to {$guest->email}.");
+    }
+
+    /**
      * Check if user can manage members (owner or admin).
      */
     protected function authorizeManageMembers(Request $request, Workspace $workspace): void

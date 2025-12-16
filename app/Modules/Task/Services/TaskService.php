@@ -359,22 +359,32 @@ class TaskService implements TaskServiceInterface
             ['id' => $newStatus?->id, 'name' => $newStatus?->name]
         );
 
-        // Send ticket closed email for inbox workspaces when status changes to closed type
+        // Send emails for inbox workspaces when status changes
         $task->load(['workspace', 'creator']);
         if ($task->workspace && $task->workspace->type->value === 'inbox') {
             $wasClosedType = $oldStatus && $oldStatus->type === 'closed';
             $isClosedType = $newStatus && $newStatus->type === 'closed';
+            $emailService = app(InboxEmailService::class);
 
-            // Only send email when transitioning TO closed status (not already closed)
+            // Send ticket closed email when transitioning TO closed status
             if (!$wasClosedType && $isClosedType) {
                 Log::info('Sending ticket closed email (status change)', [
                     'task_id' => $task->id,
                     'source_email' => $task->source_email,
                     'creator_email' => $task->creator?->email,
                 ]);
-                $emailService = app(InboxEmailService::class);
                 $result = $emailService->sendTicketClosedEmail($task);
                 Log::info('Ticket closed email result (status change)', ['success' => $result]);
+            }
+
+            // Send status changed email for all status changes (except when closing - already sent closed email)
+            if (!$isClosedType || $wasClosedType) {
+                Log::info('Sending status changed email', [
+                    'task_id' => $task->id,
+                    'old_status' => $oldStatus?->name,
+                    'new_status' => $newStatus?->name,
+                ]);
+                $emailService->sendStatusChangedEmail($task, $oldStatus?->name, $newStatus?->name);
             }
         }
 
@@ -408,6 +418,17 @@ class TaskService implements TaskServiceInterface
             // Load workspace for email template
             $task->load(['workspace', 'status']);
             $this->notificationService->createTaskAssignedNotification($newAssignee, $user, $task);
+        }
+
+        // Send assignee changed email for inbox workspaces
+        $task->load(['workspace', 'creator']);
+        if ($task->workspace && $task->workspace->type->value === 'inbox' && $newAssignee) {
+            Log::info('Sending assignee changed email', [
+                'task_id' => $task->id,
+                'new_assignee' => $newAssignee->name,
+            ]);
+            $emailService = app(InboxEmailService::class);
+            $emailService->sendAssigneeChangedEmail($task, $newAssignee->name);
         }
 
         return $task;
@@ -504,6 +525,18 @@ class TaskService implements TaskServiceInterface
 
         // Check if assignee is out of office and should auto-respond
         $this->handleOutOfOfficeAutoResponse($task, $comment, $user);
+
+        // Send new comment email for inbox workspaces (only for team member comments, not guest comments)
+        $task->load(['workspace', 'creator']);
+        if ($task->workspace && $task->workspace->type->value === 'inbox' && !$user->is_guest) {
+            Log::info('Sending new comment email to client', [
+                'task_id' => $task->id,
+                'commenter' => $user->name,
+                'source_email' => $task->source_email,
+            ]);
+            $emailService = app(InboxEmailService::class);
+            $emailService->sendNewCommentEmail($task, $content, $user->name);
+        }
 
         return $comment->fresh(['user']);
     }

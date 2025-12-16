@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\MentionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ClientTicketController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\GuestPortalController;
@@ -188,6 +189,14 @@ Route::post('/team/signup/{token}', [TeamSignupController::class, 'complete'])->
 */
 Route::get('/guest/signup/{token}', [GuestSignupController::class, 'show'])->name('guest.signup');
 Route::post('/guest/signup/{token}', [GuestSignupController::class, 'complete'])->name('guest.signup.complete');
+
+/*
+|--------------------------------------------------------------------------
+| Client Ticket View Routes (Public, token-protected)
+|--------------------------------------------------------------------------
+*/
+Route::get('/ticket/{task}', [ClientTicketController::class, 'show'])->name('client.ticket.show');
+Route::post('/ticket/{task}/reply', [ClientTicketController::class, 'reply'])->name('client.ticket.reply');
 
 /*
 |--------------------------------------------------------------------------

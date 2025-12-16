@@ -3,8 +3,25 @@
     <div class="lg:col-span-2 space-y-6">
 
         @if($workspace->type->value === 'inbox')
-            {{-- Inbox Workspace Setup Checklist --}}
-            @include('workspace::partials.inbox.setup-checklist')
+            @php
+                // Check if all checklist items are completed
+                $inboxSettings = $workspace->inboxSettings;
+                $checklistComplete = $inboxSettings &&
+                    $inboxSettings->working_hours_configured_at !== null &&
+                    $inboxSettings->departments_configured_at !== null &&
+                    $inboxSettings->priorities_configured_at !== null &&
+                    $inboxSettings->holidays_configured_at !== null &&
+                    $inboxSettings->sla_configured_at !== null &&
+                    $inboxSettings->ticket_rules_configured_at !== null &&
+                    $inboxSettings->sla_rules_configured_at !== null &&
+                    $inboxSettings->idle_rules_configured_at !== null &&
+                    $inboxSettings->email_templates_configured_at !== null &&
+                    $inboxSettings->client_portal_enabled;
+            @endphp
+            @if(!$checklistComplete)
+                {{-- Inbox Workspace Setup Checklist (hidden when all complete) --}}
+                @include('workspace::partials.inbox.setup-checklist')
+            @endif
         @endif
 
         <!-- Quick Actions -->

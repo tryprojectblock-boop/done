@@ -208,7 +208,7 @@ class InboxEmailService
     /**
      * Render template with placeholders replaced.
      */
-    protected function renderTemplate(string $template, Task $task, Workspace $workspace, ?User $user = null): string
+    protected function renderTemplate(string $template, Task $task, Workspace $workspace, ?User $user = null, array $additionalPlaceholders = []): string
     {
         // Get portal URLs
         $portalUrl = route('login');
@@ -228,17 +228,380 @@ class InboxEmailService
             '{{customer_email}}' => $user?->email ?? $task->source_email ?? $task->creator?->email ?? '',
             '{{agent_name}}' => $task->assignee?->name ?? 'Support Team',
             '{{workspace_name}}' => $workspace->name,
-            '{{ticket_url}}' => route('tasks.show', $task),
+            '{{ticket_url}}' => $task->getClientTicketUrl(),
             '{{created_date}}' => $task->created_at->format('M d, Y H:i'),
             '{{sla_due_date}}' => $task->sla_due_at?->format('M d, Y H:i') ?? 'N/A',
             '{{portal_url}}' => $portalUrl,
             '{{set_password_url}}' => $setPasswordUrl,
         ];
 
+        // Merge additional placeholders
+        $placeholders = array_merge($placeholders, $additionalPlaceholders);
+
         return str_replace(
             array_keys($placeholders),
             array_values($placeholders),
             $template
         );
+    }
+
+    /**
+     * Send "Status Changed" email to customer.
+     */
+    public function sendStatusChangedEmail(Task $task, ?string $oldStatusName, ?string $newStatusName): bool
+    {
+        $workspace = $task->workspace;
+
+        if (!$workspace || $workspace->type->value !== 'inbox') {
+            return false;
+        }
+
+        // Load creator
+        $task->load('creator');
+        $creator = $task->creator;
+
+        // Determine recipient - prefer source_email (from email submission), fallback to creator email if guest
+        $toEmail = $task->source_email;
+        $toName = $creator?->name ?? 'Customer';
+
+        // If no source_email, only send if creator is a guest (not a team member)
+        if (!$toEmail) {
+            if (!$creator || !$creator->is_guest) {
+                Log::info('Status changed email skipped - no source_email and creator is not a guest', [
+                    'task_id' => $task->id,
+                    'creator_id' => $creator?->id,
+                ]);
+                return false;
+            }
+            $toEmail = $creator->email;
+        }
+
+        // Get the template from database or use default
+        $template = $workspace->emailTemplates()
+            ->where('type', 'user_status_changed')
+            ->where('is_active', true)
+            ->first();
+
+        $subject = null;
+        $body = null;
+
+        if ($template) {
+            $subject = $template->subject;
+            $body = $template->body;
+        } else {
+            // Use default template
+            $defaults = WorkspaceEmailTemplate::getDefaultTemplates();
+            if (isset($defaults['user_status_changed'])) {
+                $subject = $defaults['user_status_changed']['subject'];
+                $body = $defaults['user_status_changed']['body'];
+            } else {
+                Log::warning('Status changed email template not found');
+                return false;
+            }
+        }
+
+        // Additional placeholders for status change
+        $additionalPlaceholders = [
+            '{{old_status}}' => $oldStatusName ?? 'N/A',
+            '{{new_status}}' => $newStatusName ?? 'N/A',
+        ];
+
+        // Render the template
+        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator, $additionalPlaceholders);
+        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator, $additionalPlaceholders);
+
+        // Get from address
+        $fromAddress = $workspace->inbound_email
+            ? $workspace->inbound_email
+            : config('mail.from.address');
+        $fromName = $workspace->name;
+
+        try {
+            Mail::send([], [], function ($message) use ($toEmail, $toName, $fromAddress, $fromName, $renderedSubject, $renderedBody) {
+                $message->to($toEmail, $toName)
+                    ->from($fromAddress, $fromName)
+                    ->subject($renderedSubject)
+                    ->html(nl2br(e($renderedBody)));
+            });
+
+            Log::info('Status changed email sent', [
+                'task_id' => $task->id,
+                'to' => $toEmail,
+                'old_status' => $oldStatusName,
+                'new_status' => $newStatusName,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send status changed email', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send "Assignee Changed" email to customer.
+     */
+    public function sendAssigneeChangedEmail(Task $task, ?string $newAssigneeName): bool
+    {
+        $workspace = $task->workspace;
+
+        if (!$workspace || $workspace->type->value !== 'inbox') {
+            return false;
+        }
+
+        // Load creator
+        $task->load('creator');
+        $creator = $task->creator;
+
+        // Determine recipient - prefer source_email (from email submission), fallback to creator email if guest
+        $toEmail = $task->source_email;
+        $toName = $creator?->name ?? 'Customer';
+
+        if (!$toEmail) {
+            if (!$creator || !$creator->is_guest) {
+                Log::info('Assignee changed email skipped - no source_email and creator is not a guest', [
+                    'task_id' => $task->id,
+                ]);
+                return false;
+            }
+            $toEmail = $creator->email;
+        }
+
+        // Get the template from database or use default
+        $template = $workspace->emailTemplates()
+            ->where('type', 'user_assignee_changed')
+            ->where('is_active', true)
+            ->first();
+
+        $subject = null;
+        $body = null;
+
+        if ($template) {
+            $subject = $template->subject;
+            $body = $template->body;
+        } else {
+            $defaults = WorkspaceEmailTemplate::getDefaultTemplates();
+            if (isset($defaults['user_assignee_changed'])) {
+                $subject = $defaults['user_assignee_changed']['subject'];
+                $body = $defaults['user_assignee_changed']['body'];
+            } else {
+                Log::warning('Assignee changed email template not found');
+                return false;
+            }
+        }
+
+        // Render the template
+        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator);
+        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator);
+
+        // Get from address
+        $fromAddress = $workspace->inbound_email ?: config('mail.from.address');
+        $fromName = $workspace->name;
+
+        try {
+            Mail::send([], [], function ($message) use ($toEmail, $toName, $fromAddress, $fromName, $renderedSubject, $renderedBody) {
+                $message->to($toEmail, $toName)
+                    ->from($fromAddress, $fromName)
+                    ->subject($renderedSubject)
+                    ->html(nl2br(e($renderedBody)));
+            });
+
+            Log::info('Assignee changed email sent', [
+                'task_id' => $task->id,
+                'to' => $toEmail,
+                'assignee' => $newAssigneeName,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send assignee changed email', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send "New Comment" email to customer.
+     */
+    public function sendNewCommentEmail(Task $task, string $commentContent, string $commenterName): bool
+    {
+        $workspace = $task->workspace;
+
+        if (!$workspace || $workspace->type->value !== 'inbox') {
+            return false;
+        }
+
+        // Load creator
+        $task->load('creator');
+        $creator = $task->creator;
+
+        // Determine recipient - prefer source_email (from email submission), fallback to creator email if guest
+        $toEmail = $task->source_email;
+        $toName = $creator?->name ?? 'Customer';
+
+        if (!$toEmail) {
+            if (!$creator || !$creator->is_guest) {
+                Log::info('New comment email skipped - no source_email and creator is not a guest', [
+                    'task_id' => $task->id,
+                ]);
+                return false;
+            }
+            $toEmail = $creator->email;
+        }
+
+        // Get the template from database or use default
+        $template = $workspace->emailTemplates()
+            ->where('type', 'user_new_comment')
+            ->where('is_active', true)
+            ->first();
+
+        $subject = null;
+        $body = null;
+
+        if ($template) {
+            $subject = $template->subject;
+            $body = $template->body;
+        } else {
+            $defaults = WorkspaceEmailTemplate::getDefaultTemplates();
+            if (isset($defaults['user_new_comment'])) {
+                $subject = $defaults['user_new_comment']['subject'];
+                $body = $defaults['user_new_comment']['body'];
+            } else {
+                Log::warning('New comment email template not found');
+                return false;
+            }
+        }
+
+        // Additional placeholders for comment
+        $additionalPlaceholders = [
+            '{{comment_content}}' => strip_tags($commentContent),
+        ];
+
+        // Render the template
+        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator, $additionalPlaceholders);
+        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator, $additionalPlaceholders);
+
+        // Get from address
+        $fromAddress = $workspace->inbound_email ?: config('mail.from.address');
+        $fromName = $workspace->name;
+
+        try {
+            Mail::send([], [], function ($message) use ($toEmail, $toName, $fromAddress, $fromName, $renderedSubject, $renderedBody) {
+                $message->to($toEmail, $toName)
+                    ->from($fromAddress, $fromName)
+                    ->subject($renderedSubject)
+                    ->html(nl2br(e($renderedBody)));
+            });
+
+            Log::info('New comment email sent', [
+                'task_id' => $task->id,
+                'to' => $toEmail,
+                'commenter' => $commenterName,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send new comment email', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send "Department Changed" email to customer.
+     */
+    public function sendDepartmentChangedEmail(Task $task, ?string $oldDepartmentName, ?string $newDepartmentName): bool
+    {
+        $workspace = $task->workspace;
+
+        if (!$workspace || $workspace->type->value !== 'inbox') {
+            return false;
+        }
+
+        // Load creator
+        $task->load('creator');
+        $creator = $task->creator;
+
+        // Determine recipient - prefer source_email (from email submission), fallback to creator email if guest
+        $toEmail = $task->source_email;
+        $toName = $creator?->name ?? 'Customer';
+
+        if (!$toEmail) {
+            if (!$creator || !$creator->is_guest) {
+                Log::info('Department changed email skipped - no source_email and creator is not a guest', [
+                    'task_id' => $task->id,
+                ]);
+                return false;
+            }
+            $toEmail = $creator->email;
+        }
+
+        // Get the template from database or use default
+        $template = $workspace->emailTemplates()
+            ->where('type', 'user_department_changed')
+            ->where('is_active', true)
+            ->first();
+
+        $subject = null;
+        $body = null;
+
+        if ($template) {
+            $subject = $template->subject;
+            $body = $template->body;
+        } else {
+            $defaults = WorkspaceEmailTemplate::getDefaultTemplates();
+            if (isset($defaults['user_department_changed'])) {
+                $subject = $defaults['user_department_changed']['subject'];
+                $body = $defaults['user_department_changed']['body'];
+            } else {
+                Log::warning('Department changed email template not found');
+                return false;
+            }
+        }
+
+        // Additional placeholders for department change
+        $additionalPlaceholders = [
+            '{{old_department}}' => $oldDepartmentName ?? 'N/A',
+            '{{new_department}}' => $newDepartmentName ?? 'N/A',
+        ];
+
+        // Render the template
+        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator, $additionalPlaceholders);
+        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator, $additionalPlaceholders);
+
+        // Get from address
+        $fromAddress = $workspace->inbound_email ?: config('mail.from.address');
+        $fromName = $workspace->name;
+
+        try {
+            Mail::send([], [], function ($message) use ($toEmail, $toName, $fromAddress, $fromName, $renderedSubject, $renderedBody) {
+                $message->to($toEmail, $toName)
+                    ->from($fromAddress, $fromName)
+                    ->subject($renderedSubject)
+                    ->html(nl2br(e($renderedBody)));
+            });
+
+            Log::info('Department changed email sent', [
+                'task_id' => $task->id,
+                'to' => $toEmail,
+                'old_department' => $oldDepartmentName,
+                'new_department' => $newDepartmentName,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send department changed email', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 }

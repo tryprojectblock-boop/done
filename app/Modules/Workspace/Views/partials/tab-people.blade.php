@@ -237,10 +237,21 @@
                             </td>
                             <td class="text-right">
                                 @if($workspace->isOwner(auth()->user()) || $workspace->getMemberRole(auth()->user())?->isAdmin())
-                                <button type="button" class="btn btn-ghost btn-sm btn-square text-error"
-                                    onclick="confirmRemoveGuest({{ $client->id }}, '{{ $client->full_name }}', 'client')">
-                                    <span class="icon-[tabler--user-minus] size-4"></span>
-                                </button>
+                                <div class="flex items-center justify-end gap-1">
+                                    @if($client->status !== 'active')
+                                    <form action="{{ route('workspace.guests.resend-portal-email', [$workspace, $client]) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-ghost btn-sm gap-1 text-primary" title="Resend Portal Email">
+                                            <span class="icon-[tabler--mail-forward] size-4"></span>
+                                            <span class="hidden sm:inline">Resend Email</span>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    <button type="button" class="btn btn-ghost btn-sm btn-square text-error"
+                                        onclick="confirmRemoveGuest({{ $client->id }}, '{{ $client->full_name }}', 'client')">
+                                        <span class="icon-[tabler--user-minus] size-4"></span>
+                                    </button>
+                                </div>
                                 @else
                                     <span class="text-base-content/30">-</span>
                                 @endif

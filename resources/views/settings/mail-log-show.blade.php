@@ -72,6 +72,50 @@
             </div>
         </div>
 
+        @php
+            // Extract client ticket URL from email body
+            $clientTicketUrl = null;
+            $emailContent = $mailLog->html_body ?? $mailLog->text_body ?? '';
+            if (preg_match('/href=["\']?(https?:\/\/[^"\'>\s]*\/ticket\/[^"\'>\s]+)["\']?/i', $emailContent, $matches)) {
+                $clientTicketUrl = html_entity_decode($matches[1]);
+            } elseif (preg_match('/(https?:\/\/[^\s<>]*\/ticket\/[^\s<>]+)/i', $emailContent, $matches)) {
+                $clientTicketUrl = $matches[1];
+            }
+        @endphp
+
+        @if($clientTicketUrl)
+        <!-- Client Ticket Actions -->
+        <div class="card bg-primary/10 border border-primary/20 shadow mb-6">
+            <div class="card-body">
+                <h2 class="card-title text-lg mb-2">
+                    <span class="icon-[tabler--ticket] size-5 text-primary"></span>
+                    Client Ticket View
+                </h2>
+                <p class="text-sm text-base-content/70 mb-4">
+                    This email contains a link to the client ticket portal. Click below to view the ticket as the client would see it.
+                </p>
+                <div class="flex gap-2">
+                    <a href="{{ $clientTicketUrl }}" target="_blank" class="btn btn-primary gap-2">
+                        <span class="icon-[tabler--external-link] size-4"></span>
+                        View Ticket as Client
+                    </a>
+                    <button type="button" class="btn btn-ghost gap-2" onclick="copyToClipboard('{{ $clientTicketUrl }}')">
+                        <span class="icon-[tabler--copy] size-4"></span>
+                        Copy URL
+                    </button>
+                </div>
+                <p class="text-xs text-base-content/50 mt-2 font-mono break-all">{{ $clientTicketUrl }}</p>
+            </div>
+        </div>
+        <script>
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('URL copied to clipboard!');
+                });
+            }
+        </script>
+        @endif
+
         @if($mailLog->attachments)
             <!-- Attachments Card -->
             <div class="card bg-base-100 shadow mb-6">

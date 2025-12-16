@@ -85,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('guests')->name('guests.')->group(function () {
                 Route::post('/', [WorkspaceMemberController::class, 'storeGuest'])->name('store');
                 Route::post('/invite', [WorkspaceMemberController::class, 'inviteGuest'])->name('invite');
+                Route::post('/{guest}/resend-portal-email', [WorkspaceMemberController::class, 'resendPortalEmail'])->name('resend-portal-email');
                 Route::delete('/{guest}', [WorkspaceMemberController::class, 'removeGuest'])->name('remove');
             });
 

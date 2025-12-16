@@ -19,8 +19,10 @@ use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskActivity;
 use App\Modules\Task\Models\TaskAttachment;
 use App\Modules\Workspace\Models\Workspace;
+use App\Services\InboxEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class TaskController extends Controller
@@ -517,6 +519,10 @@ class TaskController extends Controller
             'department_id' => 'nullable|exists:workspace_departments,id',
         ]);
 
+        // Store old department name for email notification
+        $oldDepartment = $task->department;
+        $oldDepartmentName = $oldDepartment?->name;
+
         // Verify the department belongs to this workspace
         $departmentId = $request->input('department_id');
         $updateData = ['department_id' => $departmentId ?: null];
@@ -581,6 +587,20 @@ class TaskController extends Controller
         }
 
         $task->update($updateData);
+
+        // Send department changed email to client (only if department actually changed)
+        $task->load(['department', 'workspace', 'creator']);
+        $newDepartmentName = $task->department?->name;
+
+        if ($oldDepartmentName !== $newDepartmentName && $newDepartmentName) {
+            Log::info('Sending department changed email', [
+                'task_id' => $task->id,
+                'old_department' => $oldDepartmentName,
+                'new_department' => $newDepartmentName,
+            ]);
+            $emailService = app(InboxEmailService::class);
+            $emailService->sendDepartmentChangedEmail($task, $oldDepartmentName, $newDepartmentName);
+        }
 
         $message = 'Department updated successfully.';
         if (!empty($appliedRules)) {

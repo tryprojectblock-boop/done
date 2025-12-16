@@ -85,6 +85,34 @@ class WorkspaceEmailTemplate extends Model
             'color' => 'accent',
             'category' => 'user',
         ],
+        'user_status_changed' => [
+            'name' => 'Status Changed',
+            'description' => 'Sent to customer when ticket status is changed',
+            'icon' => 'tabler--refresh',
+            'color' => 'warning',
+            'category' => 'user',
+        ],
+        'user_assignee_changed' => [
+            'name' => 'Assignee Changed',
+            'description' => 'Sent to customer when ticket is assigned to someone',
+            'icon' => 'tabler--user-check',
+            'color' => 'info',
+            'category' => 'user',
+        ],
+        'user_new_comment' => [
+            'name' => 'New Comment',
+            'description' => 'Sent to customer when a team member comments on their ticket',
+            'icon' => 'tabler--message',
+            'color' => 'primary',
+            'category' => 'user',
+        ],
+        'user_department_changed' => [
+            'name' => 'Department Changed',
+            'description' => 'Sent to customer when ticket is transferred to another department',
+            'icon' => 'tabler--building',
+            'color' => 'info',
+            'category' => 'user',
+        ],
 
         // For Operator templates
         'operator_assigned' => [
@@ -158,6 +186,11 @@ class WorkspaceEmailTemplate extends Model
         '{{sla_due_date}}' => 'SLA Due Date/Time',
         '{{portal_url}}' => 'Client Portal Login URL',
         '{{set_password_url}}' => 'Set Password URL',
+        '{{old_status}}' => 'Previous Status Name',
+        '{{new_status}}' => 'New Status Name',
+        '{{comment_content}}' => 'Comment Content',
+        '{{old_department}}' => 'Previous Department Name',
+        '{{new_department}}' => 'New Department Name',
     ];
 
     /**
@@ -204,6 +237,26 @@ class WorkspaceEmailTemplate extends Model
                 'name' => 'Client Portal Access',
                 'subject' => 'Your Client Portal Access - {{workspace_name}}',
                 'body' => "Hello {{customer_name}},\n\nYou now have access to our Client Portal where you can view and manage your support tickets.\n\n**Your Login Credentials:**\n- Email: {{customer_email}}\n- Password: Please set your password using the link below\n\n**Set Your Password:**\n{{set_password_url}}\n\n**Access Client Portal:**\n{{portal_url}}\n\nOnce you've set your password, you can log in to view all your tickets, track progress, and communicate with our support team.\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+            'user_status_changed' => [
+                'name' => 'Status Changed',
+                'subject' => 'Ticket #{{ticket_id}} - Status Updated to {{new_status}}',
+                'body' => "Hello {{customer_name}},\n\nThe status of your ticket has been updated.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Previous Status: {{old_status}}\n- New Status: {{new_status}}\n\nYou can view your ticket at:\n{{ticket_url}}\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+            'user_assignee_changed' => [
+                'name' => 'Assignee Changed',
+                'subject' => 'Ticket #{{ticket_id}} - Now being handled by {{agent_name}}',
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been assigned to a team member who will assist you.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Assigned To: {{agent_name}}\n\nYou can reply to this email to add more information to your ticket.\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+            'user_new_comment' => [
+                'name' => 'New Comment',
+                'subject' => 'Re: Ticket #{{ticket_id}} - {{ticket_subject}}',
+                'body' => "Hello {{customer_name}},\n\nA team member has responded to your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\n---\n{{comment_content}}\n---\n\nYou can reply directly to this email to respond.\n\nBest regards,\n{{workspace_name}} Support Team",
+            ],
+            'user_department_changed' => [
+                'name' => 'Department Changed',
+                'subject' => 'Ticket #{{ticket_id}} - Transferred to {{new_department}}',
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been transferred to a different department for better assistance.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- New Department: {{new_department}}\n\nThe new team will review your ticket and respond as soon as possible.\n\nYou can reply to this email to add more information.\n\nBest regards,\n{{workspace_name}} Support Team",
             ],
 
             // For Operator templates
