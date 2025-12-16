@@ -24,6 +24,8 @@ use App\Modules\Workspace\Models\WorkspaceInboxSetting;
 use App\Modules\Workspace\Models\WorkspacePriority;
 use App\Modules\Workspace\Models\WorkspaceSlaRule;
 use App\Modules\Workspace\Models\WorkspaceSlaSetting;
+use App\Modules\Workspace\Models\WorkspaceTicketForm;
+use App\Modules\Workspace\Models\WorkspaceTicketFormField;
 use App\Modules\Workspace\Models\WorkspaceTicketRule;
 use App\Modules\Workspace\Models\WorkspaceWorkingHour;
 use Illuminate\Http\RedirectResponse;
@@ -487,13 +489,18 @@ class WorkspaceController extends Controller
     /**
      * Verify inbound email setup for inbox workspace.
      */
-    public function verifyInboundEmail(Request $request, Workspace $workspace): RedirectResponse
+    public function verifyInboundEmail(Request $request, Workspace $workspace): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
 
+        $isAjax = $request->ajax() || $request->wantsJson();
+
         // Check if this is an inbox workspace
         if (!$workspace->isInbox()) {
-            return back()->with('error', 'This feature is only available for inbox workspaces.');
+            $error = 'This feature is only available for inbox workspaces.';
+            return $isAjax
+                ? response()->json(['success' => false, 'error' => $error], 400)
+                : back()->with('error', $error);
         }
 
         // Validate from_email
@@ -501,15 +508,33 @@ class WorkspaceController extends Controller
             'from_email' => ['required', 'email', 'max:255'],
         ]);
 
+        // Check if this from_email is already used by another workspace
+        $existingMapping = \App\Modules\Workspace\Models\WorkspaceInboxSetting::where('from_email', $validated['from_email'])
+            ->where('workspace_id', '!=', $workspace->id)
+            ->first();
+
+        if ($existingMapping) {
+            $error = 'This email address is already mapped to another workspace.';
+            return $isAjax
+                ? response()->json(['success' => false, 'errors' => ['from_email' => [$error]]], 422)
+                : back()->withErrors(['from_email' => $error])->withInput();
+        }
+
         // Get or create inbox settings
         $inboxSettings = $workspace->inboxSettings;
         if (!$inboxSettings) {
-            return back()->with('error', 'Inbox settings not found for this workspace.');
+            $error = 'Inbox settings not found for this workspace.';
+            return $isAjax
+                ? response()->json(['success' => false, 'error' => $error], 400)
+                : back()->with('error', $error);
         }
 
         // Check if inbound email is configured
         if (empty($inboxSettings->inbound_email)) {
-            return back()->with('error', 'Inbound email is not configured for this workspace.');
+            $error = 'Inbound email is not configured for this workspace.';
+            return $isAjax
+                ? response()->json(['success' => false, 'error' => $error], 400)
+                : back()->with('error', $error);
         }
 
         // Save from_email (don't mark as verified yet)
@@ -535,7 +560,10 @@ class WorkspaceController extends Controller
                 }
             );
 
-            return back()->with('success', 'Verification email sent to ' . $validated['from_email'] . '! Please forward it to ' . $inboxSettings->inbound_email . ' to complete verification.');
+            $message = 'Verification email sent to ' . $validated['from_email'] . '! Please forward it to ' . $inboxSettings->inbound_email . ' to complete verification.';
+            return $isAjax
+                ? response()->json(['success' => true, 'message' => $message])
+                : back()->with('success', $message);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send verification email', [
                 'workspace_id' => $workspace->id,
@@ -543,7 +571,10 @@ class WorkspaceController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('warning', 'Email configuration saved, but we could not send the verification email. Please send any email to ' . $inboxSettings->inbound_email . ' to verify.');
+            $message = 'Email configuration saved, but we could not send the verification email. Please send any email to ' . $inboxSettings->inbound_email . ' to verify.';
+            return $isAjax
+                ? response()->json(['success' => true, 'message' => $message])
+                : back()->with('warning', $message);
         }
     }
 
@@ -1711,6 +1742,354 @@ class WorkspaceController extends Controller
             'prioritySlaHours' => $prioritySlaHours,
             'slaRules' => $workspace->slaRules()->with(['department', 'priority', 'assignedUser'])->orderBy('sort_order')->get(),
         ]);
+    }
+
+    /**
+     * Display Ticket Form Builder page.
+     */
+    public function ticketFormPage(Request $request, Workspace $workspace): View
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            abort(404, 'This feature is only available for inbox workspaces.');
+        }
+
+        // Get or create ticket form with defaults
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            $ticketForm = $workspace->ticketForm()->create([
+                'name' => 'Support Request',
+                'description' => 'Submit a support ticket and we\'ll get back to you as soon as possible.',
+            ]);
+        }
+
+        // Load custom fields
+        $ticketForm->load('fields');
+
+        return view('workspace::inbox.ticket-form', [
+            'workspace' => $workspace->load(['departments', 'priorities']),
+            'ticketForm' => $ticketForm,
+        ]);
+    }
+
+    /**
+     * Save Ticket Form settings.
+     */
+    public function saveTicketForm(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            return back()->with('error', 'This feature is only available for inbox workspaces.');
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'success_message' => ['nullable', 'string', 'max:500'],
+            'submit_button_text' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['nullable'],
+            'show_name' => ['nullable'],
+            'name_required' => ['nullable'],
+            'show_email' => ['nullable'],
+            'email_required' => ['nullable'],
+            'show_phone' => ['nullable'],
+            'phone_required' => ['nullable'],
+            'show_subject' => ['nullable'],
+            'subject_required' => ['nullable'],
+            'show_description' => ['nullable'],
+            'description_required' => ['nullable'],
+            'show_department' => ['nullable'],
+            'department_required' => ['nullable'],
+            'show_priority' => ['nullable'],
+            'priority_required' => ['nullable'],
+            'show_attachments' => ['nullable'],
+            'default_department_id' => ['nullable', 'exists:workspace_departments,id'],
+            'default_priority_id' => ['nullable', 'exists:workspace_priorities,id'],
+            'logo_url' => ['nullable', 'string', 'max:500'],
+            'primary_color' => ['nullable', 'string', 'max:20'],
+            'background_color' => ['nullable', 'string', 'max:20'],
+            'enable_captcha' => ['nullable'],
+            'enable_honeypot' => ['nullable'],
+            // Confirmation settings
+            'confirmation_type' => ['nullable', 'in:inline,modal,redirect'],
+            'confirmation_headline' => ['nullable', 'string', 'max:200'],
+            'confirmation_message' => ['nullable', 'string', 'max:1000'],
+            'redirect_url' => ['nullable', 'url', 'max:500'],
+            // Spam protection
+            'enable_rate_limiting' => ['nullable'],
+            'rate_limit_per_hour' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'block_disposable_emails' => ['nullable'],
+            'blocked_emails' => ['nullable', 'string', 'max:5000'],
+            'blocked_domains' => ['nullable', 'string', 'max:5000'],
+            'blocked_ips' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        // Get or create ticket form
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            $ticketForm = new WorkspaceTicketForm();
+            $ticketForm->workspace_id = $workspace->id;
+        }
+
+        // Update form settings
+        $ticketForm->fill([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'success_message' => $validated['success_message'] ?? 'Thank you! Your ticket has been submitted successfully.',
+            'submit_button_text' => $validated['submit_button_text'] ?? 'Submit Ticket',
+            'is_active' => $request->boolean('is_active', true),
+            'show_name' => $request->boolean('show_name', true),
+            'name_required' => $request->boolean('name_required', true),
+            'show_email' => $request->boolean('show_email', true),
+            'email_required' => $request->boolean('email_required', true),
+            'show_phone' => $request->boolean('show_phone', false),
+            'phone_required' => $request->boolean('phone_required', false),
+            'show_subject' => $request->boolean('show_subject', true),
+            'subject_required' => $request->boolean('subject_required', true),
+            'show_description' => $request->boolean('show_description', true),
+            'description_required' => $request->boolean('description_required', true),
+            'show_department' => $request->boolean('show_department', false),
+            'department_required' => $request->boolean('department_required', false),
+            'show_priority' => $request->boolean('show_priority', false),
+            'priority_required' => $request->boolean('priority_required', false),
+            'show_attachments' => $request->boolean('show_attachments', false),
+            'default_department_id' => $validated['default_department_id'] ?? null,
+            'default_priority_id' => $validated['default_priority_id'] ?? null,
+            'logo_url' => $validated['logo_url'] ?? null,
+            'primary_color' => $validated['primary_color'] ?? '#3b82f6',
+            'background_color' => $validated['background_color'] ?? '#f8fafc',
+            'enable_captcha' => $request->boolean('enable_captcha', false),
+            'enable_honeypot' => $request->boolean('enable_honeypot', true),
+            // Confirmation settings
+            'confirmation_type' => $validated['confirmation_type'] ?? 'inline',
+            'confirmation_headline' => $validated['confirmation_headline'] ?? 'Thank You!',
+            'confirmation_message' => $validated['confirmation_message'] ?? 'Your ticket has been submitted successfully. We\'ll get back to you soon.',
+            'redirect_url' => $validated['redirect_url'] ?? null,
+            // Spam protection
+            'enable_rate_limiting' => $request->boolean('enable_rate_limiting', true),
+            'rate_limit_per_hour' => $validated['rate_limit_per_hour'] ?? 10,
+            'block_disposable_emails' => $request->boolean('block_disposable_emails', false),
+            'blocked_emails' => $validated['blocked_emails'] ?? null,
+            'blocked_domains' => $validated['blocked_domains'] ?? null,
+            'blocked_ips' => $validated['blocked_ips'] ?? null,
+        ]);
+
+        $ticketForm->save();
+
+        // Mark form as configured
+        $workspace->inboxSettings()->update(['form_configured_at' => now()]);
+
+        return redirect()->route('workspace.inbox.ticket-form', $workspace)->with('success', 'Ticket form settings saved successfully.');
+    }
+
+    /**
+     * Publish (lock) the ticket form.
+     */
+    public function publishTicketForm(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            return back()->with('error', 'This feature is only available for inbox workspaces.');
+        }
+
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            return back()->with('error', 'Ticket form not found.');
+        }
+
+        $ticketForm->update(['published_at' => now()]);
+
+        return redirect()->route('workspace.inbox.ticket-form', $workspace)->with('success', 'Form published successfully. The form is now locked.');
+    }
+
+    /**
+     * Unpublish (unlock) the ticket form.
+     */
+    public function unpublishTicketForm(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            return back()->with('error', 'This feature is only available for inbox workspaces.');
+        }
+
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            return back()->with('error', 'Ticket form not found.');
+        }
+
+        $ticketForm->update(['published_at' => null]);
+
+        return redirect()->route('workspace.inbox.ticket-form', $workspace)->with('success', 'Form unpublished. You can now edit the form.');
+    }
+
+    /**
+     * Show create ticket form field page.
+     */
+    public function createTicketFormField(Request $request, Workspace $workspace): View
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            abort(404, 'This feature is only available for inbox workspaces.');
+        }
+
+        return view('workspace::inbox.ticket-form-field', [
+            'workspace' => $workspace,
+            'fieldTypes' => WorkspaceTicketFormField::getFieldTypes(),
+        ]);
+    }
+
+    /**
+     * Store a new ticket form field.
+     */
+    public function storeTicketFormField(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        if (!$workspace->isInbox()) {
+            return back()->with('error', 'This feature is only available for inbox workspaces.');
+        }
+
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'in:text,textarea,email,phone,date,select,file'],
+            'label' => ['required', 'string', 'max:100'],
+            'placeholder' => ['nullable', 'string', 'max:200'],
+            'help_text' => ['nullable', 'string', 'max:500'],
+            'is_required' => ['nullable'],
+            'options' => ['nullable', 'array'],
+            'options.*' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            return back()->with('error', 'Ticket form not found.');
+        }
+
+        // Get max sort order
+        $maxOrder = $ticketForm->fields()->max('sort_order') ?? 0;
+
+        // Process options for select fields
+        $options = null;
+        if ($validated['type'] === 'select' && !empty($validated['options'])) {
+            $options = array_values(array_filter($validated['options']));
+        }
+
+        $ticketForm->fields()->create([
+            'type' => $validated['type'],
+            'label' => $validated['label'],
+            'name' => WorkspaceTicketFormField::generateFieldName($validated['label']),
+            'placeholder' => $validated['placeholder'] ?? null,
+            'help_text' => $validated['help_text'] ?? null,
+            'is_required' => $request->boolean('is_required'),
+            'options' => $options,
+            'sort_order' => $maxOrder + 1,
+        ]);
+
+        return redirect()->route('workspace.inbox.ticket-form', $workspace)->with('success', 'Field added successfully.');
+    }
+
+    /**
+     * Show edit ticket form field page.
+     */
+    public function editTicketFormField(Request $request, Workspace $workspace, WorkspaceTicketFormField $field): View
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        // Verify field belongs to this workspace
+        if ($field->form->workspace_id !== $workspace->id) {
+            abort(404);
+        }
+
+        return view('workspace::inbox.ticket-form-field', [
+            'workspace' => $workspace,
+            'field' => $field,
+            'fieldTypes' => WorkspaceTicketFormField::getFieldTypes(),
+        ]);
+    }
+
+    /**
+     * Update a ticket form field.
+     */
+    public function updateTicketFormField(Request $request, Workspace $workspace, WorkspaceTicketFormField $field): RedirectResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        // Verify field belongs to this workspace
+        if ($field->form->workspace_id !== $workspace->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'in:text,textarea,email,phone,date,select,file'],
+            'label' => ['required', 'string', 'max:100'],
+            'placeholder' => ['nullable', 'string', 'max:200'],
+            'help_text' => ['nullable', 'string', 'max:500'],
+            'is_required' => ['nullable'],
+            'options' => ['nullable', 'array'],
+            'options.*' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        // Process options for select fields
+        $options = null;
+        if ($validated['type'] === 'select' && !empty($validated['options'])) {
+            $options = array_values(array_filter($validated['options']));
+        }
+
+        $field->update([
+            'type' => $validated['type'],
+            'label' => $validated['label'],
+            'name' => WorkspaceTicketFormField::generateFieldName($validated['label']),
+            'placeholder' => $validated['placeholder'] ?? null,
+            'help_text' => $validated['help_text'] ?? null,
+            'is_required' => $request->boolean('is_required'),
+            'options' => $options,
+        ]);
+
+        return redirect()->route('workspace.inbox.ticket-form', $workspace)->with('success', 'Field updated successfully.');
+    }
+
+    /**
+     * Delete a ticket form field.
+     */
+    public function deleteTicketFormField(Request $request, Workspace $workspace, WorkspaceTicketFormField $field): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        // Verify field belongs to this workspace
+        if ($field->form->workspace_id !== $workspace->id) {
+            return response()->json(['error' => 'Not found'], 404);
+        }
+
+        $field->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Reorder ticket form fields.
+     */
+    public function reorderTicketFormFields(Request $request, Workspace $workspace): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeWorkspaceAccess($request, $workspace);
+
+        $validated = $request->validate([
+            'field_order' => ['required', 'array'],
+            'field_order.*' => ['required', 'string'],
+        ]);
+
+        $ticketForm = $workspace->ticketForm;
+        if (!$ticketForm) {
+            return response()->json(['error' => 'Form not found'], 404);
+        }
+
+        // Save the field order (includes both standard field keys and custom_X field keys)
+        $ticketForm->update(['field_order' => $validated['field_order']]);
+
+        return response()->json(['success' => true]);
     }
 
     /**

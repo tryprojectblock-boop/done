@@ -458,7 +458,19 @@ class TaskController extends Controller
 
         $request->validate(['priority' => 'nullable|string|in:lowest,low,medium,high,highest']);
 
-        $task->update(['priority' => $request->input('priority')]);
+        $oldPriority = $task->priority;
+        $newPriority = $request->input('priority');
+
+        $task->update(['priority' => $newPriority]);
+
+        // Log activity
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::PRIORITY_CHANGED,
+            ['label' => $oldPriority?->label() ?? 'None'],
+            ['label' => $newPriority ? \App\Modules\Task\Enums\TaskPriority::from($newPriority)->label() : 'None']
+        );
 
         return back()->with('success', 'Priority updated successfully.');
     }
@@ -473,7 +485,19 @@ class TaskController extends Controller
 
         $request->validate(['due_date' => 'nullable|date']);
 
-        $task->update(['due_date' => $request->input('due_date')]);
+        $oldDueDate = $task->due_date;
+        $newDueDate = $request->input('due_date');
+
+        $task->update(['due_date' => $newDueDate]);
+
+        // Log activity
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::DUE_DATE_CHANGED,
+            ['date' => $oldDueDate?->format('M d, Y')],
+            ['date' => $newDueDate ? \Carbon\Carbon::parse($newDueDate)->format('M d, Y') : null]
+        );
 
         return back()->with('success', 'Due date updated successfully.');
     }
@@ -488,12 +512,22 @@ class TaskController extends Controller
 
         $request->validate(['type' => 'nullable|array']);
 
-        $types = $request->input('type', []);
-        if (empty($types)) {
-            $types = ['task'];
+        $oldTypes = $task->type ?? ['task'];
+        $newTypes = $request->input('type', []);
+        if (empty($newTypes)) {
+            $newTypes = ['task'];
         }
 
-        $task->update(['type' => $types]);
+        $task->update(['type' => $newTypes]);
+
+        // Log activity
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::TYPE_CHANGED,
+            ['types' => $oldTypes],
+            ['types' => $newTypes]
+        );
 
         return back()->with('success', 'Type updated successfully.');
     }
@@ -532,6 +566,22 @@ class TaskController extends Controller
             $department = $task->workspace->departments()->find($departmentId);
             if (!$department) {
                 return back()->with('error', 'Invalid department selected.');
+            }
+
+            // Auto-advance status from "Unassigned" (open type) to next status when department is assigned
+            $currentStatus = $task->status;
+            if ($currentStatus && $currentStatus->type === \App\Models\WorkflowStatus::TYPE_OPEN) {
+                // Find the next status in the workflow (next active status by sort_order)
+                $nextStatus = \App\Models\WorkflowStatus::where('workflow_id', $currentStatus->workflow_id)
+                    ->where('is_active', true)
+                    ->where('sort_order', '>', $currentStatus->sort_order)
+                    ->orderBy('sort_order')
+                    ->first();
+
+                if ($nextStatus) {
+                    $updateData['status_id'] = $nextStatus->id;
+                    $appliedRules[] = 'status changed to ' . $nextStatus->name;
+                }
             }
 
             // Find and apply ticket rule for this department
@@ -602,6 +652,17 @@ class TaskController extends Controller
             $emailService->sendDepartmentChangedEmail($task, $oldDepartmentName, $newDepartmentName);
         }
 
+        // Log activity for department change
+        if ($oldDepartmentName !== $newDepartmentName) {
+            TaskActivity::log(
+                $task,
+                $user,
+                ActivityType::DEPARTMENT_CHANGED,
+                ['name' => $oldDepartmentName],
+                ['name' => $newDepartmentName]
+            );
+        }
+
         $message = 'Department updated successfully.';
         if (!empty($appliedRules)) {
             $message .= ' Applied: ' . implode(', ', $appliedRules) . '.';
@@ -630,16 +691,33 @@ class TaskController extends Controller
             'workspace_priority_id' => 'nullable|exists:workspace_priorities,id',
         ]);
 
+        // Store old priority for activity log
+        $oldPriority = $task->workspacePriority;
+        $oldPriorityName = $oldPriority?->name;
+
         // Verify the priority belongs to this workspace
         $priorityId = $request->input('workspace_priority_id');
+        $newPriority = null;
         if ($priorityId) {
-            $priority = $task->workspace->priorities()->find($priorityId);
-            if (!$priority) {
+            $newPriority = $task->workspace->priorities()->find($priorityId);
+            if (!$newPriority) {
                 return back()->with('error', 'Invalid priority selected.');
             }
         }
 
         $task->update(['workspace_priority_id' => $priorityId ?: null]);
+
+        // Log activity
+        $newPriorityName = $newPriority?->name;
+        if ($oldPriorityName !== $newPriorityName) {
+            TaskActivity::log(
+                $task,
+                $user,
+                ActivityType::WORKSPACE_PRIORITY_CHANGED,
+                ['name' => $oldPriorityName],
+                ['name' => $newPriorityName]
+            );
+        }
 
         return back()->with('success', 'Priority updated successfully.');
     }

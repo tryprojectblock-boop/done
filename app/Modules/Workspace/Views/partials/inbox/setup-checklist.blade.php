@@ -12,6 +12,7 @@
     $slaRulesConfigured = $inboxSettings && $inboxSettings->sla_rules_configured_at !== null;
 
     $idleRulesConfigured = $inboxSettings && $inboxSettings->idle_rules_configured_at !== null;
+    $formConfigured = $inboxSettings && $inboxSettings->form_configured_at !== null;
 
     $checklist = [
         'working_hours' => [
@@ -99,9 +100,8 @@
             'description' => 'Create a public form for ticket submissions',
             'icon' => 'tabler--forms',
             'color' => 'accent',
-            'completed' => false,
-            'route' => '#',
-            'coming_soon' => true,
+            'completed' => $formConfigured,
+            'route' => route('workspace.inbox.ticket-form', $workspace),
         ],
     ];
     // Exclude "Coming Soon" items from counts

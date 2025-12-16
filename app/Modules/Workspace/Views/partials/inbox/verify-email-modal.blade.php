@@ -26,8 +26,11 @@
         </div>
         @endif
 
-        <form action="{{ route('workspace.verify-email', $workspace) }}" method="POST">
+        <form id="verifyEmailForm" action="{{ route('workspace.verify-email', $workspace) }}" method="POST">
             @csrf
+
+            {{-- Alert Messages --}}
+            <div id="verifyEmailAlert" class="hidden mb-4"></div>
 
             {{-- From Email --}}
             <div class="form-control mb-3">
@@ -36,12 +39,14 @@
                 </label>
                 <input type="email"
                        name="from_email"
-                       value="{{ $workspace->inboxSettings->from_email ?? '' }}"
+                       id="fromEmailInput"
+                       value="{{ old('from_email', $workspace->inboxSettings->from_email ?? '') }}"
                        placeholder="support@yourdomain.com"
                        class="input input-bordered input-sm w-full"
                        required>
                 <label class="label py-0.5">
-                    <span class="label-text-alt text-xs text-base-content/50">Email customers will see in replies</span>
+                    <span id="fromEmailError" class="label-text-alt text-xs text-error hidden"></span>
+                    <span id="fromEmailHint" class="label-text-alt text-xs text-base-content/50">Email customers will see in replies. This address will be mapped to your inbound email and cannot be used by another workspace.</span>
                 </label>
             </div>
 
@@ -90,9 +95,9 @@
             {{-- Actions --}}
             <div class="flex justify-end gap-2">
                 <button type="button" class="btn btn-ghost btn-sm" onclick="closeVerifyEmailModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary btn-sm">
+                <button type="submit" id="verifyEmailBtn" class="btn btn-primary btn-sm">
                     <span class="icon-[tabler--send] size-4"></span>
-                    Send Verification
+                    <span id="verifyEmailBtnText">Send Verification</span>
                 </button>
             </div>
         </form>
@@ -114,6 +119,7 @@ function copyInboundEmail() {
 function openVerifyEmailModal() {
     document.getElementById('verifyEmailModal').classList.add('open');
     document.body.style.overflow = 'hidden';
+    clearVerifyEmailErrors();
 }
 
 function closeVerifyEmailModal() {
@@ -121,8 +127,91 @@ function closeVerifyEmailModal() {
     document.body.style.overflow = '';
 }
 
+function clearVerifyEmailErrors() {
+    const input = document.getElementById('fromEmailInput');
+    const errorSpan = document.getElementById('fromEmailError');
+    const hintSpan = document.getElementById('fromEmailHint');
+    const alertDiv = document.getElementById('verifyEmailAlert');
+
+    input?.classList.remove('input-error');
+    errorSpan?.classList.add('hidden');
+    hintSpan?.classList.remove('hidden');
+    alertDiv?.classList.add('hidden');
+}
+
+function showVerifyEmailError(message) {
+    const input = document.getElementById('fromEmailInput');
+    const errorSpan = document.getElementById('fromEmailError');
+    const hintSpan = document.getElementById('fromEmailHint');
+
+    input?.classList.add('input-error');
+    if (errorSpan) {
+        errorSpan.textContent = message;
+        errorSpan.classList.remove('hidden');
+    }
+    hintSpan?.classList.add('hidden');
+}
+
+function showVerifyEmailAlert(message, type = 'success') {
+    const alertDiv = document.getElementById('verifyEmailAlert');
+    if (alertDiv) {
+        const icon = type === 'success' ? 'tabler--check' : 'tabler--alert-circle';
+        alertDiv.className = `alert alert-${type} py-2 mb-4`;
+        alertDiv.innerHTML = `<span class="icon-[${icon}] size-4"></span><span class="text-sm">${message}</span>`;
+    }
+}
+
 document.getElementById('verifyEmailModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeVerifyEmailModal();
+});
+
+// Handle form submission via AJAX
+document.getElementById('verifyEmailForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const btn = document.getElementById('verifyEmailBtn');
+    const btnText = document.getElementById('verifyEmailBtnText');
+    const input = document.getElementById('fromEmailInput');
+
+    // Clear previous errors
+    clearVerifyEmailErrors();
+
+    // Show loading state
+    btn.disabled = true;
+    btnText.textContent = 'Sending...';
+
+    try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showVerifyEmailAlert(data.message, 'success');
+            // Update the input value
+            if (input) input.value = formData.get('from_email');
+        } else if (data.errors?.from_email) {
+            showVerifyEmailError(data.errors.from_email[0] || data.errors.from_email);
+        } else if (data.error) {
+            showVerifyEmailError(data.error);
+        } else {
+            showVerifyEmailError('An error occurred. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showVerifyEmailError('An error occurred. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Send Verification';
+    }
 });
 </script>
 @endif

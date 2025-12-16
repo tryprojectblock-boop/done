@@ -48,6 +48,10 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+        'client-portal' => [
+            'driver' => 'session',
+            'provider' => 'client_portal_users',
+        ],
     ],
 
     /*
@@ -81,6 +85,11 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Modules\Admin\Models\AdminUser::class,
+        ],
+
+        'client_portal_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
         ],
 
         // 'users' => [

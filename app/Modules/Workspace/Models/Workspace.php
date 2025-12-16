@@ -167,6 +167,11 @@ class Workspace extends BaseModel
         return $this->hasMany(WorkspaceEmailTemplate::class);
     }
 
+    public function ticketForm(): HasOne
+    {
+        return $this->hasOne(WorkspaceTicketForm::class);
+    }
+
     /**
      * Check if this is an inbox workspace.
      */

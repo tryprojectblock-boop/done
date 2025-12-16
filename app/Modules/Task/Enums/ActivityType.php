@@ -32,6 +32,8 @@ enum ActivityType: string
     case PUT_ON_HOLD = 'put_on_hold';
     case RESUMED = 'resumed';
     case PARENT_CHANGED = 'parent_changed';
+    case DEPARTMENT_CHANGED = 'department_changed';
+    case WORKSPACE_PRIORITY_CHANGED = 'workspace_priority_changed';
 
     public function label(): string
     {
@@ -62,6 +64,8 @@ enum ActivityType: string
             self::PUT_ON_HOLD => 'put this task on hold',
             self::RESUMED => 'resumed this task',
             self::PARENT_CHANGED => 'changed the parent task',
+            self::DEPARTMENT_CHANGED => 'changed the department',
+            self::WORKSPACE_PRIORITY_CHANGED => 'changed the priority',
         };
     }
 
@@ -88,6 +92,8 @@ enum ActivityType: string
             self::PUT_ON_HOLD => 'tabler--player-pause',
             self::RESUMED => 'tabler--player-play',
             self::PARENT_CHANGED => 'tabler--subtask',
+            self::DEPARTMENT_CHANGED => 'tabler--building',
+            self::WORKSPACE_PRIORITY_CHANGED => 'tabler--flag',
         };
     }
 }

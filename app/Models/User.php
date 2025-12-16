@@ -868,4 +868,46 @@ class User extends Authenticatable
             'google_connected_at' => null,
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Client Portal Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get inbox workspaces where this user is added as a guest.
+     */
+    public function inboxGuestWorkspaces(): BelongsToMany
+    {
+        return $this->belongsToMany(Workspace::class, 'workspace_guests')
+            ->where('workspaces.type', 'inbox')
+            ->withPivot('invited_by')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if user is an inbox client (guest with access to at least one inbox workspace).
+     */
+    public function isInboxClient(): bool
+    {
+        return $this->is_guest && $this->inboxGuestWorkspaces()->exists();
+    }
+
+    /**
+     * Get all tickets (tasks) for this inbox client.
+     * Returns tasks where:
+     * - User created the task, OR
+     * - Task's source_email matches user's email
+     */
+    public function inboxTickets()
+    {
+        $workspaceIds = $this->inboxGuestWorkspaces()->pluck('workspaces.id');
+
+        return \App\Modules\Task\Models\Task::whereIn('workspace_id', $workspaceIds)
+            ->where(function ($query) {
+                $query->where('created_by', $this->id)
+                    ->orWhere('source_email', $this->email);
+            });
+    }
 }

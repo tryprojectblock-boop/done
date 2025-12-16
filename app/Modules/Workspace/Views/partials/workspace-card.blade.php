@@ -31,14 +31,16 @@
                     @endif
                 </div>
                 <div class="flex items-center gap-2">
-                    @if($workspace->owner?->company)
+                    @if(($isGuest || $isOtherCompany) && $workspace->owner?->company)
                         <span class="text-xs text-base-content/50 flex items-center gap-1">
                             <span class="icon-[tabler--building] size-3"></span>
                             {{ $workspace->owner->company->name }}
                         </span>
+                        @if($workspace->description)
+                            <span class="text-base-content/30">•</span>
+                        @endif
                     @endif
                     @if($workspace->description)
-                        <span class="text-base-content/30">•</span>
                         <p class="text-sm text-base-content/50 truncate">{{ Str::limit($workspace->description, 60) }}</p>
                     @endif
                 </div>

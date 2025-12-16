@@ -101,6 +101,9 @@ class TaskActivity extends Model
             ActivityType::PARENT_CHANGED => $this->formatParentChange($userName),
             ActivityType::PUT_ON_HOLD => $this->formatPutOnHold($userName),
             ActivityType::RESUMED => "{$userName} resumed this task",
+            ActivityType::DEPARTMENT_CHANGED => $this->formatDepartmentChange($userName),
+            ActivityType::WORKSPACE_PRIORITY_CHANGED => $this->formatWorkspacePriorityChange($userName),
+            ActivityType::TYPE_CHANGED => $this->formatTypeChange($userName),
             default => "{$userName} made changes to this task",
         };
     }
@@ -211,6 +214,45 @@ class TaskActivity extends Model
             return "{$userName} put this task on hold: \"{$reason}\"";
         }
         return "{$userName} put this task on hold";
+    }
+
+    private function formatDepartmentChange(string $userName): string
+    {
+        $oldDepartment = $this->old_value['name'] ?? null;
+        $newDepartment = $this->new_value['name'] ?? null;
+
+        if (!$oldDepartment && $newDepartment) {
+            return "{$userName} assigned to department \"{$newDepartment}\"";
+        }
+        if ($oldDepartment && !$newDepartment) {
+            return "{$userName} removed from department \"{$oldDepartment}\"";
+        }
+        return "{$userName} moved from \"{$oldDepartment}\" to \"{$newDepartment}\"";
+    }
+
+    private function formatWorkspacePriorityChange(string $userName): string
+    {
+        $oldPriority = $this->old_value['name'] ?? null;
+        $newPriority = $this->new_value['name'] ?? null;
+
+        if (!$oldPriority && $newPriority) {
+            return "{$userName} set priority to \"{$newPriority}\"";
+        }
+        if ($oldPriority && !$newPriority) {
+            return "{$userName} removed priority";
+        }
+        return "{$userName} changed priority from \"{$oldPriority}\" to \"{$newPriority}\"";
+    }
+
+    private function formatTypeChange(string $userName): string
+    {
+        $oldTypes = $this->old_value['types'] ?? [];
+        $newTypes = $this->new_value['types'] ?? [];
+
+        $oldStr = implode(', ', $oldTypes) ?: 'none';
+        $newStr = implode(', ', $newTypes) ?: 'none';
+
+        return "{$userName} changed type from [{$oldStr}] to [{$newStr}]";
     }
 
     // ==================== FACTORY METHODS ====================

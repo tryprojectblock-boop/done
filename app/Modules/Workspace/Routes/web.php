@@ -43,8 +43,22 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/sla-rules', [WorkspaceController::class, 'slaRulesPage'])->name('sla-rules');
                 Route::get('/idle-settings', [WorkspaceController::class, 'idleSettingsPage'])->name('idle-settings');
                 Route::get('/email-templates', [WorkspaceController::class, 'emailTemplatesPage'])->name('email-templates');
+                Route::get('/ticket-form', [WorkspaceController::class, 'ticketFormPage'])->name('ticket-form');
                 Route::post('/toggle-client-portal', [WorkspaceController::class, 'toggleClientPortal'])->name('toggle-client-portal');
             });
+
+            // Ticket Form (Inbox)
+            Route::post('/ticket-form', [WorkspaceController::class, 'saveTicketForm'])->name('save-ticket-form');
+            Route::post('/ticket-form/publish', [WorkspaceController::class, 'publishTicketForm'])->name('ticket-form.publish');
+            Route::post('/ticket-form/unpublish', [WorkspaceController::class, 'unpublishTicketForm'])->name('ticket-form.unpublish');
+
+            // Ticket Form Fields (Inbox)
+            Route::get('/ticket-form/fields/create', [WorkspaceController::class, 'createTicketFormField'])->name('ticket-form.fields.create');
+            Route::post('/ticket-form/fields', [WorkspaceController::class, 'storeTicketFormField'])->name('ticket-form.fields.store');
+            Route::get('/ticket-form/fields/{field}/edit', [WorkspaceController::class, 'editTicketFormField'])->name('ticket-form.fields.edit');
+            Route::put('/ticket-form/fields/{field}', [WorkspaceController::class, 'updateTicketFormField'])->name('ticket-form.fields.update');
+            Route::delete('/ticket-form/fields/{field}', [WorkspaceController::class, 'deleteTicketFormField'])->name('ticket-form.fields.delete');
+            Route::post('/ticket-form/fields/reorder', [WorkspaceController::class, 'reorderTicketFormFields'])->name('ticket-form.fields.reorder');
 
             // Departments (Inbox)
             Route::post('/departments', [WorkspaceController::class, 'addDepartment'])->name('add-department');

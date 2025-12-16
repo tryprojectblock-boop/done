@@ -210,12 +210,12 @@ class InboxEmailService
      */
     protected function renderTemplate(string $template, Task $task, Workspace $workspace, ?User $user = null, array $additionalPlaceholders = []): string
     {
-        // Get portal URLs
-        $portalUrl = route('login');
+        // Get portal URLs - use client portal for inbox workspace clients
+        $portalUrl = route('client-portal.login');
         $setPasswordUrl = '';
 
         if ($user && $user->invitation_token) {
-            $setPasswordUrl = route('guest.signup', ['token' => $user->invitation_token]);
+            $setPasswordUrl = route('client-portal.signup', ['token' => $user->invitation_token]);
         }
 
         $placeholders = [

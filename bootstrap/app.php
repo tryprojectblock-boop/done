@@ -2,9 +2,11 @@
 
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckRegistrationEnabled;
+use App\Http\Middleware\EnsureClientPortalAuthenticated;
 use App\Http\Middleware\EnsureTwoFactorAuthenticated;
 use App\Http\Middleware\EnsureUserCanManageUsers;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
+use App\Http\Middleware\RedirectIfClientPortalAuthenticated;
 use App\Modules\Auth\Http\Middleware\CheckAccountPaused;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.account.paused' => CheckAccountPaused::class,
             'registration.enabled' => CheckRegistrationEnabled::class,
             'two-factor' => EnsureTwoFactorAuthenticated::class,
+            'client-portal.auth' => EnsureClientPortalAuthenticated::class,
+            'client-portal.guest' => RedirectIfClientPortalAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

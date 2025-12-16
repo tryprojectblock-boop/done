@@ -57,6 +57,7 @@ class Task extends Model
         'google_sync_source',
         'source',
         'source_email',
+        'custom_fields',
         'client_token',
         'department_id',
         'workspace_priority_id',
@@ -78,6 +79,7 @@ class Task extends Model
             'is_on_hold' => 'boolean',
             'hold_at' => 'datetime',
             'google_synced_at' => 'datetime',
+            'custom_fields' => 'array',
         ];
     }
 

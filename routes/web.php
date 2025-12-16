@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\FileUploadController;
 use App\Http\Controllers\Api\ImageUploadController;
 use App\Http\Controllers\Api\MentionController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClientTicketController;
 use App\Http\Controllers\GuestController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\Api\MilestoneApiController;
+use App\Http\Controllers\PublicTicketFormController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -200,6 +202,14 @@ Route::post('/ticket/{task}/reply', [ClientTicketController::class, 'reply'])->n
 
 /*
 |--------------------------------------------------------------------------
+| Public Ticket Form Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/form/{slug}', [PublicTicketFormController::class, 'show'])->name('public.ticket-form');
+Route::post('/form/{slug}', [PublicTicketFormController::class, 'submit'])->name('public.ticket-form.submit');
+
+/*
+|--------------------------------------------------------------------------
 | Guest Portal Routes (For Authenticated Guests)
 |--------------------------------------------------------------------------
 */
@@ -207,6 +217,29 @@ Route::middleware(['auth:guest'])->prefix('guest')->name('guest.portal.')->group
     Route::get('/portal', [GuestPortalController::class, 'index'])->name('index');
     Route::get('/portal/workspace/{workspace:uuid}', [GuestPortalController::class, 'workspace'])->name('workspace');
     Route::post('/logout', [GuestPortalController::class, 'logout'])->name('logout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Client Portal Routes (For Inbox Workspace Clients)
+|--------------------------------------------------------------------------
+*/
+// Public routes (guest middleware redirects authenticated users)
+Route::middleware(['client-portal.guest'])->prefix('client-portal')->name('client-portal.')->group(function () {
+    Route::get('/login', [ClientPortalController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [ClientPortalController::class, 'login'])->name('login.submit');
+    Route::get('/signup/{token}', [ClientPortalController::class, 'showSignupForm'])->name('signup');
+    Route::post('/signup/{token}', [ClientPortalController::class, 'completeSignup'])->name('signup.complete');
+});
+
+// Protected routes (requires client portal authentication)
+Route::middleware(['client-portal.auth'])->prefix('client-portal')->name('client-portal.')->group(function () {
+    Route::get('/', [ClientPortalController::class, 'dashboard'])->name('dashboard');
+    Route::post('/logout', [ClientPortalController::class, 'logout'])->name('logout');
+    Route::get('/tickets/create', [ClientPortalController::class, 'createTicketForm'])->name('tickets.create');
+    Route::post('/tickets', [ClientPortalController::class, 'storeTicket'])->name('tickets.store');
+    Route::get('/tickets/{task:uuid}', [ClientPortalController::class, 'showTicket'])->name('tickets.show');
+    Route::post('/tickets/{task:uuid}/reply', [ClientPortalController::class, 'replyToTicket'])->name('tickets.reply');
 });
 
 /*

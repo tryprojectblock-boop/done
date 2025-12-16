@@ -13,9 +13,9 @@ enum WorkspaceType: string
     public function label(): string
     {
         return match ($this) {
-            self::CLASSIC => 'Classic Workspace',
-            self::PRODUCT => 'Product Workspace',
-            self::INBOX => 'Inbox Workspace',
+            self::CLASSIC => 'Classic',
+            self::PRODUCT => 'Product',
+            self::INBOX => 'Inbox',
         };
     }
 
@@ -42,7 +42,7 @@ enum WorkspaceType: string
         return match ($this) {
             self::CLASSIC => 'primary',
             self::PRODUCT => 'secondary',
-            self::INBOX => 'info',
+            self::INBOX => 'warning',
         };
     }
 
@@ -51,7 +51,7 @@ enum WorkspaceType: string
         return match ($this) {
             self::CLASSIC => '#3b82f6', // blue
             self::PRODUCT => '#8b5cf6', // purple
-            self::INBOX => '#06b6d4',   // cyan
+            self::INBOX => '#f59e0b',   // amber/orange
         };
     }
 
