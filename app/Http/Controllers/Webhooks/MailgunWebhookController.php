@@ -276,6 +276,7 @@ class MailgunWebhookController extends Controller
         // Create the task/ticket
         $task = \App\Modules\Task\Models\Task::create([
             'workspace_id' => $workspace->id,
+            'company_id' => $workspace->company_id ?? $workspace->owner?->company_id,
             'title' => $inboundEmail->subject,
             'description' => $inboundEmail->stripped_html ?: $inboundEmail->body_html ?: $inboundEmail->stripped_text ?: $inboundEmail->body_plain,
             'status_id' => $defaultStatus?->id,

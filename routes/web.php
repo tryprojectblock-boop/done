@@ -24,6 +24,7 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\Api\MilestoneApiController;
 use App\Http\Controllers\PublicTicketFormController;
+use App\Http\Controllers\Settings;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -85,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/activity', [ProfileController::class, 'activity'])->name('profile.activity');
     Route::put('/profile/out-of-office', [ProfileController::class, 'updateOutOfOffice'])->name('profile.out-of-office.update');
     Route::delete('/profile/out-of-office', [ProfileController::class, 'deleteOutOfOffice'])->name('profile.out-of-office.delete');
+    Route::put('/profile/signature', [ProfileController::class, 'updateSignature'])->name('profile.signature.update');
 
     // Password routes
     Route::get('/profile/password', [PasswordController::class, 'index'])->name('profile.password');
@@ -116,6 +118,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/mail-logs/{mailLog}', [SettingsController::class, 'showMailLog'])->name('settings.mail-logs.show');
     Route::delete('/settings/mail-logs/{mailLog}', [SettingsController::class, 'deleteMailLog'])->name('settings.mail-logs.delete');
     Route::delete('/settings/mail-logs', [SettingsController::class, 'clearMailLogs'])->name('settings.mail-logs.clear');
+
+    // Scheduled Tasks routes (Admin/Owner only)
+    Route::get('/settings/scheduled-tasks', [Settings\ScheduledTasksController::class, 'index'])->name('settings.scheduled-tasks');
+    Route::put('/settings/scheduled-tasks/{task}', [Settings\ScheduledTasksController::class, 'update'])->name('settings.scheduled-tasks.update');
+    Route::post('/settings/scheduled-tasks/{task}/toggle', [Settings\ScheduledTasksController::class, 'toggle'])->name('settings.scheduled-tasks.toggle');
+    Route::post('/settings/scheduled-tasks/{task}/run', [Settings\ScheduledTasksController::class, 'run'])->name('settings.scheduled-tasks.run');
+    Route::post('/settings/scheduled-tasks/{task}/run-ajax', [Settings\ScheduledTasksController::class, 'runAjax'])->name('settings.scheduled-tasks.run-ajax');
+    Route::put('/settings/scheduled-tasks/{task}/options', [Settings\ScheduledTasksController::class, 'updateOptions'])->name('settings.scheduled-tasks.options');
 
     // Marketplace routes (Admin/Owner only)
     Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
@@ -291,6 +301,7 @@ Route::middleware(['auth'])->prefix('notifications')->name('notifications.')->gr
     Route::get('/poll', [NotificationController::class, 'poll'])->name('poll');
     Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
     Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+    Route::delete('/delete-all', [NotificationController::class, 'destroyAll'])->name('destroy-all');
     Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
 });
 

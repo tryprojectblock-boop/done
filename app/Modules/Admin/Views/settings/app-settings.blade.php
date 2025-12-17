@@ -100,12 +100,56 @@
         </div>
 
         <!-- Submit -->
-        <div class="flex justify-end">
+        <div class="flex justify-end mb-6">
             <button type="submit" class="btn btn-primary">
                 <span class="icon-[tabler--device-floppy] size-5"></span>
                 Save Settings
             </button>
         </div>
     </form>
+
+    <!-- System Tools -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h2 class="card-title text-lg mb-4">
+                <span class="icon-[tabler--tool] size-5"></span>
+                System Tools
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Scheduled Tasks -->
+                <a href="{{ route('backoffice.scheduled-tasks.index') }}" class="card bg-base-200 hover:bg-base-300 transition-colors">
+                    <div class="card-body p-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                                <span class="icon-[tabler--clock-play] size-6 text-violet-500"></span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-base-content">Scheduled Tasks</h3>
+                                <p class="text-sm text-base-content/60">Manage cron jobs and automated tasks</p>
+                            </div>
+                            <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- App Maintenance -->
+                <a href="{{ route('backoffice.app.index') }}" class="card bg-base-200 hover:bg-base-300 transition-colors">
+                    <div class="card-body p-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
+                                <span class="icon-[tabler--tool] size-6 text-warning"></span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-base-content">App Maintenance</h3>
+                                <p class="text-sm text-base-content/60">Maintenance mode and factory reset</p>
+                            </div>
+                            <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

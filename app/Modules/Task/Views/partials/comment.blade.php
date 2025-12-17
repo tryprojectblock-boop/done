@@ -18,7 +18,13 @@
         </div>
     </div>
     <div class="flex-1">
-        <div class="bg-base-200 rounded-lg p-3">
+        <div class="{{ $comment->is_private ? 'bg-warning/10 border-2 border-warning/50' : 'bg-base-200' }} rounded-lg p-3">
+            @if($comment->is_private)
+            <div class="flex items-center gap-1.5 text-warning mb-2 pb-2 border-b border-warning/30">
+                <span class="icon-[tabler--lock] size-4"></span>
+                <span class="text-xs font-medium">Private Note - Only visible to team members</span>
+            </div>
+            @endif
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
                     <span class="font-medium">{{ $comment->user->name }}</span>
@@ -89,11 +95,20 @@
             <form action="{{ route('tasks.comments.store', $comment->task) }}" method="POST">
                 @csrf
                 <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                <div class="border border-base-300 rounded-lg overflow-hidden bg-white">
+                @if($comment->is_private)
+                    <input type="hidden" name="is_private" value="1">
+                @endif
+                <div class="border {{ $comment->is_private ? 'border-warning' : 'border-base-300' }} rounded-lg overflow-hidden bg-white">
+                    @if($comment->is_private)
+                    <div class="bg-warning/10 px-3 py-1.5 border-b border-warning/30 flex items-center gap-2">
+                        <span class="icon-[tabler--lock] size-4 text-warning"></span>
+                        <span class="text-xs font-medium text-warning">Replying to private note</span>
+                    </div>
+                    @endif
                     <div id="{{ $replyEditorId }}"
                          class="quill-editor quill-mini"
                          data-quill-id="{{ $replyEditorId }}"
-                         data-placeholder="Write a reply..."
+                         data-placeholder="{{ $comment->is_private ? 'Write a private reply...' : 'Write a reply...' }}"
                          data-upload-url="{{ route('upload.image') }}"
                          data-mentions-url="{{ route('mentions.search') }}"
                          data-csrf="{{ csrf_token() }}"
@@ -105,15 +120,20 @@
                 <input type="hidden" name="content" id="{{ $replyEditorId }}-input" value="">
                 <div class="flex justify-end gap-2 mt-2">
                     <button type="button" class="btn btn-ghost btn-xs" onclick="toggleReply({{ $comment->id }}, '{{ $replyEditorId }}')">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-xs">Reply</button>
+                    <button type="submit" class="btn {{ $comment->is_private ? 'btn-warning' : 'btn-primary' }} btn-xs">Reply</button>
                 </div>
             </form>
         </div>
 
-        <!-- Replies -->
-        @if($comment->replies->isNotEmpty())
-            <div class="ml-4 mt-3 space-y-3 border-l-2 border-base-300 pl-4">
-                @foreach($comment->replies as $reply)
+        <!-- Replies (filter out private notes for clients) -->
+        @php
+            $visibleReplies = $isClient
+                ? $comment->replies->where('is_private', false)
+                : $comment->replies;
+        @endphp
+        @if($visibleReplies->isNotEmpty())
+            <div class="ml-4 mt-3 space-y-3 border-l-2 {{ $comment->is_private ? 'border-warning/50' : 'border-base-300' }} pl-4">
+                @foreach($visibleReplies as $reply)
                     @include('task::partials.comment', ['comment' => $reply])
                 @endforeach
             </div>

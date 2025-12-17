@@ -4,15 +4,33 @@
 <div class="container mx-auto px-4 py-8 max-w-4xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Notifications</h1>
-        @if($notifications->where('read_at', null)->count() > 0)
-            <form action="{{ route('notifications.mark-all-read') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn btn-ghost btn-sm">
-                    <span class="icon-[tabler--checks] size-4"></span>
-                    Mark all as read
+        <div class="flex items-center gap-2">
+            @if($notifications->where('read_at', null)->count() > 0)
+                <form action="{{ route('notifications.mark-all-read') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-ghost btn-sm">
+                        <span class="icon-[tabler--checks] size-4"></span>
+                        Mark all as read
+                    </button>
+                </form>
+            @endif
+            @if($notifications->count() > 0)
+                <button type="button" class="btn btn-ghost btn-sm text-error hover:bg-error/10"
+                    data-confirm
+                    data-confirm-action="{{ route('notifications.destroy-all') }}"
+                    data-confirm-method="DELETE"
+                    data-confirm-title="Delete All Notifications"
+                    data-confirm-content="<p class='text-base-content/70'>Are you sure you want to delete all {{ $notifications->total() }} notification(s)?</p><p class='text-error text-sm mt-2'>This action cannot be undone.</p>"
+                    data-confirm-button="Yes, Delete All"
+                    data-confirm-icon="tabler--trash"
+                    data-confirm-class="btn-error"
+                    data-confirm-icon-class="text-error"
+                    data-confirm-title-icon="tabler--alert-triangle">
+                    <span class="icon-[tabler--trash] size-4"></span>
+                    Delete all
                 </button>
-            </form>
-        @endif
+            @endif
+        </div>
     </div>
 
     @if($notifications->isEmpty())

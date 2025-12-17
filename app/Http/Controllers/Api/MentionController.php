@@ -17,17 +17,20 @@ class MentionController extends Controller
         $search = $request->get('search', '');
         $user = $request->user();
 
-        // Return all company team members (not just workspace members)
-        // This allows mentioning any team member, who will then be added as a watcher
-        $users = User::where('company_id', $user->company_id)
-            ->where('status', 'active')
+        // Return all company team members including invited users from other companies
+        // Uses company_user pivot table to include invited members
+        $users = User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.status', 'active')
             ->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                $query->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.first_name', 'like', "%{$search}%")
+                    ->orWhere('users.last_name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
             })
-            ->where('id', '!=', $user->id)
+            ->where('users.id', '!=', $user->id)
+            ->select('users.*')
             ->limit(10)
             ->get()
             ->map(function ($user) {

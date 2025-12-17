@@ -181,12 +181,14 @@ class NotificationService
     /**
      * Send comment email notifications to all involved users.
      * Sends to: assignee, watchers, and mentioned users (excluding commenter).
+     * If $isPrivate is true, only sends to team members (non-guests).
      */
     public function sendTaskCommentEmails(
         Task $task,
         TaskComment $comment,
         User $commenter,
-        array $mentionedUserIds = []
+        array $mentionedUserIds = [],
+        bool $isPrivate = false
     ): void {
         // Collect all users who should receive the email
         $recipientIds = collect();
@@ -218,6 +220,11 @@ class NotificationService
         // Get users and send emails
         $recipients = User::whereIn('id', $recipientIds)->get();
 
+        // For private notes, filter out guests/clients
+        if ($isPrivate) {
+            $recipients = $recipients->filter(fn($user) => !$user->is_guest && $user->role !== User::ROLE_GUEST);
+        }
+
         foreach ($recipients as $recipient) {
             try {
                 Mail::to($recipient->email)->send(new TaskCommentMail($task, $comment, $recipient, $commenter));
@@ -230,12 +237,14 @@ class NotificationService
     /**
      * Create in-app notifications for task comments.
      * Notifies: assignee, watchers (excluding commenter and already-mentioned users).
+     * If $isPrivate is true, only notifies team members (non-guests).
      */
     public function createTaskCommentNotifications(
         Task $task,
         TaskComment $comment,
         User $commenter,
-        array $mentionedUserIds = []
+        array $mentionedUserIds = [],
+        bool $isPrivate = false
     ): array {
         $notifications = [];
         $recipientIds = collect();
@@ -260,6 +269,11 @@ class NotificationService
         }
 
         $recipients = User::whereIn('id', $recipientIds)->get();
+
+        // For private notes, filter out guests/clients
+        if ($isPrivate) {
+            $recipients = $recipients->filter(fn($user) => !$user->is_guest && $user->role !== User::ROLE_GUEST);
+        }
 
         foreach ($recipients as $recipient) {
             $notifications[] = Notification::create([

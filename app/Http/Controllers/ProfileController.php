@@ -321,4 +321,24 @@ class ProfileController extends Controller
         return redirect()->route('profile.index')
             ->with('success', 'Out of Office has been disabled.');
     }
+
+    /**
+     * Update the user's signature.
+     */
+    public function updateSignature(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'signature' => ['nullable', 'string', 'max:5000'],
+            'include_signature_in_inbox' => ['boolean'],
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'signature' => $validated['signature'] ?? null,
+            'include_signature_in_inbox' => $request->boolean('include_signature_in_inbox'),
+        ]);
+
+        return redirect()->route('profile.index')
+            ->with('success', 'Signature updated successfully.');
+    }
 }

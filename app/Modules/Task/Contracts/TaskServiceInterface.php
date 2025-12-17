@@ -37,7 +37,7 @@ interface TaskServiceInterface
 
     public function removeTag(Task $task, int $tagId, User $user): void;
 
-    public function addComment(Task $task, string $content, User $user, ?int $parentId = null): \App\Modules\Task\Models\TaskComment;
+    public function addComment(Task $task, string $content, User $user, ?int $parentId = null, bool $isPrivate = false): \App\Modules\Task\Models\TaskComment;
 
     public function getTaskByUuid(string $uuid): ?Task;
 

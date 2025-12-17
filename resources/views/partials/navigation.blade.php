@@ -14,6 +14,9 @@
     $canCreateWorkspace = $planLimits['can_create_workspace'] ?? true;
     $canAddTeamMember = $planLimits['can_add_team_member'] ?? true;
     $planName = $planLimits['plan_name'] ?? 'Free';
+    // Notifications for dropdown (only unread, for non-guests)
+    $navNotifications = !$isGuestOnly ? $user->appNotifications()->whereNull('read_at')->take(10)->get() : collect();
+    $unreadNotificationCount = !$isGuestOnly ? $user->unread_notification_count : 0;
 @endphp
 
 <nav class="navbar bg-base-100 shadow-sm fixed top-0 left-0 right-0 z-[100] px-4 min-h-16">
@@ -28,20 +31,13 @@
             <!-- Guest-Only Navigation (simplified) -->
             <ul class="menu menu-horizontal px-1 gap-1 hidden lg:flex">
                 @if($hasInboxWorkspaces)
+                {{-- Client Portal - only show My Tickets, no Workspaces link --}}
                 <li>
                     <a href="/dashboard" class="{{ request()->is('dashboard') ? 'active' : '' }}">
                         <span class="icon-[tabler--ticket] size-5"></span>
                         My Tickets
                     </a>
                 </li>
-                @if($hasGuestWorkspaces)
-                <li>
-                    <a href="{{ route('workspace.index') }}" class="{{ request()->is('workspaces*') ? 'active' : '' }}">
-                        <span class="icon-[tabler--briefcase] size-5"></span>
-                        Workspaces
-                    </a>
-                </li>
-                @endif
                 @else
                 <li>
                     <a href="/dashboard" class="{{ request()->is('dashboard') ? 'active' : '' }}">
@@ -181,50 +177,275 @@
             </button>
 
             <!-- Notifications -->
-            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]" x-data="notificationData" x-init="initNotifications()">
-                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications" @click="loadNotifications">
+            <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
+                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications">
                     <span class="icon-[tabler--bell] size-5"></span>
-                    <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="badge badge-primary badge-xs indicator-item" x-cloak></span>
+                    @if($unreadNotificationCount > 0)
+                        <span class="badge badge-primary badge-xs indicator-item">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
+                    @endif
                 </button>
                 <div class="dropdown-menu dropdown-open:opacity-100 hidden w-80" role="menu" aria-orientation="vertical" aria-labelledby="notifications-dropdown">
-                    <div class="p-4 border-b border-base-200 flex items-center justify-between">
+                    <div class="p-3 border-b border-base-200 flex items-center justify-between">
                         <h3 class="font-semibold">Notifications</h3>
-                        <button x-show="unreadCount > 0" @click.stop="markAllAsRead" class="text-xs text-primary hover:underline" x-cloak>Mark all read</button>
+                        @if($unreadNotificationCount > 0)
+                            <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="text-xs text-primary hover:underline">Mark all read</button>
+                            </form>
+                        @endif
                     </div>
-                    <div class="max-h-64 overflow-y-auto" id="notifications-list">
-                        <!-- Loading State -->
-                        <div x-show="loading" class="p-4 text-center text-base-content/50">
-                            <span class="loading loading-spinner loading-sm"></span>
-                        </div>
-                        <!-- Empty State -->
-                        <div x-show="!loading && loaded && notifications.length === 0" class="p-4 text-center text-base-content/50">
-                            <span class="icon-[tabler--bell-off] size-8 mb-2 block mx-auto opacity-50"></span>
-                            <p class="text-sm">No notifications yet</p>
-                        </div>
-                        <!-- Notifications List -->
-                        <div x-show="!loading && notifications.length > 0" class="p-2">
-                            <template x-for="notification in notifications" :key="notification.id">
-                                <div @click="goToNotification(notification)"
-                                     class="p-2 hover:bg-base-200 rounded cursor-pointer flex items-start gap-3 mb-1"
-                                     :class="notification.is_read ? '' : 'bg-primary/5'">
-                                    <div class="size-5 mt-0.5 flex-shrink-0">
-                                        <span :class="notification.icon" class="size-5" :style="'color: var(--' + notification.color.replace('text-', '') + ')'"></span>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm" :class="notification.is_read ? 'font-medium' : 'font-semibold'" x-text="notification.title"></p>
-                                        <p class="text-xs text-base-content/60 truncate" x-text="notification.message"></p>
-                                        <span class="text-xs text-base-content/40" x-text="notification.time"></span>
-                                    </div>
-                                    <span x-show="!notification.is_read" class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
-                                </div>
-                            </template>
-                        </div>
+                    <div class="max-h-72 overflow-y-auto" id="notification-list-container">
+                        @if($navNotifications->isEmpty())
+                            <!-- Empty State -->
+                            <div class="p-6 text-center text-base-content/50 empty-state">
+                                <span class="icon-[tabler--bell-off] size-10 mb-2 block mx-auto opacity-40"></span>
+                                <p class="text-sm">No notifications yet</p>
+                            </div>
+                        @else
+                            <!-- Notifications List (Unread Only) -->
+                            <div class="divide-y divide-base-200">
+                                @foreach($navNotifications as $notification)
+                                    @php
+                                        $notifUrl = $notification->data['task_url']
+                                            ?? $notification->data['channel_url']
+                                            ?? $notification->data['thread_url']
+                                            ?? $notification->data['discussion_url']
+                                            ?? $notification->data['milestone_url']
+                                            ?? $notification->data['idea_url']
+                                            ?? route('notifications.index');
+                                    @endphp
+                                    <a href="{{ $notifUrl }}"
+                                       class="block p-3 hover:bg-base-200 bg-primary/5 notification-item"
+                                       data-notification-id="{{ $notification->id }}"
+                                       onclick="markNotificationRead(event, this)">
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <span class="{{ $notification->icon }} {{ $notification->color }} size-5"></span>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-semibold">{{ $notification->title }}</p>
+                                                <p class="text-xs text-base-content/60 truncate">{{ $notification->message }}</p>
+                                                <span class="text-xs text-base-content/40">{{ $notification->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            <span class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                     <div class="p-2 border-t border-base-200">
                         <a href="{{ route('notifications.index') }}" class="btn btn-ghost btn-sm w-full">View All</a>
                     </div>
                 </div>
             </div>
+
+            <!-- Notification Polling Script -->
+            <script>
+            // Mark notification as read when clicked
+            async function markNotificationRead(event, element) {
+                const notificationId = element.dataset.notificationId;
+                const href = element.href;
+
+                // Send mark as read request (don't wait for it)
+                fetch(`/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                }).catch(err => console.error('Failed to mark as read:', err));
+
+                // Remove from list immediately
+                element.style.transition = 'all 0.2s ease-out';
+                element.style.opacity = '0';
+                element.style.transform = 'translateX(20px)';
+
+                setTimeout(() => {
+                    element.remove();
+
+                    // Update badge count
+                    const badge = document.querySelector('#notifications-dropdown .badge');
+                    if (badge) {
+                        const currentCount = parseInt(badge.textContent) || 0;
+                        if (currentCount <= 1) {
+                            badge.style.display = 'none';
+                        } else {
+                            badge.textContent = currentCount - 1;
+                        }
+                    }
+
+                    // Check if list is empty, show empty state
+                    const listContainer = document.getElementById('notification-list-container');
+                    const remainingItems = listContainer?.querySelectorAll('.notification-item');
+                    if (remainingItems?.length === 0) {
+                        const divideContainer = listContainer.querySelector('.divide-y');
+                        if (divideContainer) divideContainer.remove();
+
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'p-6 text-center text-base-content/50 empty-state';
+                        emptyState.innerHTML = `
+                            <span class="icon-[tabler--bell-off] size-10 mb-2 block mx-auto opacity-40"></span>
+                            <p class="text-sm">No notifications yet</p>
+                        `;
+                        listContainer.appendChild(emptyState);
+                    }
+                }, 200);
+
+                // Navigate after a tiny delay
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 50);
+
+                event.preventDefault();
+            }
+
+            (function() {
+                let lastCount = {{ $unreadNotificationCount }};
+                const pollInterval = 30000; // 30 seconds
+
+                async function checkNotifications() {
+                    try {
+                        const response = await fetch('/notifications/poll?last_count=' + lastCount, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const newCount = data.unread_count || 0;
+
+                            // Update badge
+                            const badge = document.querySelector('#notifications-dropdown .badge');
+                            if (newCount > 0) {
+                                if (badge) {
+                                    badge.textContent = newCount > 9 ? '9+' : newCount;
+                                    badge.style.display = '';
+                                } else {
+                                    const btn = document.querySelector('#notifications-dropdown');
+                                    const newBadge = document.createElement('span');
+                                    newBadge.className = 'badge badge-primary badge-xs indicator-item';
+                                    newBadge.textContent = newCount > 9 ? '9+' : newCount;
+                                    btn.appendChild(newBadge);
+                                }
+                            } else if (badge) {
+                                badge.style.display = 'none';
+                            }
+
+                            // Show toast and update list if new notifications arrived
+                            if (newCount > lastCount && data.latest_notification) {
+                                showNotificationToast(data.latest_notification);
+                                updateNotificationList(data.latest_notification);
+                            }
+
+                            lastCount = newCount;
+                        }
+                    } catch (error) {
+                        console.error('Notification poll failed:', error);
+                    }
+                }
+
+                function updateNotificationList(notification) {
+                    const listContainer = document.getElementById('notification-list-container');
+                    if (!listContainer) return;
+
+                    // Remove empty state if exists
+                    const emptyState = listContainer.querySelector('.empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+
+                    // Create new notification item
+                    const newItem = document.createElement('a');
+                    newItem.href = notification.url || '/notifications';
+                    newItem.className = 'block p-3 hover:bg-base-200 bg-primary/5 animate-fade-in-down';
+                    newItem.innerHTML = `
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <span class="${notification.icon} ${notification.color} size-5"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold">${notification.title}</p>
+                                <p class="text-xs text-base-content/60 truncate">${notification.message}</p>
+                                <span class="text-xs text-base-content/40">Just now</span>
+                            </div>
+                            <span class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
+                        </div>
+                    `;
+
+                    // Insert at the top of list
+                    let divideContainer = listContainer.querySelector('.divide-y');
+                    if (!divideContainer) {
+                        divideContainer = document.createElement('div');
+                        divideContainer.className = 'divide-y divide-base-200';
+                        listContainer.appendChild(divideContainer);
+                    }
+                    divideContainer.insertBefore(newItem, divideContainer.firstChild);
+
+                    // Keep only 10 items
+                    const items = divideContainer.querySelectorAll('a');
+                    if (items.length > 10) {
+                        items[items.length - 1].remove();
+                    }
+                }
+
+                function showNotificationToast(notification) {
+                    // Play notification sound (optional)
+                    // new Audio('/sounds/notification.mp3').play().catch(() => {});
+
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-20 right-4 z-[200] animate-fade-in-down';
+                    toast.innerHTML = `
+                        <div class="card bg-base-100 shadow-2xl border border-primary/20 w-80 overflow-hidden cursor-pointer hover:shadow-primary/10 transition-all duration-300" onclick="window.location.href='${notification.url || '/notifications'}'">
+                            <div class="bg-gradient-to-r from-primary/10 to-transparent px-4 py-2 flex items-center gap-2 border-b border-base-200">
+                                <span class="icon-[tabler--bell-ringing] size-4 text-primary animate-pulse"></span>
+                                <span class="text-xs font-semibold text-primary">New Notification</span>
+                                <button class="ml-auto btn btn-ghost btn-xs btn-circle hover:bg-base-200" onclick="event.stopPropagation(); this.closest('.fixed').remove();">
+                                    <span class="icon-[tabler--x] size-4"></span>
+                                </button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                        <span class="${notification.icon} ${notification.color} size-5"></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-semibold text-sm text-base-content">${notification.title}</p>
+                                        <p class="text-xs text-base-content/60 mt-1 line-clamp-2">${notification.message}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-base-200">
+                                    <span class="text-xs text-base-content/40">Just now</span>
+                                    <span class="text-xs text-primary font-medium">Click to view →</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+
+                    // Auto-remove after 6 seconds
+                    setTimeout(() => {
+                        toast.style.transition = 'all 0.3s ease-out';
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateX(100%)';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 6000);
+                }
+
+                // Start polling
+                setInterval(checkNotifications, pollInterval);
+
+                // Also check when tab becomes visible
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        checkNotifications();
+                    }
+                });
+            })();
+            </script>
         @else
             <!-- Upgrade Button (only for guest-only users) -->
             <button type="button" class="btn btn-success btn-sm gap-2"
@@ -286,10 +507,8 @@
             <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-56" role="menu" aria-orientation="vertical" aria-labelledby="mobile-menu-dropdown">
                 @if($isGuestOnly)
                     @if($hasInboxWorkspaces)
+                    {{-- Client Portal - only show My Tickets, no Workspaces link --}}
                     <li><a class="dropdown-item" href="/dashboard"><span class="icon-[tabler--ticket] size-4 me-2"></span>My Tickets</a></li>
-                    @if($hasGuestWorkspaces)
-                    <li><a class="dropdown-item" href="{{ route('workspace.index') }}"><span class="icon-[tabler--briefcase] size-4 me-2"></span>Workspaces</a></li>
-                    @endif
                     @else
                     <li><a class="dropdown-item" href="/dashboard"><span class="icon-[tabler--home] size-4 me-2"></span>Home</a></li>
                     @if($hasGuestWorkspaces)
@@ -348,3 +567,4 @@
         </div>
     </div>
 </nav>
+

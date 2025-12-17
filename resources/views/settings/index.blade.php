@@ -24,13 +24,18 @@
         @endif
 
         <!-- Tabs Navigation -->
-        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6">
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6 flex-wrap gap-1">
             <a href="{{ route('settings.index', ['tab' => 'general']) }}"
                class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $tab === 'general' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--settings] size-5"></span>
                 <span>General</span>
             </a>
             @if($user->isAdminOrHigher())
+            <a href="{{ route('settings.scheduled-tasks') }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-base-content/60 hover:text-primary hover:bg-primary/10">
+                <span class="icon-[tabler--clock-play] size-5"></span>
+                <span>Scheduled Tasks</span>
+            </a>
             <a href="{{ route('settings.index', ['tab' => 'marketplace']) }}"
                class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $tab === 'marketplace' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--apps] size-5"></span>
@@ -182,6 +187,22 @@
                             <div class="flex-1">
                                 <h3 class="font-semibold text-base-content">Mail Logs</h3>
                                 <p class="text-sm text-base-content/60">View all emails triggered by the application</p>
+                            </div>
+                            <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Scheduled Tasks (Admin/Owner only) -->
+                <a href="{{ route('settings.scheduled-tasks') }}" class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                    <div class="card-body">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                                <span class="icon-[tabler--clock-play] size-6 text-violet-500"></span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-base-content">Scheduled Tasks</h3>
+                                <p class="text-sm text-base-content/60">Manage cron jobs and automated background tasks</p>
                             </div>
                             <span class="icon-[tabler--chevron-right] size-5 text-base-content/40"></span>
                         </div>

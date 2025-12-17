@@ -68,47 +68,31 @@ class NotificationController extends Controller
     public function poll(Request $request): JsonResponse
     {
         $user = $request->user();
-        $lastTimestamp = $request->get('last_ts', '');
+        $lastCount = (int) $request->get('last_count', 0);
+        $unreadCount = $user->unread_notification_count;
 
-        // Get new notifications since last timestamp
-        $query = $user->appNotifications();
+        $response = [
+            'unread_count' => $unreadCount,
+            'latest_notification' => null,
+        ];
 
-        if ($lastTimestamp) {
-            $query->where('created_at', '>', $lastTimestamp);
-        } else {
-            // First poll - just get the latest timestamp, don't show toasts
-            $latest = $user->appNotifications()->first();
-            return response()->json([
-                'notifications' => [],
-                'last_ts' => $latest?->created_at?->toISOString() ?? '',
-                'unread_count' => $user->unread_notification_count,
-            ]);
+        // If there are more notifications than before, get the latest one
+        if ($unreadCount > $lastCount) {
+            $latest = $user->appNotifications()->whereNull('read_at')->first();
+            if ($latest) {
+                $response['latest_notification'] = [
+                    'id' => $latest->id,
+                    'type' => $latest->type,
+                    'title' => $latest->title,
+                    'message' => $latest->message,
+                    'icon' => $latest->icon,
+                    'color' => $latest->color,
+                    'url' => $this->getNotificationUrl($latest),
+                ];
+            }
         }
 
-        $notifications = $query->orderBy('created_at', 'asc')->take(10)->get();
-
-        $notificationData = $notifications->map(function ($notification) {
-            return [
-                'id' => $notification->id,
-                'type' => $notification->type,
-                'title' => $notification->title,
-                'message' => $notification->message,
-                'icon' => $notification->icon,
-                'color' => $notification->color,
-                'url' => $this->getNotificationUrl($notification),
-            ];
-        })->values()->toArray();
-
-        // Get the new last timestamp
-        $newLastTs = $notifications->isNotEmpty()
-            ? $notifications->last()->created_at->toISOString()
-            : $lastTimestamp;
-
-        return response()->json([
-            'notifications' => $notificationData,
-            'last_ts' => $newLastTs,
-            'unread_count' => $user->unread_notification_count,
-        ]);
+        return response()->json($response);
     }
 
     /**
@@ -128,13 +112,35 @@ class NotificationController extends Controller
     /**
      * Mark all notifications as read.
      */
-    public function markAllAsRead(Request $request): JsonResponse
+    public function markAllAsRead(Request $request): JsonResponse|RedirectResponse
     {
+        $count = $request->user()->appNotifications()->whereNull('read_at')->count();
+
         $request->user()->appNotifications()->whereNull('read_at')->update([
             'read_at' => now(),
         ]);
 
-        return response()->json(['success' => true]);
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', $count > 0
+            ? "Marked {$count} notification(s) as read."
+            : 'All notifications are already read.');
+    }
+
+    /**
+     * Delete all notifications.
+     */
+    public function destroyAll(Request $request): RedirectResponse
+    {
+        $count = $request->user()->appNotifications()->count();
+
+        $request->user()->appNotifications()->delete();
+
+        return back()->with('success', $count > 0
+            ? "Deleted {$count} notification(s)."
+            : 'No notifications to delete.');
     }
 
     /**

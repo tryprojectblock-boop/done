@@ -222,6 +222,8 @@ class User extends Authenticatable
         'google_token_expires_at',
         'google_calendar_id',
         'google_connected_at',
+        'signature',
+        'include_signature_in_inbox',
     ];
 
     /**
@@ -264,6 +266,7 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'google_token_expires_at' => 'datetime',
             'google_connected_at' => 'datetime',
+            'include_signature_in_inbox' => 'boolean',
         ];
     }
 

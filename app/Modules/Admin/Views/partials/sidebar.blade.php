@@ -65,6 +65,26 @@
             </li>
 
             <li class="menu-title mt-4">
+                <span>System</span>
+            </li>
+
+            <!-- Scheduled Tasks -->
+            <li>
+                <a href="{{ route('backoffice.scheduled-tasks.index') }}" class="{{ request()->routeIs('backoffice.scheduled-tasks.*') ? 'active' : '' }}">
+                    <span class="icon-[tabler--clock-play] size-5"></span>
+                    Scheduled Tasks
+                </a>
+            </li>
+
+            <!-- App Maintenance -->
+            <li>
+                <a href="{{ route('backoffice.app.index') }}" class="{{ request()->routeIs('backoffice.app.*') ? 'active' : '' }}">
+                    <span class="icon-[tabler--tool] size-5"></span>
+                    App Maintenance
+                </a>
+            </li>
+
+            <li class="menu-title mt-4">
                 <span>Settings</span>
             </li>
 

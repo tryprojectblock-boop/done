@@ -11,6 +11,7 @@ use App\Modules\Admin\Http\Controllers\InvoicesController;
 use App\Modules\Admin\Http\Controllers\AdminUsersController;
 use App\Modules\Admin\Http\Controllers\AppSettingsController;
 use App\Modules\Admin\Http\Controllers\AppController;
+use App\Modules\Admin\Http\Controllers\ScheduledTasksController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,6 +95,18 @@ Route::prefix('backoffice')->name('backoffice.')->group(function () {
             Route::post('/maintenance/enable', [AppController::class, 'enableMaintenanceMode'])->name('maintenance.enable');
             Route::post('/maintenance/disable', [AppController::class, 'disableMaintenanceMode'])->name('maintenance.disable');
             Route::post('/factory-reset', [AppController::class, 'factoryReset'])->name('factory-reset');
+        });
+
+        // Scheduled Tasks (Cron Jobs)
+        Route::prefix('scheduled-tasks')->name('scheduled-tasks.')->group(function () {
+            Route::get('/', [ScheduledTasksController::class, 'index'])->name('index');
+            Route::get('/create', [ScheduledTasksController::class, 'create'])->name('create');
+            Route::post('/', [ScheduledTasksController::class, 'store'])->name('store');
+            Route::put('/{task}', [ScheduledTasksController::class, 'update'])->name('update');
+            Route::post('/{task}/toggle', [ScheduledTasksController::class, 'toggle'])->name('toggle');
+            Route::post('/{task}/run', [ScheduledTasksController::class, 'run'])->name('run');
+            Route::post('/{task}/run-ajax', [ScheduledTasksController::class, 'runAjax'])->name('run-ajax');
+            Route::delete('/{task}', [ScheduledTasksController::class, 'destroy'])->name('destroy');
         });
 
         // Settings

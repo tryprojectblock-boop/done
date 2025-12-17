@@ -119,12 +119,6 @@
                         Here's what's on your plate today
                     </p>
                 </div>
-                <div class="flex gap-2">
-                    <a href="/tasks/create" class="btn btn-primary btn-sm">
-                        <span class="icon-[tabler--plus] size-4"></span>
-                        Add Task
-                    </a>
-                </div>
             </div>
 
             <!-- Stats Overview -->

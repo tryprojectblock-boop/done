@@ -26,9 +26,30 @@ class TaskService implements TaskServiceInterface
 
     public function getTasksForUser(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
+        // Get all company IDs the user belongs to (primary + invited)
+        $companyIds = \DB::table('company_user')
+            ->where('user_id', $user->id)
+            ->pluck('company_id')
+            ->toArray();
+
+        // Also include user's primary company_id if not already in the list
+        if ($user->company_id && !in_array($user->company_id, $companyIds)) {
+            $companyIds[] = $user->company_id;
+        }
+
         $query = Task::query()
             ->with(['workspace', 'status', 'assignee', 'creator', 'tags'])
-            ->where('company_id', $user->company_id)
+            ->where(function ($q) use ($companyIds) {
+                // Tasks with company_id in user's companies
+                $q->whereIn('company_id', $companyIds)
+                    // OR tasks with NULL company_id but workspace owner is in user's companies
+                    ->orWhere(function ($q2) use ($companyIds) {
+                        $q2->whereNull('company_id')
+                            ->whereHas('workspace.owner', function ($ownerQuery) use ($companyIds) {
+                                $ownerQuery->whereIn('company_id', $companyIds);
+                            });
+                    });
+            })
             ->visibleTo($user) // Filter private tasks
             ->where(function ($q) use ($user) {
                 $q->where('assignee_id', $user->id)
@@ -492,20 +513,42 @@ class TaskService implements TaskServiceInterface
         }
     }
 
-    public function addComment(Task $task, string $content, User $user, ?int $parentId = null): TaskComment
+    public function addComment(Task $task, string $content, User $user, ?int $parentId = null, bool $isPrivate = false): TaskComment
     {
         $comment = TaskComment::create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'content' => $content,
             'parent_id' => $parentId,
+            'is_private' => $isPrivate,
         ]);
 
-        TaskActivity::log($task, $user, ActivityType::COMMENT_ADDED);
+        TaskActivity::log($task, $user, $isPrivate ? ActivityType::PRIVATE_NOTE_ADDED : ActivityType::COMMENT_ADDED);
 
         // Auto-add commenter as watcher
         if (!$task->watchers()->where('user_id', $user->id)->exists()) {
             $task->watchers()->attach($user->id, ['added_by' => $user->id]);
+        }
+
+        // Private notes should not send notifications to guests/clients - only to team members
+        if ($isPrivate) {
+            // For private notes, only notify team members (non-guest users)
+            // Auto-add mentioned users as watchers (only if they are team members)
+            $this->addMentionedUsersAsWatchers($task, $content, $user);
+
+            // Parse mentioned user IDs from comment content
+            $mentionedUserIds = $this->notificationService->parseMentionsFromContent($content);
+
+            // Create in-app notifications for mentioned team members only
+            $this->notificationService->notifyMentionedUsers($content, $user, $task, $comment);
+
+            // Create in-app notifications for assignee and watchers (team members only)
+            $this->notificationService->createTaskCommentNotifications($task, $comment, $user, $mentionedUserIds, true);
+
+            // Send email notifications to team members only (not to guests/clients)
+            $this->notificationService->sendTaskCommentEmails($task, $comment, $user, $mentionedUserIds, true);
+
+            return $comment;
         }
 
         // Auto-add mentioned users as watchers so they can view the task
@@ -535,7 +578,7 @@ class TaskService implements TaskServiceInterface
                 'source_email' => $task->source_email,
             ]);
             $emailService = app(InboxEmailService::class);
-            $emailService->sendNewCommentEmail($task, $content, $user->name);
+            $emailService->sendNewCommentEmail($task, $content, $user->name, $user);
         }
 
         return $comment->fresh(['user']);

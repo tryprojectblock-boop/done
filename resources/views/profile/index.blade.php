@@ -256,6 +256,54 @@
         </div>
         @endif
 
+        <!-- Signature Card -->
+        <div class="card bg-base-100 shadow mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-lg mb-4">
+                    <span class="icon-[tabler--signature] size-5 text-info"></span>
+                    Email Signature
+                </h2>
+
+                <p class="text-base-content/70 mb-4">
+                    Create a signature that will be automatically appended to your inbox responses.
+                </p>
+
+                <form action="{{ route('profile.signature.update') }}" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="mb-4">
+                        <x-quill-editor
+                            name="signature"
+                            :value="$user->signature ?? ''"
+                            placeholder="Enter your email signature..."
+                            height="150px"
+                            :mentions="false"
+                            :emoji="true"
+                        />
+                        @error('signature')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="form-control mb-6">
+                        <label class="label cursor-pointer justify-start gap-3">
+                            <input type="checkbox" name="include_signature_in_inbox" value="1" {{ $user->include_signature_in_inbox ? 'checked' : '' }} class="checkbox checkbox-primary">
+                            <div>
+                                <span class="label-text font-medium">Include signature in inbox responses</span>
+                                <p class="text-xs text-base-content/50">Automatically append this signature when replying to inbox tickets</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <span class="icon-[tabler--device-floppy] size-5"></span>
+                        Save Signature
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Out of Office Card -->
         @if($oooEnabled)
         <div class="card bg-base-100 shadow mt-6">

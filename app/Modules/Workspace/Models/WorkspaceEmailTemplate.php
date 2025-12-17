@@ -191,6 +191,7 @@ class WorkspaceEmailTemplate extends Model
         '{{comment_content}}' => 'Comment Content',
         '{{old_department}}' => 'Previous Department Name',
         '{{new_department}}' => 'New Department Name',
+        '{{signature}}' => 'Agent Signature (or name if not set)',
     ];
 
     /**
@@ -216,47 +217,47 @@ class WorkspaceEmailTemplate extends Model
             'user_ticket_opened' => [
                 'name' => 'New Ticket Opened',
                 'subject' => 'Ticket #{{ticket_id}} - {{ticket_subject}}',
-                'body' => "Hello {{customer_name}},\n\nThank you for contacting us. Your ticket has been created successfully.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Department: {{ticket_department}}\n\nOur team will review your request and get back to you as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nThank you for contacting us. Your ticket has been created successfully.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Priority: {{ticket_priority}}\n- Department: {{ticket_department}}\n\nOur team will review your request and get back to you as soon as possible.\n\nBest regards,\n{{signature}}",
             ],
             'user_ticket_reply' => [
                 'name' => 'New Ticket Reply',
                 'subject' => 'Re: Ticket #{{ticket_id}} - {{ticket_subject}}',
-                'body' => "Hello {{customer_name}},\n\nYou have received a new reply on your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nTo view the full conversation and respond, please visit:\n{{ticket_url}}\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nYou have received a new reply on your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nTo view the full conversation and respond, please visit:\n{{ticket_url}}\n\nBest regards,\n{{signature}}",
             ],
             'user_new_reply' => [
                 'name' => 'New User Reply',
                 'subject' => 'Re: Ticket #{{ticket_id}} - Your reply has been received',
-                'body' => "Hello {{customer_name}},\n\nThank you for your reply. We have received your message regarding ticket #{{ticket_id}}.\n\nOur team will review and respond as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nThank you for your reply. We have received your message regarding ticket #{{ticket_id}}.\n\nOur team will review and respond as soon as possible.\n\nBest regards,\n{{signature}}",
             ],
             'user_ticket_closed' => [
                 'name' => 'Ticket Closed',
                 'subject' => 'Ticket #{{ticket_id}} has been closed',
-                'body' => "Hello {{customer_name}},\n\nYour ticket has been closed.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n\nIf you have any further questions or if the issue persists, please reply to this email or create a new ticket.\n\nThank you for choosing us!\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been closed.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n\nIf you have any further questions or if the issue persists, please reply to this email or create a new ticket.\n\nThank you for choosing us!\n\nBest regards,\n{{signature}}",
             ],
             'user_portal_access' => [
                 'name' => 'Client Portal Access',
                 'subject' => 'Your Client Portal Access - {{workspace_name}}',
-                'body' => "Hello {{customer_name}},\n\nYou now have access to our Client Portal where you can view and manage your support tickets.\n\n**Your Login Credentials:**\n- Email: {{customer_email}}\n- Password: Please set your password using the link below\n\n**Set Your Password:**\n{{set_password_url}}\n\n**Access Client Portal:**\n{{portal_url}}\n\nOnce you've set your password, you can log in to view all your tickets, track progress, and communicate with our support team.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nYou now have access to our Client Portal where you can view and manage your support tickets.\n\n**Your Login Credentials:**\n- Email: {{customer_email}}\n- Password: Please set your password using the link below\n\n**Set Your Password:**\n{{set_password_url}}\n\n**Access Client Portal:**\n{{portal_url}}\n\nOnce you've set your password, you can log in to view all your tickets, track progress, and communicate with our support team.\n\nBest regards,\n{{signature}}",
             ],
             'user_status_changed' => [
                 'name' => 'Status Changed',
                 'subject' => 'Ticket #{{ticket_id}} - Status Updated to {{new_status}}',
-                'body' => "Hello {{customer_name}},\n\nThe status of your ticket has been updated.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Previous Status: {{old_status}}\n- New Status: {{new_status}}\n\nYou can view your ticket at:\n{{ticket_url}}\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nThe status of your ticket has been updated.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Previous Status: {{old_status}}\n- New Status: {{new_status}}\n\nYou can view your ticket at:\n{{ticket_url}}\n\nBest regards,\n{{signature}}",
             ],
             'user_assignee_changed' => [
                 'name' => 'Assignee Changed',
                 'subject' => 'Ticket #{{ticket_id}} - Now being handled by {{agent_name}}',
-                'body' => "Hello {{customer_name}},\n\nYour ticket has been assigned to a team member who will assist you.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Assigned To: {{agent_name}}\n\nYou can reply to this email to add more information to your ticket.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been assigned to a team member who will assist you.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- Assigned To: {{agent_name}}\n\nYou can reply to this email to add more information to your ticket.\n\nBest regards,\n{{signature}}",
             ],
             'user_new_comment' => [
                 'name' => 'New Comment',
                 'subject' => 'Re: Ticket #{{ticket_id}} - {{ticket_subject}}',
-                'body' => "Hello {{customer_name}},\n\nA team member has responded to your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\n---\n{{comment_content}}\n---\n\nYou can reply directly to this email to respond.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nA team member has responded to your ticket.\n\n**Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\n---\n{{comment_content}}\n---\n\nYou can reply directly to this email to respond.\n\nBest regards,\n{{signature}}",
             ],
             'user_department_changed' => [
                 'name' => 'Department Changed',
                 'subject' => 'Ticket #{{ticket_id}} - Transferred to {{new_department}}',
-                'body' => "Hello {{customer_name}},\n\nYour ticket has been transferred to a different department for better assistance.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- New Department: {{new_department}}\n\nThe new team will review your ticket and respond as soon as possible.\n\nYou can reply to this email to add more information.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nYour ticket has been transferred to a different department for better assistance.\n\n**Ticket Details:**\n- Ticket ID: #{{ticket_id}}\n- Subject: {{ticket_subject}}\n- New Department: {{new_department}}\n\nThe new team will review your ticket and respond as soon as possible.\n\nYou can reply to this email to add more information.\n\nBest regards,\n{{signature}}",
             ],
 
             // For Operator templates
@@ -295,7 +296,7 @@ class WorkspaceEmailTemplate extends Model
             'custom_high_demand' => [
                 'name' => 'High Demand',
                 'subject' => 'Ticket #{{ticket_id}} - We received your request',
-                'body' => "Hello {{customer_name}},\n\nThank you for contacting us. We're currently experiencing higher than normal volume.\n\n**Your Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nOur team is working hard to respond to all inquiries. We appreciate your patience and will get back to you as soon as possible.\n\nBest regards,\n{{workspace_name}} Support Team",
+                'body' => "Hello {{customer_name}},\n\nThank you for contacting us. We're currently experiencing higher than normal volume.\n\n**Your Ticket:** #{{ticket_id}} - {{ticket_subject}}\n\nOur team is working hard to respond to all inquiries. We appreciate your patience and will get back to you as soon as possible.\n\nBest regards,\n{{signature}}",
             ],
         ];
     }

@@ -98,7 +98,18 @@ final class WorkspaceService implements WorkspaceServiceInterface
 
     public function getForUser(User $user, int $perPage = 15): Collection
     {
-        // Get workspaces from user's own company only (where they are owner or member)
+        // Get all company IDs the user belongs to (primary + invited via company_user)
+        $companyIds = \DB::table('company_user')
+            ->where('user_id', $user->id)
+            ->pluck('company_id')
+            ->toArray();
+
+        // Also include user's primary company_id if not already in the list
+        if ($user->company_id && !in_array($user->company_id, $companyIds)) {
+            $companyIds[] = $user->company_id;
+        }
+
+        // Get workspaces from user's companies (where they are owner or member)
         // Includes both active and archived workspaces
         return Workspace::where(function ($query) use ($user) {
                 $query->where('owner_id', $user->id)
@@ -106,8 +117,8 @@ final class WorkspaceService implements WorkspaceServiceInterface
                         $q->where('user_id', $user->id);
                     });
             })
-            ->whereHas('owner', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
+            ->whereHas('owner', function ($q) use ($companyIds) {
+                $q->whereIn('company_id', $companyIds);
             })
             ->whereIn('status', [WorkspaceStatus::ACTIVE, WorkspaceStatus::ARCHIVED])
             ->with(['owner.company', 'members'])
@@ -118,13 +129,24 @@ final class WorkspaceService implements WorkspaceServiceInterface
 
     public function getOtherCompanyWorkspaces(User $user): Collection
     {
+        // Get all company IDs the user belongs to (primary + invited via company_user)
+        $companyIds = \DB::table('company_user')
+            ->where('user_id', $user->id)
+            ->pluck('company_id')
+            ->toArray();
+
+        // Also include user's primary company_id if not already in the list
+        if ($user->company_id && !in_array($user->company_id, $companyIds)) {
+            $companyIds[] = $user->company_id;
+        }
+
         // Get workspaces from OTHER companies where user is a member
         // Includes both active and archived workspaces
         return Workspace::whereHas('members', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
-            ->whereHas('owner', function ($q) use ($user) {
-                $q->where('company_id', '!=', $user->company_id);
+            ->whereHas('owner', function ($q) use ($companyIds) {
+                $q->whereNotIn('company_id', $companyIds);
             })
             ->whereIn('status', [WorkspaceStatus::ACTIVE, WorkspaceStatus::ARCHIVED])
             ->with(['owner.company', 'members'])

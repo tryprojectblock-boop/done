@@ -24,17 +24,27 @@ class TaskCommentController extends Controller
         $request->validate([
             'content' => 'required|string|max:10000',
             'parent_id' => 'nullable|exists:task_comments,id',
+            'is_private' => 'nullable|boolean',
         ]);
 
         $parentId = $request->input('parent_id');
+        $isPrivate = (bool) $request->input('is_private', false);
+
+        // Only team members can add private notes
+        $user = auth()->user();
+        if ($isPrivate && ($user->is_guest || $user->role === \App\Models\User::ROLE_GUEST)) {
+            $isPrivate = false;
+        }
+
         $this->taskService->addComment(
             $task,
             $request->input('content'),
-            auth()->user(),
-            $parentId ? (int) $parentId : null
+            $user,
+            $parentId ? (int) $parentId : null,
+            $isPrivate
         );
 
-        return back()->with('success', 'Comment added successfully.');
+        return back()->with('success', $isPrivate ? 'Private note added successfully.' : 'Comment added successfully.');
     }
 
     public function update(Request $request, TaskComment $comment): RedirectResponse

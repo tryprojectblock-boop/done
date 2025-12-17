@@ -20,6 +20,19 @@
 <div class="p-4 md:p-6">
     <div class="max-w-5xl mx-auto">
         @if($hasInboxWorkspaces)
+        <!-- Client Portal Welcome Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-base-content mb-2">
+                Welcome, {{ auth()->user()->first_name ?? auth()->user()->name }}!
+            </h1>
+            <p class="text-base-content/60 text-lg mb-4">
+                You're logged in as a <span class="badge badge-primary">Client</span>
+            </p>
+            <p class="text-base-content/70 max-w-lg mx-auto">
+                As a client, you have full access to tickets you've been invited to. When someone adds you to a ticket, it will appear below.
+            </p>
+        </div>
+
         <!-- Client Portal - Tickets View -->
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
@@ -129,7 +142,7 @@
             </div>
         </div>
 
-        <!-- Account Info Footer -->
+        <!-- Account Info Footer for Clients -->
         <div class="flex items-center justify-center gap-6 mt-6 text-sm text-base-content/50">
             <div class="flex items-center gap-2">
                 <span class="icon-[tabler--mail] size-4"></span>
@@ -145,10 +158,9 @@
             </a>
         </div>
 
-        @endif
-
-        <!-- Welcome Section with Workspaces (shown for all guests) -->
-        <div class="card bg-base-100 shadow-xl {{ $hasInboxWorkspaces ? 'mt-6' : '' }}">
+        @else
+        <!-- Welcome Section with Workspaces (shown for regular guests, not clients) -->
+        <div class="card bg-base-100 shadow-xl">
             <div class="card-body text-center py-12">
                 <div class="flex justify-center mb-6">
                     <div class="w-24 h-24 rounded-full bg-warning/20 flex items-center justify-center">
@@ -234,6 +246,7 @@
                 Change Password
             </a>
         </div>
+        @endif
     </div>
 </div>
 @endsection

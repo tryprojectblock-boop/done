@@ -267,13 +267,82 @@
                 <!-- Comments -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
+                        @php
+                            $visibleCommentsCount = $isClient
+                                ? $task->comments->where('is_private', false)->count()
+                                : $task->comments->count();
+                        @endphp
                         <h2 class="card-title text-lg">
                             <span class="icon-[tabler--message-circle] size-5"></span>
                             Comments
-                            <span class="badge badge-sm">{{ $task->comments->count() }}</span>
+                            <span class="badge badge-sm">{{ $visibleCommentsCount }}</span>
                         </h2>
 
-                        <!-- Add Comment Form -->
+                        <!-- Add Comment Form with Tabs (only show tabs for team members) -->
+                        @if(!$isClient)
+                        <div class="mb-4">
+                            <!-- Comment Type Tabs -->
+                            <div class="tabs tabs-boxed mb-3 bg-base-200 p-1 rounded-lg inline-flex">
+                                <button type="button" class="tab tab-active" data-comment-tab="comment" onclick="switchCommentTab('comment')">
+                                    <span class="icon-[tabler--message] size-4 mr-1"></span>
+                                    Comment
+                                </button>
+                                <button type="button" class="tab" data-comment-tab="private" onclick="switchCommentTab('private')">
+                                    <span class="icon-[tabler--lock] size-4 mr-1"></span>
+                                    Private Note
+                                </button>
+                            </div>
+
+                            <!-- Comment Form -->
+                            <form action="{{ route('tasks.comments.store', $task) }}" method="POST" id="comment-form" onsubmit="return prepareCommentSubmit()">
+                                @csrf
+                                <input type="hidden" name="is_private" id="is_private_input" value="0">
+                                <input type="hidden" name="content" id="final_content_input" value="">
+                                <div class="flex gap-3">
+                                    <div class="avatar">
+                                        <div class="w-10 h-10 rounded-full overflow-hidden">
+                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <!-- Comment Editor -->
+                                        <div id="comment-editor-wrapper">
+                                            <x-quill-editor
+                                                name="comment_content"
+                                                id="comment-editor"
+                                                placeholder="Add a comment..."
+                                                height="100px"
+                                                :mentions="true"
+                                            />
+                                        </div>
+                                        <!-- Private Note Editor (with yellow border) -->
+                                        <div id="private-editor-wrapper" class="hidden">
+                                            <div class="border-2 border-warning rounded-lg overflow-hidden">
+                                                <div class="bg-warning/10 px-3 py-1.5 border-b border-warning/30 flex items-center gap-2">
+                                                    <span class="icon-[tabler--lock] size-4 text-warning"></span>
+                                                    <span class="text-sm font-medium text-warning">Private Note - Only visible to team members</span>
+                                                </div>
+                                                <x-quill-editor
+                                                    name="private_content"
+                                                    id="private-editor"
+                                                    placeholder="Add a private note (only visible to team members)..."
+                                                    height="100px"
+                                                    :mentions="true"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end mt-2">
+                                            <button type="submit" class="btn btn-primary btn-sm" id="comment-submit-btn">
+                                                <span class="icon-[tabler--send] size-4"></span>
+                                                <span id="submit-btn-text">Comment</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        @else
+                        <!-- Client view - simple comment form without tabs -->
                         <form action="{{ route('tasks.comments.store', $task) }}" method="POST" class="mb-4" id="comment-form">
                             @csrf
                             <div class="flex gap-3">
@@ -288,7 +357,7 @@
                                         id="comment-editor"
                                         placeholder="Add a comment..."
                                         height="100px"
-                                        :mentions="!$isClient"
+                                        :mentions="false"
                                     />
                                     <div class="flex justify-end mt-2">
                                         <button type="submit" class="btn btn-primary btn-sm">
@@ -299,10 +368,16 @@
                                 </div>
                             </div>
                         </form>
+                        @endif
 
-                        <!-- Comments List -->
+                        <!-- Comments List (filter out private notes for clients) -->
                         <div class="space-y-4">
-                            @forelse($task->comments as $comment)
+                            @php
+                                $visibleComments = $isClient
+                                    ? $task->comments->where('is_private', false)
+                                    : $task->comments;
+                            @endphp
+                            @forelse($visibleComments as $comment)
                                 @include('task::partials.comment', ['comment' => $comment])
                             @empty
                                 <p class="text-base-content/60 text-center py-4">No comments yet. Be the first to comment!</p>
@@ -1032,6 +1107,75 @@
     }
 </style>
 <script>
+// Comment/Private Note Tab Switching
+let currentCommentTab = 'comment';
+
+function switchCommentTab(type) {
+    const commentWrapper = document.getElementById('comment-editor-wrapper');
+    const privateWrapper = document.getElementById('private-editor-wrapper');
+    const isPrivateInput = document.getElementById('is_private_input');
+    const submitBtnText = document.getElementById('submit-btn-text');
+    const submitBtn = document.getElementById('comment-submit-btn');
+    const tabs = document.querySelectorAll('[data-comment-tab]');
+
+    currentCommentTab = type;
+
+    // Update active tab
+    tabs.forEach(tab => {
+        if (tab.dataset.commentTab === type) {
+            tab.classList.add('tab-active');
+        } else {
+            tab.classList.remove('tab-active');
+        }
+    });
+
+    if (type === 'private') {
+        // Show private note editor
+        commentWrapper.classList.add('hidden');
+        privateWrapper.classList.remove('hidden');
+        isPrivateInput.value = '1';
+        submitBtnText.textContent = 'Add Private Note';
+        submitBtn.classList.remove('btn-primary');
+        submitBtn.classList.add('btn-warning');
+    } else {
+        // Show comment editor
+        commentWrapper.classList.remove('hidden');
+        privateWrapper.classList.add('hidden');
+        isPrivateInput.value = '0';
+        submitBtnText.textContent = 'Comment';
+        submitBtn.classList.remove('btn-warning');
+        submitBtn.classList.add('btn-primary');
+    }
+}
+
+// Prepare comment form submission - copy content from active editor to final input
+function prepareCommentSubmit() {
+    const isPrivate = document.getElementById('is_private_input').value === '1';
+    const finalInput = document.getElementById('final_content_input');
+
+    if (isPrivate) {
+        // Get content from private editor
+        const privateInput = document.getElementById('private-editor-input');
+        if (privateInput) {
+            finalInput.value = privateInput.value;
+        }
+    } else {
+        // Get content from comment editor
+        const commentInput = document.getElementById('comment-editor-input');
+        if (commentInput) {
+            finalInput.value = commentInput.value;
+        }
+    }
+
+    // Validate that content is not empty
+    if (!finalInput.value || finalInput.value.trim() === '' || finalInput.value === '<p><br></p>') {
+        alert('Please enter a comment');
+        return false;
+    }
+
+    return true;
+}
+
 function toggleEdit(field) {
     const displayEl = document.getElementById(field + '-display');
     const editEl = document.getElementById(field + '-edit');

@@ -208,7 +208,7 @@ class InboxEmailService
     /**
      * Render template with placeholders replaced.
      */
-    protected function renderTemplate(string $template, Task $task, Workspace $workspace, ?User $user = null, array $additionalPlaceholders = []): string
+    protected function renderTemplate(string $template, Task $task, Workspace $workspace, ?User $user = null, array $additionalPlaceholders = [], ?User $sender = null): string
     {
         // Get portal URLs - use client portal for inbox workspace clients
         $portalUrl = route('client-portal.login');
@@ -217,6 +217,9 @@ class InboxEmailService
         if ($user && $user->invitation_token) {
             $setPasswordUrl = route('client-portal.signup', ['token' => $user->invitation_token]);
         }
+
+        // Determine signature - use sender's signature if enabled, otherwise their full name
+        $signature = $this->getSignature($sender ?? $task->assignee);
 
         $placeholders = [
             '{{ticket_id}}' => $task->task_number ?? $task->id,
@@ -233,6 +236,7 @@ class InboxEmailService
             '{{sla_due_date}}' => $task->sla_due_at?->format('M d, Y H:i') ?? 'N/A',
             '{{portal_url}}' => $portalUrl,
             '{{set_password_url}}' => $setPasswordUrl,
+            '{{signature}}' => $signature,
         ];
 
         // Merge additional placeholders
@@ -243,6 +247,26 @@ class InboxEmailService
             array_values($placeholders),
             $template
         );
+    }
+
+    /**
+     * Get signature for a user.
+     * Returns the user's signature if enabled, otherwise their full name.
+     */
+    protected function getSignature(?User $user): string
+    {
+        if (!$user) {
+            return 'Support Team';
+        }
+
+        // Check if user has signature enabled for inbox and has a signature
+        if ($user->include_signature_in_inbox && !empty($user->signature)) {
+            // Strip HTML tags for plain text emails, but keep the formatted content
+            return strip_tags($user->signature);
+        }
+
+        // Fall back to full name
+        return $user->name ?? 'Support Team';
     }
 
     /**
@@ -428,7 +452,7 @@ class InboxEmailService
     /**
      * Send "New Comment" email to customer.
      */
-    public function sendNewCommentEmail(Task $task, string $commentContent, string $commenterName): bool
+    public function sendNewCommentEmail(Task $task, string $commentContent, string $commenterName, ?User $sender = null): bool
     {
         $workspace = $task->workspace;
 
@@ -482,9 +506,9 @@ class InboxEmailService
             '{{comment_content}}' => strip_tags($commentContent),
         ];
 
-        // Render the template
-        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator, $additionalPlaceholders);
-        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator, $additionalPlaceholders);
+        // Render the template - pass sender for signature
+        $renderedSubject = $this->renderTemplate($subject, $task, $workspace, $creator, $additionalPlaceholders, $sender);
+        $renderedBody = $this->renderTemplate($body, $task, $workspace, $creator, $additionalPlaceholders, $sender);
 
         // Get from address
         $fromAddress = $workspace->inbound_email ?: config('mail.from.address');

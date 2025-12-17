@@ -26,6 +26,7 @@ class TaskComment extends Model
         'is_edited',
         'is_auto_response',
         'source',
+        'is_private',
     ];
 
     protected function casts(): array
@@ -34,7 +35,13 @@ class TaskComment extends Model
             'is_edited' => 'boolean',
             'edited_at' => 'datetime',
             'is_auto_response' => 'boolean',
+            'is_private' => 'boolean',
         ];
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->is_private === true;
     }
 
     protected static function boot(): void

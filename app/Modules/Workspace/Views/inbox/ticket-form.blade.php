@@ -434,13 +434,18 @@
                         <button type="button" class="tab" data-embed-tab="popup">Popup Button</button>
                     </div>
 
+                    @php
+                        $displayDomain = 'yourdomain.com';
+                        $displayUrl = $displayDomain . '/form/' . $ticketForm->slug;
+                    @endphp
+
                     <!-- Direct Link -->
                     <div id="embed-direct" class="embed-content">
                         <label class="label">
                             <span class="label-text font-medium">Direct URL</span>
                         </label>
                         <div class="flex items-center gap-2">
-                            <input type="text" value="{{ $ticketForm->public_url }}" class="input input-bordered flex-1 font-mono text-sm" readonly id="embed-url">
+                            <input type="text" value="{{ $displayUrl }}" class="input input-bordered flex-1 font-mono text-sm" readonly id="embed-url">
                             <button type="button" onclick="copyEmbed('embed-url')" class="btn btn-ghost btn-square">
                                 <span class="icon-[tabler--copy] size-5"></span>
                             </button>
@@ -448,7 +453,7 @@
                                 <span class="icon-[tabler--external-link] size-5"></span>
                             </a>
                         </div>
-                        <p class="text-xs text-base-content/50 mt-2">Share this link directly with your customers or add it to your website.</p>
+                        <p class="text-xs text-base-content/50 mt-2">Replace "yourdomain.com" with your actual domain. Share this link directly with your customers.</p>
                     </div>
 
                     <!-- iFrame -->
@@ -457,13 +462,13 @@
                             <span class="label-text font-medium">iFrame Code</span>
                         </label>
                         <div class="relative">
-                            <textarea id="embed-iframe-code" class="textarea textarea-bordered w-full font-mono text-xs" rows="4" readonly>&lt;iframe src="{{ $ticketForm->public_url }}" width="100%" height="600" frameborder="0" style="border: none; border-radius: 8px;"&gt;&lt;/iframe&gt;</textarea>
+                            <textarea id="embed-iframe-code" class="textarea textarea-bordered w-full font-mono text-xs" rows="4" readonly>&lt;iframe src="https://{{ $displayUrl }}" width="100%" height="600" frameborder="0" style="border: none; border-radius: 8px;"&gt;&lt;/iframe&gt;</textarea>
                             <button type="button" onclick="copyEmbed('embed-iframe-code')" class="btn btn-sm btn-ghost absolute top-2 right-2">
                                 <span class="icon-[tabler--copy] size-4"></span>
                                 Copy
                             </button>
                         </div>
-                        <p class="text-xs text-base-content/50 mt-2">Embed the form directly on your page. Adjust width and height as needed.</p>
+                        <p class="text-xs text-base-content/50 mt-2">Replace "yourdomain.com" with your actual domain. Adjust width and height as needed.</p>
                     </div>
 
                     <!-- Popup Button -->
@@ -475,7 +480,7 @@
                             <textarea id="embed-popup-code" class="textarea textarea-bordered w-full font-mono text-xs" rows="6" readonly>&lt;!-- Ticket Form Popup --&gt;
 &lt;script&gt;
 function openTicketForm() {
-    window.open('{{ $ticketForm->public_url }}', 'ticketForm', 'width=600,height=700,scrollbars=yes');
+    window.open('https://{{ $displayUrl }}', 'ticketForm', 'width=600,height=700,scrollbars=yes');
 }
 &lt;/script&gt;
 &lt;button onclick="openTicketForm()" style="background: {{ $ticketForm->primary_color ?? '#6366f1' }}; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;"&gt;Contact Support&lt;/button&gt;</textarea>
@@ -484,7 +489,7 @@ function openTicketForm() {
                                 Copy
                             </button>
                         </div>
-                        <p class="text-xs text-base-content/50 mt-2">Opens the form in a popup window when clicked. Customize the button text and styling as needed.</p>
+                        <p class="text-xs text-base-content/50 mt-2">Replace "yourdomain.com" with your actual domain. Opens the form in a popup window when clicked.</p>
                     </div>
                 </div>
             </div>

@@ -25,6 +25,7 @@ enum ActivityType: string
     case COMMENT_ADDED = 'comment_added';
     case COMMENT_EDITED = 'comment_edited';
     case COMMENT_DELETED = 'comment_deleted';
+    case PRIVATE_NOTE_ADDED = 'private_note_added';
     case LINKED = 'linked';
     case UNLINKED = 'unlinked';
     case REOPENED = 'reopened';
@@ -57,6 +58,7 @@ enum ActivityType: string
             self::COMMENT_ADDED => 'added a comment',
             self::COMMENT_EDITED => 'edited a comment',
             self::COMMENT_DELETED => 'deleted a comment',
+            self::PRIVATE_NOTE_ADDED => 'added a private note',
             self::LINKED => 'linked a task',
             self::UNLINKED => 'unlinked a task',
             self::REOPENED => 'reopened this task',
@@ -86,6 +88,7 @@ enum ActivityType: string
             self::WATCHER_ADDED, self::WATCHER_REMOVED => 'tabler--eye',
             self::ATTACHMENT_ADDED, self::ATTACHMENT_REMOVED => 'tabler--paperclip',
             self::COMMENT_ADDED, self::COMMENT_EDITED, self::COMMENT_DELETED => 'tabler--message',
+            self::PRIVATE_NOTE_ADDED => 'tabler--lock',
             self::LINKED, self::UNLINKED => 'tabler--link',
             self::REOPENED => 'tabler--refresh',
             self::CLOSED => 'tabler--check',

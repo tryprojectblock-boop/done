@@ -269,6 +269,7 @@ class PublicTicketFormController extends Controller
         // Create the ticket (task)
         $task = Task::create([
             'workspace_id' => $workspace->id,
+            'company_id' => $workspace->company_id ?? $workspace->owner?->company_id,
             'title' => $title,
             'description' => $description ?: null,
             'status_id' => $openStatus?->id,
