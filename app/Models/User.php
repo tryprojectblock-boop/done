@@ -14,10 +14,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
 
     /**
      * User roles with hierarchy levels.
@@ -297,6 +298,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Company::class, 'company_user')
             ->withPivot('role', 'is_primary', 'joined_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all workspaces the user is a member of.
+     */
+    public function workspaces(): BelongsToMany
+    {
+        return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
+            ->withPivot(['role', 'joined_at', 'invited_by', 'permissions'])
             ->withTimestamps();
     }
 

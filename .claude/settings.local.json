@@ -11,7 +11,9 @@
       "Bash(grep:*)",
       "WebSearch",
       "Bash(npm run build:*)",
-      "Bash(curl -s -X POST \"https://noncultured-electrolytically-chung.ngrok-free.dev/api/webhooks/mailgun/inbound\" )"
+      "Bash(curl -s -X POST \"https://noncultured-electrolytically-chung.ngrok-free.dev/api/webhooks/mailgun/inbound\" )",
+      "Bash(composer require:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
