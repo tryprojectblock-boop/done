@@ -66,7 +66,7 @@ class TaskController extends Controller
             ->get();
         $tags = Tag::where('company_id', $user->company_id)->get();
 
-        $viewMode = $request->get('view', session('task_view_mode', 'card'));
+        $viewMode = $request->get('view', session('task_view_mode', 'table'));
         session(['task_view_mode' => $viewMode]);
 
         // Handle AJAX request for real-time search

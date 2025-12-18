@@ -285,6 +285,8 @@
     </div>
 </div>
 
+@include('users.partials.delete-user-modal', ['user' => new \App\Models\User()])
+
 @push('scripts')
 <script>
 let currentUserId = null;
@@ -372,31 +374,22 @@ function closeUserDrawer() {
     document.body.style.overflow = '';
 }
 
-async function confirmDeleteUser() {
-    if (!currentUserId || !confirm('Are you sure you want to remove this user? This action cannot be undone.')) {
+function confirmDeleteUser() {
+    if (!currentUserId || !currentUserData) {
         return;
     }
 
-    try {
-        const response = await fetch(`/users/${currentUserId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json',
-            },
-        });
+    // Close the drawer first
+    closeUserDrawer();
 
-        const data = await response.json();
-
-        if (data.success) {
-            closeUserDrawer();
-            window.location.reload();
-        } else {
-            alert(data.error || 'Failed to remove user');
-        }
-    } catch (error) {
-        alert('An error occurred. Please try again.');
-    }
+    // Open the delete modal
+    openDeleteModal(
+        currentUserData.id,
+        currentUserData.full_name,
+        `/users/${currentUserData.id}/work-data`,
+        `/users/${currentUserData.id}/with-reassignment`,
+        '{{ route("users.index") }}'
+    );
 }
 
 async function resendInvitation(userId) {

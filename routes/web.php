@@ -169,6 +169,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
         Route::post('/users/{user}/resend-invitation', [UsersController::class, 'resendInvitation'])->name('users.resend-invitation');
+        Route::get('/users/{user}/work-data', [UsersController::class, 'getWorkData'])->name('users.work-data');
+        Route::delete('/users/{user}/with-reassignment', [UsersController::class, 'destroyWithReassignment'])->name('users.destroy-with-reassignment');
     });
 
     // Guest/Client CRM routes

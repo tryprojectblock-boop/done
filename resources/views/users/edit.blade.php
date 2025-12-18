@@ -198,8 +198,12 @@
                 <div class="card-body border-t border-base-200 pt-4">
                     <div class="flex justify-between items-center">
                         <div>
-                            @if(!$isCompanyOwner && $user->id !== auth()->id())
-                                <button type="button" class="btn btn-ghost text-error btn-sm" onclick="confirmDelete()">
+                            @if($isCompanyOwner)
+                                <span class="text-sm text-base-content/50">Company owner cannot be removed</span>
+                            @elseif($user->id === auth()->id())
+                                <span class="text-sm text-base-content/50">You cannot remove yourself</span>
+                            @else
+                                <button type="button" class="btn btn-error btn-sm" onclick="confirmDelete()">
                                     <span class="icon-[tabler--trash] size-4"></span>
                                     Remove User
                                 </button>
@@ -219,22 +223,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<dialog id="delete-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg">Remove User</h3>
-        <p class="py-4">Are you sure you want to remove <strong>{{ $user->full_name }}</strong> from your workspace? This action cannot be undone.</p>
-        <div class="modal-action">
-            <form method="dialog">
-                <button class="btn btn-ghost">Cancel</button>
-            </form>
-            <button type="button" id="confirm-delete-btn" class="btn btn-error">Remove User</button>
-        </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+@include('users.partials.delete-user-modal', ['user' => $user])
 @endsection
 
 @push('scripts')
@@ -286,32 +275,15 @@ document.getElementById('edit-user-form').addEventListener('submit', function(e)
     });
 });
 
+// Delete user - calls the reusable modal
 function confirmDelete() {
-    document.getElementById('delete-modal').showModal();
+    openDeleteModal(
+        {{ $user->id }},
+        '{{ $user->full_name }}',
+        '{{ route("users.work-data", $user) }}',
+        '{{ route("users.destroy-with-reassignment", $user) }}',
+        '{{ route("users.index") }}'
+    );
 }
-
-document.getElementById('confirm-delete-btn').addEventListener('click', function() {
-    fetch('{{ route("users.destroy", $user) }}', {
-        method: 'DELETE',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = '{{ route("users.index") }}';
-        } else {
-            alert(data.error || 'Failed to remove user');
-        }
-    })
-    .catch(error => {
-        alert('An error occurred. Please try again.');
-    });
-
-    document.getElementById('delete-modal').close();
-});
 </script>
 @endpush

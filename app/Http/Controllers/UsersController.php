@@ -6,9 +6,13 @@ use App\Mail\UserInvitationMail;
 use App\Mail\TeamInvitationMail;
 use App\Models\User;
 use App\Models\TeamInvitation;
+use App\Modules\Discussion\Models\Discussion;
+use App\Modules\Task\Models\Task;
+use App\Modules\Workspace\Models\Workspace;
 use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -470,5 +474,219 @@ class UsersController extends Controller
             'success' => true,
             'message' => 'Invitation email resent successfully.',
         ]);
+    }
+
+    /**
+     * Get user's work data for delete confirmation.
+     */
+    public function getWorkData(Request $request, User $user): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        // Ensure user belongs to same company
+        if ($user->company_id !== $currentUser->company_id) {
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
+        }
+
+        // Get workspaces where user is a member (check tenant_id OR owner's company)
+        $workspaces = Workspace::where(function ($q) use ($currentUser) {
+                $q->where('tenant_id', $currentUser->company_id)
+                  ->orWhereHas('owner', function ($ownerQ) use ($currentUser) {
+                      $ownerQ->where('company_id', $currentUser->company_id);
+                  });
+            })
+            ->whereHas('members', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->select('id', 'uuid', 'name', 'type')
+            ->withCount(['tasks as total_tasks'])
+            ->get()
+            ->map(function ($workspace) use ($user) {
+                $workspace->assigned_tasks = Task::where('workspace_id', $workspace->id)
+                    ->where('assignee_id', $user->id)
+                    ->whereNull('completed_at')
+                    ->count();
+                $workspace->role = $workspace->getMemberRole($user)?->value ?? 'member';
+                return $workspace;
+            });
+
+        // Get tasks assigned to this user
+        $assignedTasks = Task::where('assignee_id', $user->id)
+            ->whereNull('completed_at')
+            ->whereHas('workspace', function ($q) use ($currentUser) {
+                $q->where('tenant_id', $currentUser->company_id)
+                  ->orWhereHas('owner', function ($ownerQ) use ($currentUser) {
+                      $ownerQ->where('company_id', $currentUser->company_id);
+                  });
+            })
+            ->with(['workspace:id,name,uuid', 'status:id,name,color'])
+            ->select('id', 'uuid', 'title', 'workspace_id', 'status_id', 'due_date')
+            ->orderBy('due_date')
+            ->limit(20)
+            ->get();
+
+        // Get tasks created by this user
+        $createdTasks = Task::where('created_by', $user->id)
+            ->whereNull('completed_at')
+            ->whereHas('workspace', function ($q) use ($currentUser) {
+                $q->where('tenant_id', $currentUser->company_id)
+                  ->orWhereHas('owner', function ($ownerQ) use ($currentUser) {
+                      $ownerQ->where('company_id', $currentUser->company_id);
+                  });
+            })
+            ->count();
+
+        // Get discussions created by this user
+        $discussions = Discussion::where('created_by', $user->id)
+            ->where('company_id', $currentUser->company_id)
+            ->with(['workspace:id,name,uuid'])
+            ->select('id', 'uuid', 'title', 'workspace_id', 'comments_count', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Get other team members for reassignment (excluding the user being deleted)
+        $teamMembers = User::where('company_id', $currentUser->company_id)
+            ->where('id', '!=', $user->id)
+            ->where('status', User::STATUS_ACTIVE)
+            ->whereIn('role', [User::ROLE_OWNER, User::ROLE_ADMIN, User::ROLE_MEMBER])
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn($member) => [
+                'id' => $member->id,
+                'name' => $member->full_name,
+                'email' => $member->email,
+                'avatar_url' => $member->avatar_url,
+                'role' => $member->role_label,
+            ]);
+
+        return response()->json([
+            'workspaces' => $workspaces,
+            'assigned_tasks' => $assignedTasks,
+            'assigned_tasks_count' => Task::where('assignee_id', $user->id)
+                ->whereNull('completed_at')
+                ->whereHas('workspace', function ($q) use ($currentUser) {
+                    $q->where('tenant_id', $currentUser->company_id)
+                      ->orWhereHas('owner', function ($ownerQ) use ($currentUser) {
+                          $ownerQ->where('company_id', $currentUser->company_id);
+                      });
+                })
+                ->count(),
+            'created_tasks_count' => $createdTasks,
+            'discussions' => $discussions,
+            'discussions_count' => Discussion::where('created_by', $user->id)
+                ->where('company_id', $currentUser->company_id)
+                ->count(),
+            'team_members' => $teamMembers,
+        ]);
+    }
+
+    /**
+     * Remove a user with optional work reassignment.
+     */
+    public function destroyWithReassignment(Request $request, User $user): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        // Ensure user belongs to same company
+        if ($user->company_id !== $currentUser->company_id) {
+            return response()->json(['error' => self::USER_NOT_FOUND], 404);
+        }
+
+        // Cannot delete yourself
+        if ($user->id === $currentUser->id) {
+            return response()->json(['error' => 'You cannot delete your own account'], 403);
+        }
+
+        // Cannot delete the company owner
+        if ($user->isCompanyOwner()) {
+            return response()->json(['error' => 'The company owner cannot be deleted'], 403);
+        }
+
+        // Check if current user can remove this role
+        if (!$currentUser->canRemoveRole($user->role)) {
+            return response()->json(['error' => 'You do not have permission to remove this user'], 403);
+        }
+
+        $validated = $request->validate([
+            'reassign_to' => ['nullable', 'exists:users,id'],
+            'reassign_tasks' => ['boolean'],
+            'reassign_discussions' => ['boolean'],
+        ]);
+
+        $reassignTo = $validated['reassign_to'] ?? null;
+        $reassignTasks = $validated['reassign_tasks'] ?? false;
+        $reassignDiscussions = $validated['reassign_discussions'] ?? false;
+
+        // Validate reassign_to user belongs to same company
+        if ($reassignTo) {
+            $targetUser = User::find($reassignTo);
+            if (!$targetUser || $targetUser->company_id !== $currentUser->company_id) {
+                return response()->json(['error' => 'Invalid reassignment target'], 400);
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            // Get workspace IDs belonging to this company (by tenant_id or owner)
+            $companyWorkspaceIds = Workspace::where(function ($q) use ($currentUser) {
+                    $q->where('tenant_id', $currentUser->company_id)
+                      ->orWhereHas('owner', function ($ownerQ) use ($currentUser) {
+                          $ownerQ->where('company_id', $currentUser->company_id);
+                      });
+                })
+                ->pluck('id')
+                ->toArray();
+
+            // Reassign tasks if requested
+            if ($reassignTo && $reassignTasks) {
+                Task::where('assignee_id', $user->id)
+                    ->whereNull('completed_at')
+                    ->whereIn('workspace_id', $companyWorkspaceIds)
+                    ->update(['assignee_id' => $reassignTo]);
+            } elseif (!$reassignTo) {
+                // Unassign tasks if no reassignment target
+                Task::where('assignee_id', $user->id)
+                    ->whereNull('completed_at')
+                    ->whereIn('workspace_id', $companyWorkspaceIds)
+                    ->update(['assignee_id' => null]);
+            }
+
+            // Reassign discussions if requested
+            if ($reassignTo && $reassignDiscussions) {
+                Discussion::where('created_by', $user->id)
+                    ->where('company_id', $currentUser->company_id)
+                    ->update(['created_by' => $reassignTo]);
+            }
+
+            // Remove user from workspace members
+            DB::table('workspace_members')
+                ->where('user_id', $user->id)
+                ->whereIn('workspace_id', $companyWorkspaceIds)
+                ->delete();
+
+            // Remove user from discussion participants
+            DB::table('discussion_participants')
+                ->where('user_id', $user->id)
+                ->whereIn('discussion_id', function ($query) use ($currentUser) {
+                    $query->select('id')
+                        ->from('discussions')
+                        ->where('company_id', $currentUser->company_id);
+                })
+                ->delete();
+
+            // Soft delete the user
+            $user->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User removed successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to remove user: ' . $e->getMessage()], 500);
+        }
     }
 }
