@@ -89,13 +89,13 @@ class Discussion extends Model
     {
         return $this->hasMany(DiscussionComment::class)
             ->whereNull('parent_id')
-            ->orderBy('created_at', 'asc');
+            ->orderBy('created_at', 'desc');
     }
 
     public function allComments(): HasMany
     {
         return $this->hasMany(DiscussionComment::class)
-            ->orderBy('created_at', 'asc');
+            ->orderBy('created_at', 'desc');
     }
 
     // ==================== SCOPES ====================

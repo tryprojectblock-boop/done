@@ -8,8 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Modules\Discussion\Contracts\DiscussionServiceInterface;
 use App\Modules\Discussion\Models\Discussion;
 use App\Modules\Discussion\Models\DiscussionComment;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class DiscussionCommentController extends Controller
 {
@@ -94,5 +97,108 @@ class DiscussionCommentController extends Controller
         $this->discussionService->deleteComment($comment, $user);
 
         return back()->with('success', 'Comment deleted successfully!');
+    }
+
+    /**
+     * Poll for new comments since a given timestamp
+     */
+    public function poll(Request $request, Discussion $discussion): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$discussion->canView($user)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $lastTs = $request->input('last_ts');
+        $lastTimestamp = null;
+
+        if ($lastTs) {
+            try {
+                $lastTimestamp = Carbon::parse($lastTs);
+            } catch (\Exception $e) {
+                $lastTimestamp = null;
+            }
+        }
+
+        // Get new top-level comments since the timestamp (newest first)
+        $newTopLevelQuery = $discussion->comments()
+            ->whereNull('parent_id')
+            ->with(['user', 'replies.user', 'attachments', 'replies.attachments'])
+            ->orderBy('created_at', 'desc');
+
+        if ($lastTimestamp) {
+            $newTopLevelQuery->where('created_at', '>', $lastTimestamp);
+        }
+
+        $newTopLevelComments = $newTopLevelQuery->get();
+
+        // Also get parent comments that have new replies since the timestamp
+        $updatedParentIds = [];
+        if ($lastTimestamp) {
+            $updatedParentIds = $discussion->comments()
+                ->whereNotNull('parent_id')
+                ->where('created_at', '>', $lastTimestamp)
+                ->pluck('parent_id')
+                ->unique()
+                ->toArray();
+        }
+
+        // Render new top-level comments
+        $commentsHtml = [];
+        foreach ($newTopLevelComments as $comment) {
+            $commentsHtml[] = [
+                'id' => $comment->id,
+                'html' => view('discussion::partials.comment', [
+                    'comment' => $comment,
+                    'discussion' => $discussion,
+                ])->render(),
+                'created_at' => $comment->created_at->toIso8601String(),
+                'type' => 'new',
+            ];
+        }
+
+        // Render updated parent comments (with new replies)
+        $updatedComments = [];
+        if (!empty($updatedParentIds)) {
+            $parentsWithNewReplies = $discussion->comments()
+                ->whereIn('id', $updatedParentIds)
+                ->whereNull('parent_id')
+                ->with(['user', 'replies.user', 'attachments', 'replies.attachments'])
+                ->get();
+
+            foreach ($parentsWithNewReplies as $comment) {
+                // Skip if this comment is already in the new comments list
+                if ($newTopLevelComments->contains('id', $comment->id)) {
+                    continue;
+                }
+
+                $updatedComments[] = [
+                    'id' => $comment->id,
+                    'html' => view('discussion::partials.comment', [
+                        'comment' => $comment,
+                        'discussion' => $discussion,
+                    ])->render(),
+                    'created_at' => $comment->created_at->toIso8601String(),
+                    'type' => 'updated',
+                ];
+            }
+        }
+
+        // Get the latest timestamp from all comments (including replies)
+        $latestComment = $discussion->comments()
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $latestTs = $latestComment
+            ? $latestComment->created_at->format('Y-m-d\TH:i:s.u\Z')
+            : ($lastTs ?: now()->format('Y-m-d\TH:i:s.u\Z'));
+
+        return response()->json([
+            'comments' => $commentsHtml,
+            'updated_comments' => $updatedComments,
+            'last_ts' => $latestTs,
+            'count' => $discussion->comments()->count(),
+        ]);
     }
 }

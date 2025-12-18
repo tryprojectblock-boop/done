@@ -142,11 +142,24 @@
                         </form>
 
                         <!-- Comments List -->
-                        <div class="space-y-4">
-                            @forelse($discussion->comments()->with(['user', 'replies.user', 'attachments'])->get() as $comment)
+                        @php
+                            $topLevelComments = $discussion->comments()
+                                ->whereNull('parent_id')
+                                ->with(['user', 'replies.user', 'attachments', 'replies.attachments'])
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+                            $lastCommentTs = $topLevelComments->isNotEmpty()
+                                ? $topLevelComments->first()->created_at->toIso8601String()
+                                : now()->toIso8601String();
+                        @endphp
+                        <div id="discussion-comments-container"
+                             class="space-y-4"
+                             data-poll-url="{{ route('discussions.comments.poll', $discussion) }}"
+                             data-last-ts="{{ $lastCommentTs }}">
+                            @forelse($topLevelComments as $comment)
                                 @include('discussion::partials.comment', ['comment' => $comment, 'discussion' => $discussion])
                             @empty
-                                <p class="text-base-content/60 text-center py-4">No comments yet. Start the conversation!</p>
+                                <p id="no-comments-message" class="text-base-content/60 text-center py-4">No comments yet. Start the conversation!</p>
                             @endforelse
                         </div>
                     </div>
@@ -292,3 +305,159 @@
 @include('discussion::partials.task-drawer', ['discussion' => $discussion, 'workspaces' => $workspaces])
 
 @endsection
+
+@push('scripts')
+<script>
+/**
+ * Real-time Discussion Comments Polling
+ */
+(function initDiscussionCommentPolling() {
+    const container = document.getElementById('discussion-comments-container');
+    if (!container) {
+        console.log('Discussion comments container not found');
+        return;
+    }
+
+    const pollUrl = container.dataset.pollUrl;
+    let lastTs = container.dataset.lastTs || '';
+    const POLL_INTERVAL = 5000; // 5 seconds
+    let isPolling = false;
+
+    console.log('Discussion comment polling initialized', { pollUrl, lastTs });
+
+    async function pollComments() {
+        if (isPolling) return;
+        isPolling = true;
+
+        try {
+            const url = `${pollUrl}?last_ts=${encodeURIComponent(lastTs)}`;
+            console.log('Polling comments:', url);
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            console.log('Poll response:', {
+                newComments: data.comments?.length || 0,
+                updatedComments: data.updated_comments?.length || 0,
+                count: data.count,
+                last_ts: data.last_ts
+            });
+
+            // Update last timestamp
+            if (data.last_ts) {
+                lastTs = data.last_ts;
+                container.dataset.lastTs = lastTs;
+            }
+
+            // Append new top-level comments
+            if (data.comments && data.comments.length > 0) {
+                console.log('New comments found:', data.comments.length);
+                // Remove "No comments" message if present
+                const noCommentsMsg = document.getElementById('no-comments-message');
+                if (noCommentsMsg) {
+                    noCommentsMsg.remove();
+                }
+
+                data.comments.forEach(comment => {
+                    // Check if comment already exists (prevent duplicates)
+                    if (!document.getElementById(`discussion-comment-${comment.id}`)) {
+                        // Create a temporary container to parse the HTML
+                        const temp = document.createElement('div');
+                        temp.innerHTML = comment.html;
+
+                        // Prepend the comment at the top with a fade-in animation (newest first)
+                        const commentEl = temp.firstElementChild;
+                        if (commentEl) {
+                            commentEl.style.opacity = '0';
+                            commentEl.style.transition = 'opacity 0.3s ease-in';
+                            container.prepend(commentEl);
+
+                            // Trigger fade-in
+                            requestAnimationFrame(() => {
+                                commentEl.style.opacity = '1';
+                            });
+
+                            // Initialize any Quill editors in the new comment
+                            initNewCommentEditors(commentEl);
+                        }
+                    }
+                });
+            }
+
+            // Update existing comments that have new replies
+            if (data.updated_comments && data.updated_comments.length > 0) {
+                console.log('Updated comments with new replies:', data.updated_comments.length);
+
+                data.updated_comments.forEach(comment => {
+                    const existingComment = document.getElementById(`discussion-comment-${comment.id}`);
+                    if (existingComment) {
+                        // Create a temporary container to parse the HTML
+                        const temp = document.createElement('div');
+                        temp.innerHTML = comment.html;
+                        const newCommentEl = temp.firstElementChild;
+
+                        if (newCommentEl) {
+                            // Replace the existing comment with the updated one
+                            existingComment.replaceWith(newCommentEl);
+
+                            // Brief highlight animation for the new reply
+                            newCommentEl.style.transition = 'background-color 0.5s ease-out';
+                            newCommentEl.style.backgroundColor = 'rgba(var(--color-primary), 0.1)';
+                            setTimeout(() => {
+                                newCommentEl.style.backgroundColor = '';
+                            }, 1000);
+
+                            // Initialize any Quill editors in the updated comment
+                            initNewCommentEditors(newCommentEl);
+                        }
+                    }
+                });
+            }
+
+            // Update comment count badge
+            if (data.count !== undefined) {
+                updateCommentCount(data.count);
+            }
+
+            // Schedule next poll
+            setTimeout(pollComments, POLL_INTERVAL);
+        } catch (error) {
+            console.error('Error polling comments:', error);
+            // Retry after interval even on error
+            setTimeout(pollComments, POLL_INTERVAL * 2); // Double the interval on error
+        } finally {
+            isPolling = false;
+        }
+    }
+
+    function updateCommentCount(count) {
+        // Update the badge in the Comments header
+        const badge = document.querySelector('.card-title .badge');
+        if (badge && count !== undefined) {
+            badge.textContent = count;
+        }
+    }
+
+    function initNewCommentEditors(commentEl) {
+        // Initialize any Quill mini editors that might be in the comment
+        // This is needed for edit/reply forms in dynamically added comments
+        if (typeof HSSelect !== 'undefined') {
+            HSSelect.autoInit();
+        }
+    }
+
+    // Start polling after a short delay
+    setTimeout(pollComments, POLL_INTERVAL);
+})();
+</script>
+@endpush
