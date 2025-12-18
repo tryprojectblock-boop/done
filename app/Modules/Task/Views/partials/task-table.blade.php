@@ -61,20 +61,42 @@
                                         <input type="text" placeholder="Search status..." class="input input-bordered input-sm w-full status-search" data-task="{{ $task->id }}">
                                     </div>
                                     <div class="status-list max-h-48 overflow-y-auto" data-task="{{ $task->id }}">
-                                        @foreach($statuses ?? $task->workspace->workflow->statuses as $status)
-                                            <form action="{{ route('tasks.update-status', $task) }}" method="POST" class="status-item" data-name="{{ strtolower($status->name) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status_id" value="{{ $status->id }}">
-                                                <button type="submit" class="dropdown-item w-full text-left flex items-center gap-2 {{ $task->status_id == $status->id ? 'bg-primary/10' : '' }}">
-                                                    <span class="w-3 h-3 rounded-full" style="background-color: {{ $status->background_color }}"></span>
-                                                    {{ $status->name }}
-                                                    @if($task->status_id == $status->id)
-                                                        <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
-                                                    @endif
-                                                </button>
-                                            </form>
-                                        @endforeach
+                                        @php
+                                            $allStatuses = $statuses ?? $task->workspace->workflow->statuses;
+                                            $currentStatus = $task->status;
+                                            // Filter statuses based on allowed transitions
+                                            if ($currentStatus && $currentStatus->allowed_transitions !== null) {
+                                                $allowedIds = $currentStatus->allowed_transitions;
+                                                $filteredStatuses = $allStatuses->filter(function ($status) use ($allowedIds, $currentStatus) {
+                                                    return $status->id === $currentStatus->id || in_array($status->id, $allowedIds);
+                                                });
+                                            } else {
+                                                $filteredStatuses = $allStatuses;
+                                            }
+                                            // Check if there are any transitions available (excluding current status)
+                                            $availableTransitions = $filteredStatuses->filter(fn($s) => $s->id !== $task->status_id);
+                                        @endphp
+                                        @if($availableTransitions->isEmpty() && $currentStatus)
+                                            <div class="px-3 py-2 text-sm text-base-content/60 italic">
+                                                <span class="icon-[tabler--lock] size-4 inline-block align-middle mr-1"></span>
+                                                No transitions available
+                                            </div>
+                                        @else
+                                            @foreach($filteredStatuses as $status)
+                                                <form action="{{ route('tasks.update-status', $task) }}" method="POST" class="status-item" data-name="{{ strtolower($status->name) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status_id" value="{{ $status->id }}">
+                                                    <button type="submit" class="dropdown-item w-full text-left flex items-center gap-2 {{ $task->status_id == $status->id ? 'bg-primary/10' : '' }}">
+                                                        <span class="w-3 h-3 rounded-full" style="background-color: {{ $status->background_color }}"></span>
+                                                        {{ $status->name }}
+                                                        @if($task->status_id == $status->id)
+                                                            <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                        @endif
+                                                    </button>
+                                                </form>
+                                            @endforeach
+                                        @endif
                                     </div>
                                 </div>
                             </div>

@@ -320,6 +320,8 @@ Route::middleware(['auth'])->prefix('workflows')->name('workflows.')->group(func
     Route::post('/{workflow}/duplicate', [WorkflowController::class, 'duplicate'])->name('duplicate');
     Route::post('/{workflow}/archive', [WorkflowController::class, 'archive'])->name('archive');
     Route::post('/{workflow}/restore', [WorkflowController::class, 'restore'])->name('restore');
+    Route::get('/{workflow}/status-rules', [WorkflowController::class, 'statusRules'])->name('status-rules');
+    Route::put('/{workflow}/status-rules', [WorkflowController::class, 'updateStatusRules'])->name('status-rules.update');
 });
 
 /*

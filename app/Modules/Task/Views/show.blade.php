@@ -449,21 +449,35 @@
                                 <form id="status-edit" action="{{ route('tasks.update-status', $task) }}" method="POST" class="hidden mt-2">
                                     @csrf
                                     @method('PATCH')
-                                    <select name="status_id" class="select select-bordered select-sm w-full">
-                                        <option value="">No Status</option>
-                                        @foreach($statuses as $status)
-                                            <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
-                                                {{ $status->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Cancel</button>
-                                    </div>
+                                    @php
+                                        // Check if there are any transitions available (excluding current status)
+                                        $availableTransitions = $statuses->filter(fn($s) => $s->id !== $task->status_id);
+                                    @endphp
+                                    @if($availableTransitions->isEmpty() && $task->status)
+                                        <div class="text-sm text-base-content/60 italic">
+                                            <span class="icon-[tabler--lock] size-4 inline-block align-middle mr-1"></span>
+                                            No transitions available from this status
+                                        </div>
+                                        <div class="flex gap-2 mt-2">
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Close</button>
+                                        </div>
+                                    @else
+                                        <select name="status_id" class="select select-bordered select-sm w-full">
+                                            <option value="">No Status</option>
+                                            @foreach($statuses as $status)
+                                                <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
+                                                    {{ $status->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="flex gap-2 mt-2">
+                                            <button type="submit" class="btn btn-primary btn-xs">
+                                                <span class="icon-[tabler--check] size-3.5"></span>
+                                                Save
+                                            </button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Cancel</button>
+                                        </div>
+                                    @endif
                                 </form>
                                 @endif
                             </div>

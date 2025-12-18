@@ -122,6 +122,10 @@
                                 <span class="icon-[tabler--circle-x] size-4 text-base-content/40"></span>
                                 {{ $workflow->statuses->where('is_active', false)->count() }} Inactive
                             </span>
+                            <span class="flex items-center gap-1">
+                                <span class="icon-[tabler--layout-grid] size-4 text-primary"></span>
+                                {{ $workflow->workspaces_count }} {{ Str::plural('Workspace', $workflow->workspaces_count) }}
+                            </span>
                         </div>
 
                         <!-- Actions -->
@@ -136,6 +140,12 @@
                                         <a href="{{ route('workflows.edit', $workflow) }}" class="dropdown-item">
                                             <span class="icon-[tabler--edit] size-4"></span>
                                             Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('workflows.status-rules', $workflow) }}" class="dropdown-item">
+                                            <span class="icon-[tabler--git-branch] size-4"></span>
+                                            Status Rules
                                         </a>
                                     </li>
                                     @endif
@@ -196,7 +206,7 @@
                                 <div class="flex items-start justify-between">
                                     <div>
                                         <h4 class="font-medium text-base-content/70">{{ $workflow->name }}</h4>
-                                        <p class="text-sm text-base-content/50">{{ $workflow->statuses->count() }} statuses</p>
+                                        <p class="text-sm text-base-content/50">{{ $workflow->statuses->count() }} statuses &bull; {{ $workflow->workspaces_count }} {{ Str::plural('workspace', $workflow->workspaces_count) }}</p>
                                     </div>
                                     @if($canManage)
                                     <div class="flex gap-1">

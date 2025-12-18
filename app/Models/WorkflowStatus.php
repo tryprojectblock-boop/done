@@ -43,6 +43,7 @@ class WorkflowStatus extends Model
         'sort_order',
         'is_active',
         'responsibility',
+        'allowed_transitions',
         'created_by',
     ];
 
@@ -55,6 +56,7 @@ class WorkflowStatus extends Model
             'is_default' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'allowed_transitions' => 'array',
         ];
     }
 
@@ -163,5 +165,40 @@ class WorkflowStatus extends Model
     public function getResponsibilityLabelAttribute(): string
     {
         return self::RESPONSIBILITIES[$this->responsibility] ?? 'Assignee';
+    }
+
+    /**
+     * Check if transition to target status is allowed.
+     * If no rules are set (null), all transitions are allowed.
+     */
+    public function canTransitionTo(int $targetStatusId): bool
+    {
+        // If no rules set, allow all transitions
+        if ($this->allowed_transitions === null) {
+            return true;
+        }
+
+        return in_array($targetStatusId, $this->allowed_transitions);
+    }
+
+    /**
+     * Get the statuses this status can transition to.
+     */
+    public function getAllowedTransitionStatuses()
+    {
+        if ($this->allowed_transitions === null) {
+            // Return all other statuses in the workflow
+            return $this->workflow->statuses()->where('id', '!=', $this->id)->get();
+        }
+
+        return self::whereIn('id', $this->allowed_transitions)->get();
+    }
+
+    /**
+     * Check if status rules are configured.
+     */
+    public function hasTransitionRules(): bool
+    {
+        return $this->allowed_transitions !== null && count($this->allowed_transitions) > 0;
     }
 }

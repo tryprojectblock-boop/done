@@ -248,7 +248,7 @@ class TaskController extends Controller
         $this->authorize('view', $task);
 
         $task->load([
-            'workspace',
+            'workspace.workflow.statuses',
             'status',
             'assignee',
             'creator',
@@ -264,10 +264,24 @@ class TaskController extends Controller
             'department',
             'workspacePriority',
         ]);
-
         $user = auth()->user();
         // Get statuses only from the task's workspace workflow
-        $statuses = $task->workspace->workflow?->statuses ?? collect();
+        $allStatuses = $task->workspace->workflow?->statuses ?? collect();
+
+        // Filter statuses based on allowed transitions from current status
+        // Get the current status from the workflow statuses to ensure we have fresh allowed_transitions
+        $currentStatus = $task->status_id ? $allStatuses->firstWhere('id', $task->status_id) : null;
+        if ($currentStatus && $currentStatus->allowed_transitions !== null) {
+            // If rules are defined, only show allowed transitions + current status
+            $allowedIds = $currentStatus->allowed_transitions;
+            $statuses = $allStatuses->filter(function ($status) use ($allowedIds, $currentStatus) {
+                return $status->id === $currentStatus->id || in_array($status->id, $allowedIds);
+            })->values();
+        } else {
+            // No rules defined, show all statuses
+            $statuses = $allStatuses;
+        }
+
         // Get only workspace members for task assignment
         $users = $task->workspace ? $task->workspace->members()->where('users.status', User::STATUS_ACTIVE)->orderBy('users.name')->get() : collect();
         $tags = Tag::where('company_id', $user->company_id)->get();
@@ -290,9 +304,27 @@ class TaskController extends Controller
 
         $user = auth()->user();
 
+        // Eager load workspace workflow and statuses
+        $task->load(['workspace.workflow.statuses', 'status']);
+
         $workspaces = Workspace::forUser($user)->get();
         // Get statuses only from the task's workspace workflow
-        $statuses = $task->workspace->workflow?->statuses ?? collect();
+        $allStatuses = $task->workspace->workflow?->statuses ?? collect();
+
+        // Filter statuses based on allowed transitions from current status
+        // Get the current status from the workflow statuses to ensure we have fresh allowed_transitions
+        $currentStatus = $task->status_id ? $allStatuses->firstWhere('id', $task->status_id) : null;
+        if ($currentStatus && $currentStatus->allowed_transitions !== null) {
+            // If rules are defined, only show allowed transitions + current status
+            $allowedIds = $currentStatus->allowed_transitions;
+            $statuses = $allStatuses->filter(function ($status) use ($allowedIds, $currentStatus) {
+                return $status->id === $currentStatus->id || in_array($status->id, $allowedIds);
+            })->values();
+        } else {
+            // No rules defined, show all statuses
+            $statuses = $allStatuses;
+        }
+
         // Get only workspace members for task assignment
         $users = $task->workspace ? $task->workspace->members()->where('users.status', User::STATUS_ACTIVE)->orderBy('users.name')->get() : collect();
         $tags = Tag::where('company_id', $user->company_id)->get();
@@ -427,7 +459,18 @@ class TaskController extends Controller
 
         $request->validate(['status_id' => 'required|exists:workflow_statuses,id']);
 
-        $this->taskService->changeStatus($task, (int) $request->input('status_id'), $user);
+        $newStatusId = (int) $request->input('status_id');
+
+        // Validate status transition is allowed
+        $currentStatus = $task->status;
+        if ($currentStatus && $currentStatus->allowed_transitions !== null) {
+            // If staying on the same status, allow it
+            if ($currentStatus->id !== $newStatusId && !$currentStatus->canTransitionTo($newStatusId)) {
+                return back()->with('error', 'This status transition is not allowed.');
+            }
+        }
+
+        $this->taskService->changeStatus($task, $newStatusId, $user);
 
         return back()->with('success', 'Status updated successfully.');
     }
@@ -578,7 +621,8 @@ class TaskController extends Controller
                     ->orderBy('sort_order')
                     ->first();
 
-                if ($nextStatus) {
+                // Only auto-advance if transition is allowed
+                if ($nextStatus && $currentStatus->canTransitionTo($nextStatus->id)) {
                     $updateData['status_id'] = $nextStatus->id;
                     $appliedRules[] = 'status changed to ' . $nextStatus->name;
                 }

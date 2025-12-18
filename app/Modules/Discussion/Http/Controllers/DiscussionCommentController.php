@@ -53,11 +53,13 @@ class DiscussionCommentController extends Controller
 
         $attachments = $request->hasFile('attachments') ? $request->file('attachments') : [];
 
+        $parentId = $request->input('parent_id');
+
         $this->discussionService->addComment(
             $discussion,
             $request->input('content'),
             $user,
-            $request->input('parent_id'),
+            $parentId ? (int) $parentId : null,
             $attachments
         );
 

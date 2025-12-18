@@ -367,6 +367,13 @@ class TaskService implements TaskServiceInterface
     {
         $oldStatus = $task->status;
 
+        // Validate transition is allowed based on workflow status rules
+        if ($oldStatus && $oldStatus->id !== $statusId && $oldStatus->allowed_transitions !== null) {
+            if (!$oldStatus->canTransitionTo($statusId)) {
+                throw new \InvalidArgumentException('This status transition is not allowed.');
+            }
+        }
+
         $task->update(['status_id' => $statusId]);
         $task->refresh();
 

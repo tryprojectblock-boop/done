@@ -33,9 +33,9 @@
                     </div>
                     <p class="text-base-content/60 mt-1">
                         Created by {{ $discussion->creator->name }} on {{ $discussion->created_at->format('M d, Y') }}
-                        @if($discussion->workspace)
+                        {{--@if($discussion->workspace)
                             in <a href="{{ route('workspace.show', $discussion->workspace) }}" class="link link-primary">{{ $discussion->workspace->name }}</a>
-                        @endif
+                        @endif--}}
                     </p>
                 </div>
 

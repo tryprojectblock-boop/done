@@ -133,6 +133,14 @@ class Workflow extends Model
     }
 
     /**
+     * Get the workspaces using this workflow.
+     */
+    public function workspaces(): HasMany
+    {
+        return $this->hasMany(Workspace::class);
+    }
+
+    /**
      * Get active statuses only.
      */
     public function activeStatuses(): HasMany

@@ -342,8 +342,8 @@
             <!-- Actions -->
             <div class="flex justify gap-3">
                 <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
-                    <span class="icon-[tabler--plus] size-5"></span>
-                    Create Workflow
+                    Continue
+                    <span class="icon-[tabler--arrow-right] size-5"></span>
                 </button>
                 <a href="{{ route('workflows.index') }}" class="btn btn-ghost">Cancel</a>
             </div>

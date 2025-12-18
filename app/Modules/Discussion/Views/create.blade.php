@@ -110,7 +110,16 @@
                             <label class="label" for="discussion-type">
                                 <span class="label-text font-medium">Discussion Type <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <select name="type" id="discussion-type" class="select select-bordered w-full">
+                            <select name="type" id="discussion-type" data-select='{
+                                "placeholder": "Select a type...",
+                                "hasSearch": true,
+                                "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
+                                "toggleClasses": "advance-select-toggle",
+                                "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
+                                "optionClasses": "advance-select-option selected:active",
+                                "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
+                                "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
+                            }' class="hidden">
                                 <option value="">Select a type</option>
                                 @foreach($types as $value => $label)
                                     <option value="{{ $value }}" {{ old('type') === $value ? 'selected' : '' }}>
@@ -125,7 +134,16 @@
                             <label class="label" for="discussion-workspace">
                                 <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
-                            <select name="workspace_id" id="discussion-workspace" class="select select-bordered w-full">
+                            <select name="workspace_id" id="discussion-workspace" data-select='{
+                                "placeholder": "Select a workspace...",
+                                "hasSearch": true,
+                                "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
+                                "toggleClasses": "advance-select-toggle",
+                                "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
+                                "optionClasses": "advance-select-option selected:active",
+                                "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
+                                "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
+                            }' class="hidden">
                                 <option value="">No Workspace (General)</option>
                                 @foreach($workspaces as $workspace)
                                     <option value="{{ $workspace->id }}" {{ old('workspace_id') == $workspace->id ? 'selected' : '' }}>

@@ -19,12 +19,14 @@ class WorkflowController extends Controller
         $companyId = $request->user()->company_id;
 
         $workflows = Workflow::with(['statuses'])
+            ->withCount('workspaces')
             ->forCompany($companyId)
             ->active()
             ->orderByRaw('is_default DESC, name ASC')
             ->get();
 
         $archivedWorkflows = Workflow::with(['statuses'])
+            ->withCount('workspaces')
             ->forCompany($companyId)
             ->archived()
             ->latest()
@@ -116,8 +118,8 @@ class WorkflowController extends Controller
             ]);
         }
 
-        return redirect()->route('workflows.index')
-            ->with('success', 'Workflow created successfully.');
+        return redirect()->route('workflows.status-rules', $workflow)
+            ->with('success', 'Workflow created successfully. Now configure the status transition rules.');
     }
 
     /**
@@ -320,5 +322,67 @@ class WorkflowController extends Controller
     protected function canManageWorkflows(Request $request): bool
     {
         return $request->user()->isAdminOrHigher();
+    }
+
+    /**
+     * Show status transition rules for a workflow.
+     */
+    public function statusRules(Request $request, Workflow $workflow): View|RedirectResponse
+    {
+        $this->authorizeWorkflowAccess($request, $workflow);
+
+        if (!$this->canManageWorkflows($request)) {
+            return redirect()->route('workflows.index')
+                ->with('error', 'You do not have permission to manage status rules.');
+        }
+
+        $workflow->load('statuses');
+
+        return view('workflow.status-rules', [
+            'workflow' => $workflow,
+            'colors' => Workflow::COLORS,
+            'canManage' => true,
+        ]);
+    }
+
+    /**
+     * Update status transition rules for a workflow.
+     */
+    public function updateStatusRules(Request $request, Workflow $workflow): RedirectResponse
+    {
+        $this->authorizeWorkflowAccess($request, $workflow);
+
+        if (!$this->canManageWorkflows($request)) {
+            return redirect()->route('workflows.index')
+                ->with('error', 'You do not have permission to manage status rules.');
+        }
+
+        $validated = $request->validate([
+            'rules' => ['required', 'array'],
+            'rules.*' => ['nullable'],
+        ]);
+
+        foreach ($validated['rules'] as $statusId => $allowedTransitions) {
+            $status = WorkflowStatus::where('id', $statusId)
+                ->where('workflow_id', $workflow->id)
+                ->first();
+
+            if ($status) {
+                // Handle different input types:
+                // - Empty string from hidden input = no transitions allowed (empty array)
+                // - Array with values = specific transitions allowed
+                if (is_array($allowedTransitions) && !empty($allowedTransitions)) {
+                    // Filter out empty values and convert to integers
+                    $transitions = array_values(array_filter(array_map('intval', $allowedTransitions)));
+                    $status->update(['allowed_transitions' => $transitions ?: []]);
+                } else {
+                    // Empty string or empty array = no transitions allowed
+                    $status->update(['allowed_transitions' => []]);
+                }
+            }
+        }
+
+        return redirect()->route('workflows.index')
+            ->with('success', 'Workflow and status rules saved successfully.');
     }
 }

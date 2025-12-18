@@ -123,8 +123,22 @@ class DiscussionService implements DiscussionServiceInterface
                 }
             }
 
-            // Notify mentioned users in details
+            // Handle mentioned users in details - add as participants and notify
             if (!empty($data['details'])) {
+                // Parse mentioned user IDs from details
+                $mentionedUserIds = $this->notificationService->parseMentionsFromContent($data['details']);
+
+                // Add mentioned users as participants so they can see the discussion
+                if (!empty($mentionedUserIds)) {
+                    foreach ($mentionedUserIds as $mentionedUserId) {
+                        $mentionedUser = User::find($mentionedUserId);
+                        if ($mentionedUser && !$discussion->isParticipant($mentionedUser) && !$discussion->isCreator($mentionedUser)) {
+                            $discussion->addParticipant($mentionedUser, $user);
+                        }
+                    }
+                }
+
+                // Notify mentioned users
                 $this->notificationService->notifyMentionedUsers(
                     $data['details'],
                     $user,
@@ -240,6 +254,16 @@ class DiscussionService implements DiscussionServiceInterface
 
             // Parse mentioned user IDs from comment content
             $mentionedUserIds = $this->notificationService->parseMentionsFromContent($content);
+
+            // Add mentioned users as participants so they can see the discussion
+            if (!empty($mentionedUserIds)) {
+                foreach ($mentionedUserIds as $mentionedUserId) {
+                    $mentionedUser = User::find($mentionedUserId);
+                    if ($mentionedUser && !$discussion->isParticipant($mentionedUser) && !$discussion->isCreator($mentionedUser)) {
+                        $discussion->addParticipant($mentionedUser, $user);
+                    }
+                }
+            }
 
             // Notify mentioned users
             $this->notificationService->notifyMentionedUsers($content, $user, $discussion, $comment);
