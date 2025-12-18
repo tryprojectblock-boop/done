@@ -106,6 +106,11 @@ Route::middleware(['auth'])->group(function () {
             // Modules
             Route::post('/modules', [WorkspaceController::class, 'updateModules'])->name('modules.update');
         });
+
+        // API-like routes (JSON responses) - using ID instead of UUID for simpler AJAX calls
+        Route::get('/api/{workspaceId}/task-form-data', [WorkspaceController::class, 'getTaskFormData'])
+            ->name('api.task-form-data')
+            ->where('workspaceId', '[0-9]+');
     });
 
     // Invitation acceptance (separate route for cleaner URL)

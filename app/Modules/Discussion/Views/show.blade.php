@@ -62,20 +62,6 @@
             </div>
         </div>
 
-        <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="alert alert-success mb-4">
-                <span class="icon-[tabler--check] size-5"></span>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-4">
-                <span class="icon-[tabler--x] size-5"></span>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Content -->
@@ -301,4 +287,8 @@
         </div>
     </div>
 </div>
+
+{{-- Task Creation Drawer --}}
+@include('discussion::partials.task-drawer', ['discussion' => $discussion, 'workspaces' => $workspaces])
+
 @endsection

@@ -18,6 +18,10 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::delete('discussion-comments/{comment}', [DiscussionCommentController::class, 'destroy'])
         ->name('discussions.comments.destroy');
 
+    // Create Task from Discussion
+    Route::post('discussions/{discussion}/create-task', [DiscussionController::class, 'createTask'])
+        ->name('discussions.create-task');
+
     // Team Channels
     Route::prefix('channels')->name('channels.')->group(function () {
         Route::get('/', [TeamChannelController::class, 'index'])->name('index');

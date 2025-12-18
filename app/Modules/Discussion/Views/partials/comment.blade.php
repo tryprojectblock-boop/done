@@ -2,16 +2,36 @@
     $user = auth()->user();
     $editEditorId = 'edit-discussion-editor-' . $comment->id;
     $replyEditorId = 'reply-discussion-editor-' . $comment->id;
+
+    // Check if user can create task from comment (owner or admin of workspace)
+    $canCreateTask = false;
+    if ($discussion->workspace) {
+        $memberRole = $discussion->workspace->getMemberRole($user);
+        $canCreateTask = $discussion->workspace->isOwner($user) ||
+                         ($memberRole && $memberRole->isAdmin());
+    }
 @endphp
 
-<div class="flex gap-3" id="discussion-comment-{{ $comment->id }}">
+<div class="group/comment flex gap-3" id="discussion-comment-{{ $comment->id }}">
     <div class="avatar">
         <div class="w-10 h-10 rounded-full overflow-hidden">
             <img src="{{ $comment->user->avatar_url }}" alt="{{ $comment->user->name }}" class="w-full h-full object-cover" />
         </div>
     </div>
     <div class="flex-1">
-        <div class="bg-base-200 rounded-lg p-3">
+        <div class="bg-base-200 rounded-lg p-3 relative">
+            <!-- Add to Task button (shows on hover) - only for workspace owner/admin -->
+            @if($canCreateTask)
+            <button type="button"
+                    class="absolute -top-2 -right-2 btn btn-xs btn-primary shadow-md opacity-0 group-hover/comment:opacity-100 transition-opacity z-10"
+                    onclick="openTaskDrawer({{ $comment->id }}, this.dataset.content)"
+                    data-content="{{ e($comment->content) }}"
+                    title="Create task from this comment">
+                <span class="icon-[tabler--subtask] size-3.5"></span>
+                <span class="hidden sm:inline">Add to Task</span>
+            </button>
+            @endif
+
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
                     <span class="font-medium">{{ $comment->user->name }}</span>

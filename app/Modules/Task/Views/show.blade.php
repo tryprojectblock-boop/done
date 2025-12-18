@@ -720,7 +720,8 @@
                                 @endif
                             </div>
 
-                            <!-- Priority -->
+                            <!-- Priority (Non-inbox workspaces only - inbox uses Workspace Priority) -->
+                            @if($task->workspace->type->value !== 'inbox')
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-medium text-base-content/70">Priority</label>
@@ -764,6 +765,7 @@
                                 </form>
                                 @endif
                             </div>
+                            @endif
 
                             <!-- Due Date -->
                             <div class="py-3">

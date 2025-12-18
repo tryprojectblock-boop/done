@@ -7,16 +7,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     @if(session('success'))
-    showToast(@json(session('success')), 'success');
+    showToast(`{!! addslashes(session('success')) !!}`, 'success');
     @endif
     @if(session('error'))
-    showToast(@json(session('error')), 'error');
+    showToast(`{!! addslashes(session('error')) !!}`, 'error');
     @endif
     @if(session('warning'))
-    showToast(@json(session('warning')), 'warning');
+    showToast(`{!! addslashes(session('warning')) !!}`, 'warning');
     @endif
     @if(session('info'))
-    showToast(@json(session('info')), 'info');
+    showToast(`{!! addslashes(session('info')) !!}`, 'info');
     @endif
 });
 </script>

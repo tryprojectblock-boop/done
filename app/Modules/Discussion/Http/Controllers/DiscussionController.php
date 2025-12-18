@@ -11,9 +11,12 @@ use App\Modules\Discussion\Enums\DiscussionType;
 use App\Modules\Discussion\Http\Requests\StoreDiscussionRequest;
 use App\Modules\Discussion\Http\Requests\UpdateDiscussionRequest;
 use App\Modules\Discussion\Models\Discussion;
+use App\Modules\Discussion\Models\DiscussionComment;
+use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class DiscussionController extends Controller
@@ -102,7 +105,10 @@ class DiscussionController extends Controller
             abort(403, 'You don\'t have permission to view this discussion.');
         }
 
-        return view('discussion::show', compact('discussion', 'user'));
+        // Get workspaces for task creation drawer
+        $workspaces = Workspace::forUser($user)->get();
+
+        return view('discussion::show', compact('discussion', 'user', 'workspaces'));
     }
 
     public function edit(string $uuid): View
@@ -187,5 +193,59 @@ class DiscussionController extends Controller
         return redirect()
             ->route('discussions.index')
             ->with('success', 'Discussion deleted successfully!');
+    }
+
+    /**
+     * Create a task from a discussion comment.
+     */
+    public function createTask(Request $request, Discussion $discussion): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (!$discussion->canView($user)) {
+            return back()->with('error', 'You do not have permission to create tasks from this discussion.');
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'workspace_id' => ['required', 'exists:workspaces,id'],
+            'description' => ['nullable', 'string'],
+            'assignee_id' => ['nullable', 'exists:users,id'],
+            'workspace_priority_id' => ['nullable', 'exists:workspace_priorities,id'],
+            'due_date' => ['nullable', 'date'],
+            'comment_id' => ['nullable', 'exists:discussion_comments,id'],
+        ]);
+
+        // Verify user has access to the workspace
+        $workspace = Workspace::findOrFail($validated['workspace_id']);
+        if (!$workspace->hasMember($user) && !$user->isAdminOrHigher()) {
+            return back()->with('error', 'You do not have access to this workspace.');
+        }
+
+        // Get the default status for the workspace
+        $defaultStatus = $workspace->workflow?->statuses()->where('is_default', true)->first()
+            ?? $workspace->workflow?->statuses()->first();
+
+        // Build description with link to discussion
+        $description = $validated['description'] ?? '';
+        $discussionLink = route('discussions.show', $discussion->uuid);
+        $description .= "\n\n---\n📝 Created from discussion: [{$discussion->title}]({$discussionLink})";
+
+        // Create the task
+        $task = Task::create([
+            'uuid' => Str::uuid()->toString(),
+            'workspace_id' => $workspace->id,
+            'title' => $validated['title'],
+            'description' => $description,
+            'status_id' => $defaultStatus?->id,
+            'assignee_id' => $validated['assignee_id'] ?? null,
+            'workspace_priority_id' => $validated['workspace_priority_id'] ?? null,
+            'due_date' => $validated['due_date'] ?? null,
+            'created_by' => $user->id,
+        ]);
+
+        return redirect()
+            ->route('discussions.show', $discussion->uuid)
+            ->with('success', "Task '{$task->title}' created successfully! <a href='" . route('tasks.show', $task->uuid) . "' class='link link-primary'>View Task</a>");
     }
 }

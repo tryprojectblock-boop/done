@@ -2101,4 +2101,49 @@ class WorkspaceController extends Controller
             abort(403, 'Unauthorized access to workspace.');
         }
     }
+
+    /**
+     * Get task form data for a workspace (members, priorities, etc.)
+     * Used by AJAX calls for dynamic task creation forms.
+     */
+    public function getTaskFormData(Request $request, int $workspaceId): \Illuminate\Http\JsonResponse
+    {
+        $workspace = Workspace::find($workspaceId);
+
+        if (!$workspace) {
+            return response()->json(['error' => 'Workspace not found'], 404);
+        }
+
+        $user = $request->user();
+
+        // Check user access
+        if (!$workspace->hasMember($user) && !$user->isAdminOrHigher()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get workspace members
+        $members = $workspace->members()
+            ->select('users.id', 'users.name', 'users.email')
+            ->get()
+            ->map(fn ($member) => [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+            ]);
+
+        // Get workspace priorities
+        $priorities = $workspace->priorities()
+            ->orderBy('sort_order')
+            ->get()
+            ->map(fn ($priority) => [
+                'id' => $priority->id,
+                'name' => $priority->name,
+                'color' => $priority->color,
+            ]);
+
+        return response()->json([
+            'members' => $members,
+            'priorities' => $priorities,
+        ]);
+    }
 }
