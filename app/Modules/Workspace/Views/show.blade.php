@@ -56,7 +56,7 @@
                     @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
                     @if($workspace->type->value !== 'inbox' || $showInboxTabs)
                     <!-- Add Task/Ticket Button -->
-                    <a href="{{ route('tasks.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-primary">
+                    <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary">
                         <span class="icon-[tabler--plus] size-5"></span>
                         Add {{ $taskLabel }}
                     </a>
@@ -68,7 +68,8 @@
                     </a>
                     @endif
 
-                    <!-- Settings Dropdown (for active workspaces) -->
+                    <!-- Settings Dropdown (only for workspace owner or admin) -->
+                    @if($workspace->isOwner(auth()->user()) || auth()->user()->isAdminOrHigher())
                     <div class="dropdown dropdown-end">
                         <button id="workspace-settings-dropdown" type="button" class="dropdown-toggle btn btn-ghost" aria-haspopup="menu" aria-expanded="false" aria-label="Settings">
                             <span class="icon-[tabler--settings] size-5"></span>
@@ -97,6 +98,7 @@
                             </li>
                         </ul>
                     </div>
+                    @endif
                     @else
                     <!-- Archived workspace actions -->
                     <button type="button" class="btn btn-success" onclick="openModal('restoreModal')">
@@ -164,6 +166,11 @@
                     <span class="badge badge-sm {{ request('tab') === 'tasks' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $tasks->count() }}</span>
                 @endif
             </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'board']) }}"
+               class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'board' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--layout-kanban] size-5"></span>
+                <span>Board</span>
+            </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'discussions']) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'discussions' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--messages] size-5"></span>
@@ -216,6 +223,8 @@
             @include('workspace::partials.tab-overview')
         @elseif(request('tab') === 'tasks')
             @include('workspace::partials.tab-tasks')
+        @elseif(request('tab') === 'board')
+            @include('workspace::partials.tab-board')
         @elseif(request('tab') === 'discussions')
             @include('workspace::partials.tab-discussions')
         @elseif(request('tab') === 'milestones')

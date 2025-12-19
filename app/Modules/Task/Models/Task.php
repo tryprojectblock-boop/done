@@ -420,13 +420,23 @@ class Task extends Model
 
     public function canChangeStatus(User $user): bool
     {
-        // Assignee and owner can change status
-        if ($this->isOwner($user) || $this->isAssignee($user) || $user->isAdminOrHigher()) {
+        // Admin or higher can change any task
+        if ($user->isAdminOrHigher()) {
             return true;
         }
 
-        // Workspace members can change status
-        if ($this->workspace && $this->workspace->hasMember($user)) {
+        // Task creator can change status
+        if ($this->isOwner($user)) {
+            return true;
+        }
+
+        // Assignee can change their own task status
+        if ($this->isAssignee($user)) {
+            return true;
+        }
+
+        // Workspace owner can change any task in their workspace
+        if ($this->workspace && $this->workspace->isOwner($user)) {
             return true;
         }
 

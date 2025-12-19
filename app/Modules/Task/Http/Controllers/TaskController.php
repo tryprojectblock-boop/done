@@ -39,23 +39,59 @@ class TaskController extends Controller
         $filters = $request->only([
             'workspace_id', 'status_id', 'priority', 'type', 'assignee_id',
             'created_by', 'tag_id', 'is_closed', 'due_date_from', 'due_date_to',
-            'search', 'sort', 'direction', 'parent_tasks_only'
+            'search', 'sort', 'direction', 'parent_tasks_only', 'task_filter'
         ]);
 
-        // Default to showing open tasks
-        if (!$request->has('is_closed')) {
+        // Handle task_filter tabs (all, overdue, closed)
+        $taskFilter = $filters['task_filter'] ?? 'all';
+        if ($taskFilter === 'closed') {
+            $filters['is_closed'] = true;
+        } elseif ($taskFilter === 'overdue') {
+            $filters['is_closed'] = false;
+            $filters['overdue_only'] = true;
+        } else {
+            // Default "all" shows open tasks only
             $filters['is_closed'] = false;
         }
 
         $tasks = $this->taskService->getTasksForUser($user, $filters, 10);
 
-        // Get filter options - workspaces where user is a member
-        $workspaces = Workspace::forUser($user)->get();
-        // Get unique statuses by name to avoid duplicates in filter dropdown
-        $statuses = WorkflowStatus::whereHas('workflow', fn ($q) => $q->where('company_id', $user->company_id))
-            ->get()
-            ->unique('name')
-            ->values();
+        // Get task stats for tabs
+        $baseQuery = Task::visibleTo($user);
+        $taskStats = [
+            'total' => (clone $baseQuery)->count(),
+            'open' => (clone $baseQuery)
+                ->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'))
+                ->count(),
+            'closed' => (clone $baseQuery)
+                ->where(function ($q) {
+                    $q->whereNotNull('closed_at')
+                      ->orWhereHas('status', fn($sq) => $sq->where('type', 'closed'));
+                })
+                ->count(),
+            'overdue' => (clone $baseQuery)
+                ->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'))
+                ->whereNotNull('due_date')
+                ->where('due_date', '<', now())
+                ->count(),
+        ];
+
+        // Get filter options - workspaces where user is a member (with workflow statuses)
+        $workspaces = Workspace::forUser($user)->with('workflow.statuses')->get();
+
+        // Get statuses for the selected workspace, or all unique statuses if no workspace selected
+        $selectedWorkspaceId = $filters['workspace_id'] ?? null;
+        if ($selectedWorkspaceId) {
+            $selectedWorkspace = $workspaces->firstWhere('id', $selectedWorkspaceId);
+            $statuses = $selectedWorkspace?->workflow?->statuses ?? collect();
+        } else {
+            $statuses = WorkflowStatus::whereHas('workflow', fn ($q) => $q->where('company_id', $user->company_id))
+                ->get()
+                ->unique('name')
+                ->values();
+        }
         // Get users from company_user pivot table (includes invited members from other companies)
         $users = User::query()
             ->join('company_user', 'users.id', '=', 'company_user.user_id')
@@ -87,7 +123,8 @@ class TaskController extends Controller
             'users',
             'tags',
             'filters',
-            'viewMode'
+            'viewMode',
+            'taskStats'
         ));
     }
 
@@ -449,28 +486,49 @@ class TaskController extends Controller
         return back()->with('success', "Task {$task->task_number} has been resumed.");
     }
 
-    public function updateStatus(Request $request, Task $task): RedirectResponse
+    public function updateStatus(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canChangeStatus($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the status.'], 403);
+            }
             return back()->with('error', 'You do not have permission to change the status.');
         }
 
-        $request->validate(['status_id' => 'required|exists:workflow_statuses,id']);
+        $request->validate([
+            'status_id' => 'required|exists:workflow_statuses,id',
+            'note' => 'nullable|string|max:500',
+        ]);
 
         $newStatusId = (int) $request->input('status_id');
+        $note = $request->input('note');
 
         // Validate status transition is allowed
         $currentStatus = $task->status;
         if ($currentStatus && $currentStatus->allowed_transitions !== null) {
             // If staying on the same status, allow it
             if ($currentStatus->id !== $newStatusId && !$currentStatus->canTransitionTo($newStatusId)) {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'This status transition is not allowed.'], 400);
+                }
                 return back()->with('error', 'This status transition is not allowed.');
             }
         }
 
-        $this->taskService->changeStatus($task, $newStatusId, $user);
+        $this->taskService->changeStatus($task, $newStatusId, $user, $note);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully.',
+                'status' => [
+                    'id' => $task->fresh()->status->id,
+                    'name' => $task->fresh()->status->name,
+                ],
+            ]);
+        }
 
         return back()->with('success', 'Status updated successfully.');
     }

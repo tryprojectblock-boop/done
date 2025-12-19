@@ -4,74 +4,112 @@
     $tasksLabel = $isInbox ? 'Tickets' : 'Tasks';
     $taskLabelLower = $isInbox ? 'ticket' : 'task';
     $tasksLabelLower = $isInbox ? 'tickets' : 'tasks';
-    $statuses = $workspace->workflow?->statuses ?? collect();
+    $filterStatuses = $workspace->workflow?->statuses ?? collect();
     $workspaceUsers = $workspace->members ?? collect();
+    $currentFilters = $taskFilters ?? [];
 @endphp
 <div class="space-y-4">
-    <!-- Header with Actions -->
-    <div class="flex items-center justify-between">
+    @php
+        $stats = $taskStats ?? ['total' => 0, 'open' => 0, 'closed' => 0, 'overdue' => 0];
+        $totalTasks = $stats['total'];
+    @endphp
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h2 class="text-lg font-semibold">{{ $tasksLabel }}</h2>
-            <p class="text-sm text-base-content/60">{{ $tasks->count() }} {{ $tasks->count() === 1 ? $taskLabelLower : $tasksLabelLower }} in this workspace</p>
+            <p class="text-sm text-base-content/60">{{ $totalTasks }} {{ $totalTasks === 1 ? $taskLabelLower : $tasksLabelLower }} in this workspace</p>
         </div>
-        <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary btn-sm">
-            <span class="icon-[tabler--plus] size-4"></span>
-            New {{ $taskLabel }}
-        </a>
+    </div>
+
+    <!-- Task Stats -->
+    <div class="stats stats-horizontal shadow w-full">
+        <div class="stat">
+            <div class="stat-figure text-primary">
+                <span class="icon-[tabler--list-check] size-8"></span>
+            </div>
+            <div class="stat-title">Open</div>
+            <div class="stat-value text-primary">{{ $stats['open'] }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-success">
+                <span class="icon-[tabler--check] size-8"></span>
+            </div>
+            <div class="stat-title">Completed</div>
+            <div class="stat-value text-success">{{ $stats['closed'] }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-error">
+                <span class="icon-[tabler--alert-triangle] size-8"></span>
+            </div>
+            <div class="stat-title">Overdue</div>
+            <div class="stat-value text-error">{{ $stats['overdue'] }}</div>
+        </div>
+    </div>
+
+    <!-- Task Type Tabs -->
+    @php
+        $activeTaskTab = $currentFilters['task_filter'] ?? 'all';
+    @endphp
+    <div class="flex flex-col gap-4">
+        <div class="inline-flex p-1 bg-base-200 rounded-xl">
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $activeTaskTab === 'all' || $activeTaskTab === '' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
+                <span class="icon-[tabler--list-check] size-5"></span>
+                <span>All {{ $tasksLabel }}</span>
+                <span class="badge badge-sm {{ $activeTaskTab === 'all' || $activeTaskTab === '' ? 'bg-primary-content/20 text-primary-content border-0' : '' }}">{{ $stats['open'] }}</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks', 'task_filter' => 'overdue']) }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $activeTaskTab === 'overdue' ? 'bg-error text-error-content shadow-sm' : 'text-base-content/60 hover:text-error hover:bg-error/10' }}">
+                <span class="icon-[tabler--alert-triangle] size-5"></span>
+                <span>Overdue</span>
+                <span class="badge badge-sm {{ $activeTaskTab === 'overdue' ? 'bg-error-content/20 text-error-content border-0' : 'badge-error' }}">{{ $stats['overdue'] }}</span>
+            </a>
+            <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks', 'task_filter' => 'closed']) }}"
+               class="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 {{ $activeTaskTab === 'closed' ? 'bg-success text-success-content shadow-sm' : 'text-base-content/60 hover:text-success hover:bg-success/10' }}">
+                <span class="icon-[tabler--circle-check] size-5"></span>
+                <span>Closed</span>
+                <span class="badge badge-sm {{ $activeTaskTab === 'closed' ? 'bg-success-content/20 text-success-content border-0' : 'badge-success' }}">{{ $stats['closed'] }}</span>
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <form id="task-filter-form" action="{{ route('workspace.show', $workspace) }}" method="GET" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="tab" value="tasks" />
+            <input type="hidden" name="task_filter" value="{{ $activeTaskTab }}" />
+            @include('task::partials.task-filters', [
+                'showWorkspaceFilter' => false,
+                'showTaskFilter' => false,
+                'filters' => $currentFilters,
+                'statuses' => $filterStatuses,
+                'users' => $workspaceUsers,
+                'formAction' => route('workspace.show', $workspace) . '?tab=tasks',
+                'formId' => 'task-filter-form',
+            ])
+        </form>
     </div>
 
     @if($tasks->count() > 0)
-        <!-- Task Stats -->
-        @php
-            $openTasks = $tasks->whereNull('closed_at')->count();
-            $closedTasks = $tasks->whereNotNull('closed_at')->count();
-            $overdueTasks = $tasks->filter(fn($t) => $t->isOverdue())->count();
-        @endphp
-        <div class="stats stats-horizontal shadow w-full">
-            <div class="stat">
-                <div class="stat-figure text-primary">
-                    <span class="icon-[tabler--list-check] size-8"></span>
-                </div>
-                <div class="stat-title">Open</div>
-                <div class="stat-value text-primary">{{ $openTasks }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-figure text-success">
-                    <span class="icon-[tabler--check] size-8"></span>
-                </div>
-                <div class="stat-title">Completed</div>
-                <div class="stat-value text-success">{{ $closedTasks }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-figure text-error">
-                    <span class="icon-[tabler--alert-triangle] size-8"></span>
-                </div>
-                <div class="stat-title">Overdue</div>
-                <div class="stat-value text-error">{{ $overdueTasks }}</div>
-            </div>
-        </div>
-
         <!-- Tasks List -->
         <div class="card bg-base-100 shadow">
             <div class="overflow-x-auto">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>{{ $taskLabel }}</th>
+                            <th class="w-64 max-w-64">{{ $taskLabel }}</th>
                             <th>Status</th>
                             <th>Priority</th>
                             <th>Progress</th>
                             <th>Assignee</th>
                             <th>Due Date</th>
-                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($tasks as $task)
                         <tr class="hover">
-                            <td class="cursor-pointer" onclick="window.location='{{ route('tasks.show', $task) }}'">
+                            <td class="cursor-pointer max-w-64" onclick="window.location='{{ route('tasks.show', $task) }}'">
                                 <div class="flex items-center gap-3">
-                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-base-200">
+                                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-base-200">
                                         @if($task->types && count($task->types) > 0)
                                             @php $firstType = $task->types[0]; @endphp
                                             <span class="icon-[{{ $firstType->icon() }}] size-5 text-base-content/70"></span>
@@ -79,8 +117,8 @@
                                             <span class="icon-[tabler--checkbox] size-5 text-base-content/70"></span>
                                         @endif
                                     </div>
-                                    <div>
-                                        <div class="font-medium {{ $task->isClosed() ? 'line-through text-base-content/60' : '' }}">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-medium truncate {{ $task->isClosed() ? 'line-through text-base-content/60' : '' }}" title="{{ $task->title }}">
                                             {{ $task->title }}
                                             @if($task->isClosed())
                                                 <span class="badge badge-neutral badge-xs ml-1">Closed</span>
@@ -114,11 +152,11 @@
                                                     $currentStatus = $task->status;
                                                     if ($currentStatus && $currentStatus->allowed_transitions !== null) {
                                                         $allowedIds = $currentStatus->allowed_transitions;
-                                                        $filteredStatuses = $statuses->filter(function ($status) use ($allowedIds, $currentStatus) {
+                                                        $filteredStatuses = $filterStatuses->filter(function ($status) use ($allowedIds, $currentStatus) {
                                                             return $status->id === $currentStatus->id || in_array($status->id, $allowedIds);
                                                         });
                                                     } else {
-                                                        $filteredStatuses = $statuses;
+                                                        $filteredStatuses = $filterStatuses;
                                                     }
                                                     $availableTransitions = $filteredStatuses->filter(fn($s) => $s->id !== $task->status_id);
                                                 @endphp
@@ -396,13 +434,6 @@
                                     <span class="text-base-content/40">-</span>
                                 @endif
                             </td>
-                            <td class="text-right">
-                                <div class="flex items-center justify-end gap-1">
-                                    <a href="{{ route('tasks.show', $task) }}" class="btn btn-ghost btn-sm btn-circle" title="View Task">
-                                        <span class="icon-[tabler--eye] size-4"></span>
-                                    </a>
-                                </div>
-                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -410,24 +441,36 @@
             </div>
         </div>
 
-        <!-- View All Link -->
-        <div class="text-center">
-            <a href="{{ route('tasks.index', ['workspace' => $workspace->uuid]) }}" class="btn btn-ghost btn-sm">
-                View all {{ $tasksLabelLower }}
-                <span class="icon-[tabler--arrow-right] size-4"></span>
-            </a>
-        </div>
+        <!-- Pagination -->
+        @if($tasks->hasPages())
+            <div class="flex justify-center mt-4">
+                {{ $tasks->links() }}
+            </div>
+        @endif
     @else
         <!-- Empty State -->
         <div class="card bg-base-100 shadow">
             <div class="card-body items-center text-center py-12">
-                <span class="icon-[{{ $isInbox ? 'tabler--ticket' : 'tabler--list-check' }}] size-16 text-base-content/20 mb-4"></span>
-                <h3 class="text-lg font-semibold">No {{ $tasksLabelLower }} yet</h3>
-                <p class="text-base-content/60 mb-4">Create your first {{ $taskLabelLower }} to start tracking work in this workspace.</p>
-                <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary">
-                    <span class="icon-[tabler--plus] size-4"></span>
-                    Create First {{ $taskLabel }}
-                </a>
+                @php
+                    $hasFilters = !empty(array_filter($currentFilters ?? []));
+                @endphp
+                @if($hasFilters)
+                    <span class="icon-[tabler--filter-off] size-16 text-base-content/20 mb-4"></span>
+                    <h3 class="text-lg font-semibold">No {{ $tasksLabelLower }} found</h3>
+                    <p class="text-base-content/60 mb-4">Try adjusting your filters to see more results.</p>
+                    <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost">
+                        <span class="icon-[tabler--x] size-4"></span>
+                        Clear Filters
+                    </a>
+                @else
+                    <span class="icon-[{{ $isInbox ? 'tabler--ticket' : 'tabler--list-check' }}] size-16 text-base-content/20 mb-4"></span>
+                    <h3 class="text-lg font-semibold">No {{ $tasksLabelLower }} yet</h3>
+                    <p class="text-base-content/60 mb-4">Create your first {{ $taskLabelLower }} to start tracking work in this workspace.</p>
+                    <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary">
+                        <span class="icon-[tabler--plus] size-4"></span>
+                        Create First {{ $taskLabel }}
+                    </a>
+                @endif
             </div>
         </div>
     @endif

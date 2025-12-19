@@ -102,10 +102,22 @@ class TaskService implements TaskServiceInterface
 
         if (isset($filters['is_closed'])) {
             if ($filters['is_closed']) {
-                $query->whereNotNull('closed_at');
+                // Closed = closed_at is set OR status type is 'closed'
+                $query->where(function ($q) {
+                    $q->whereNotNull('closed_at')
+                      ->orWhereHas('status', fn($sq) => $sq->where('type', 'closed'));
+                });
             } else {
-                $query->whereNull('closed_at');
+                // Open = no closed_at AND status type is not 'closed'
+                $query->whereNull('closed_at')
+                    ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'));
             }
+        }
+
+        // Overdue only filter
+        if (!empty($filters['overdue_only'])) {
+            $query->whereNotNull('due_date')
+                ->where('due_date', '<', now());
         }
 
         if (!empty($filters['due_date_from'])) {
@@ -121,7 +133,16 @@ class TaskService implements TaskServiceInterface
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('task_number', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('status', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('assignee', function ($aq) use ($search) {
+                        $aq->where('name', 'like', "%{$search}%")
+                           ->orWhere('first_name', 'like', "%{$search}%")
+                           ->orWhere('last_name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('priority', 'like', "%{$search}%");
             });
         }
 
@@ -363,7 +384,7 @@ class TaskService implements TaskServiceInterface
         return $task->fresh();
     }
 
-    public function changeStatus(Task $task, int $statusId, User $user): Task
+    public function changeStatus(Task $task, int $statusId, User $user, ?string $note = null): Task
     {
         $oldStatus = $task->status;
 
@@ -383,9 +404,20 @@ class TaskService implements TaskServiceInterface
             $task,
             $user,
             ActivityType::STATUS_CHANGED,
-            ['id' => $oldStatus?->id, 'name' => $oldStatus?->name],
+            ['id' => $oldStatus?->id, 'name' => $oldStatus?->name, 'note' => $note],
             ['id' => $newStatus?->id, 'name' => $newStatus?->name]
         );
+
+        // Auto-post note as a comment if provided
+        if ($note) {
+            $commentContent = "**Status changed:** {$oldStatus?->name} → {$newStatus?->name}\n\n{$note}";
+            TaskComment::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'content' => $commentContent,
+                'is_private' => false,
+            ]);
+        }
 
         // Send emails for inbox workspaces when status changes
         $task->load(['workspace', 'creator']);

@@ -280,13 +280,88 @@ class WorkspaceController extends Controller
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
 
+        // Get task filters
+        $taskFilters = $request->only(['status_id', 'assignee_id', 'priority', 'search', 'task_filter']);
+
         // Load tasks for this workspace (filtered by visibility for private tasks)
-        $tasks = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
+        $tasksQuery = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
             ->visibleTo($request->user())
-            ->with(['assignee', 'creator', 'status'])
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
+            ->with(['assignee', 'creator', 'status']);
+
+        // Apply task type filter (All/Overdue/Closed)
+        // A task is considered "closed" if closed_at is set OR status type is 'closed'
+        $taskFilter = $taskFilters['task_filter'] ?? '';
+        if ($taskFilter === 'overdue') {
+            // Only overdue tasks (not closed, due date passed)
+            $tasksQuery->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'))
+                ->whereNotNull('due_date')
+                ->where('due_date', '<', now());
+        } elseif ($taskFilter === 'closed') {
+            // Only closed tasks (closed_at set OR status type is 'closed')
+            $tasksQuery->where(function ($q) {
+                $q->whereNotNull('closed_at')
+                  ->orWhereHas('status', fn($sq) => $sq->where('type', 'closed'));
+            });
+        } else {
+            // "All Tasks" excludes closed tasks by default
+            $tasksQuery->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'));
+        }
+
+        // Apply filters
+        if (!empty($taskFilters['status_id'])) {
+            $tasksQuery->where('status_id', $taskFilters['status_id']);
+        }
+        if (!empty($taskFilters['assignee_id'])) {
+            $tasksQuery->where('assignee_id', $taskFilters['assignee_id']);
+        }
+        if (!empty($taskFilters['priority'])) {
+            $tasksQuery->where('priority', $taskFilters['priority']);
+        }
+
+        // Apply search filter (search in title, status name, priority, assignee name)
+        if (!empty($taskFilters['search'])) {
+            $search = $taskFilters['search'];
+            $tasksQuery->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('status', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('assignee', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('first_name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('priority', 'like', "%{$search}%");
+            });
+        }
+
+        $tasks = $tasksQuery->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        // Get task stats (for the stats bar - these are totals, not filtered)
+        // A task is "closed" if closed_at is set OR status type is 'closed'
+        $allWorkspaceTasks = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)
+            ->visibleTo($request->user());
+        $taskStats = [
+            'total' => (clone $allWorkspaceTasks)->count(),
+            'open' => (clone $allWorkspaceTasks)
+                ->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'))
+                ->count(),
+            'closed' => (clone $allWorkspaceTasks)
+                ->where(function ($q) {
+                    $q->whereNotNull('closed_at')
+                      ->orWhereHas('status', fn($sq) => $sq->where('type', 'closed'));
+                })
+                ->count(),
+            'overdue' => (clone $allWorkspaceTasks)
+                ->whereNull('closed_at')
+                ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'))
+                ->whereNotNull('due_date')
+                ->where('due_date', '<', now())
+                ->count(),
+        ];
 
         // Load discussions for this workspace
         $discussions = \App\Modules\Discussion\Models\Discussion::where('workspace_id', $workspace->id)
@@ -302,8 +377,10 @@ class WorkspaceController extends Controller
             ->get();
 
         return view('workspace::show', [
-            'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow', 'guests']),
+            'workspace' => $workspace->load(['members', 'owner', 'invitations', 'workflow.statuses', 'guests']),
             'tasks' => $tasks,
+            'taskFilters' => $taskFilters,
+            'taskStats' => $taskStats,
             'discussions' => $discussions,
             'files' => $files,
         ]);
@@ -328,10 +405,16 @@ class WorkspaceController extends Controller
 
     /**
      * Show workspace settings.
+     * Only accessible by workspace owner or company admin.
      */
     public function settings(Request $request, Workspace $workspace): View
     {
         $this->authorizeWorkspaceAccess($request, $workspace);
+
+        $user = $request->user();
+        if (!$workspace->isOwner($user) && !$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access workspace settings.');
+        }
 
         return view('workspace::settings', [
             'workspace' => $workspace->load(['members', 'owner']),

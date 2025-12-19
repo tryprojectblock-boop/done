@@ -25,7 +25,7 @@ interface TaskServiceInterface
 
     public function reopenTask(Task $task, User $user): Task;
 
-    public function changeStatus(Task $task, int $statusId, User $user): Task;
+    public function changeStatus(Task $task, int $statusId, User $user, ?string $note = null): Task;
 
     public function changeAssignee(Task $task, ?int $assigneeId, User $user): Task;
 

@@ -177,6 +177,7 @@
         }
     @endphp
 
+    @if($workspace->isOwner(auth()->user()) || auth()->user()->isAdminOrHigher())
     @if($isInboxWorkspace)
     <!-- Clients List (Inbox workspace only) -->
     <div class="card bg-base-100 shadow">
@@ -282,7 +283,7 @@
     </div>
     @endif
 
-    <!-- Guests List -->
+    <!-- Guests List (only for workspace owner or admin) -->
     <div class="card bg-base-100 shadow">
         <div class="card-body">
             <div class="flex items-center justify-between mb-4">
@@ -368,6 +369,7 @@
             @endif
         </div>
     </div>
+    @endif
 
     <!-- Role Info -->
     <div class="card bg-base-100 shadow">

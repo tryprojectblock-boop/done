@@ -3,7 +3,7 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Task</th>
+                    <th class="w-72 max-w-72">Task</th>
                     <th>Status</th>
                     <th>Priority</th>
                     <th>Progress</th>
@@ -15,9 +15,9 @@
             <tbody>
                 @foreach($tasks as $task)
                 <tr class="hover">
-                    <td class="cursor-pointer" onclick="window.location='{{ route('tasks.show', $task) }}'">
+                    <td class="cursor-pointer max-w-72" onclick="window.location='{{ route('tasks.show', $task) }}'">
                         <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-base-200">
+                            <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-base-200">
                                 @if($task->types && count($task->types) > 0)
                                     @php $firstType = $task->types[0]; @endphp
                                     <span class="icon-[{{ $firstType->icon() }}] size-5 text-base-content/70"></span>
@@ -25,9 +25,9 @@
                                     <span class="icon-[tabler--checkbox] size-5 text-base-content/70"></span>
                                 @endif
                             </div>
-                            <div>
-                                <div class="font-medium {{ $task->isClosed() ? 'line-through text-base-content/60' : '' }}">
-                                    {{ $task->title }}
+                            <div class="min-w-0 flex-1">
+                                <div class="font-medium truncate {{ $task->isClosed() ? 'line-through text-base-content/60' : '' }}" title="{{ $task->title }}">
+                                    {{ Str::words($task->title, 20, '...') }}
                                     @if($task->isClosed())
                                         <span class="badge badge-neutral badge-xs ml-1">Closed</span>
                                     @endif
@@ -37,7 +37,7 @@
                                         </span>
                                     @endif
                                 </div>
-                                <div class="text-xs text-base-content/50">{{ $task->workspace->name }}</div>
+                                <div class="text-xs text-base-content/50 truncate">{{ $task->workspace->name }}</div>
                             </div>
                         </div>
                     </td>
