@@ -19,80 +19,89 @@ class CalendarController extends Controller
         $user = $request->user();
         $companyId = $user->company_id;
 
+        // Check if user can view all assignees (owner/admin only)
+        $canViewAllAssignees = $user->isAdminOrHigher();
+
         $view = $request->get('view', 'list'); // list or calendar
         if (!in_array($view, ['list', 'calendar'])) {
             $view = 'list';
         }
 
         // Get filter parameters
+        $tab = $request->get('tab', 'all'); // all or overdue
+
+        // Determine assignee filter:
+        // - For regular members: always show their own tasks only
+        // - For owner/admin: show ALL tasks by default, can filter by assignee
+        $assigneeId = $request->get('assignee_id');
+        if (!$canViewAllAssignees) {
+            // Regular members can only see their own tasks
+            $assigneeId = $user->id;
+        }
+        // Owner/admin: use whatever filter they set (including empty = all tasks)
+
         $filters = [
+            'tab' => $tab,
             'workspace_id' => $request->get('workspace_id'),
-            'assignee_id' => $request->get('assignee_id'),
-            'status' => $request->get('status'),
+            'assignee_id' => $assigneeId,
             'month' => $request->get('month', now()->month),
             'year' => $request->get('year', now()->year),
         ];
 
-        // Build date range for the selected month
-        $startOfMonth = Carbon::create($filters['year'], $filters['month'], 1)->startOfMonth();
-        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+        // Build date range - from today onwards for 30 days
+        $today = Carbon::today();
+        $tomorrow = Carbon::tomorrow();
+        $endDate = $today->copy()->addDays(30);
 
-        // For list view, extend to show a few days before and after
-        $listStartDate = $startOfMonth->copy()->subDays(7);
-        $listEndDate = $endOfMonth->copy()->addDays(7);
-
-        // Query tasks with due dates (filtered by visibility for private tasks)
-        $query = Task::query()
+        // Query base for tasks
+        $baseQuery = Task::query()
             ->with(['workspace', 'assignee', 'creator', 'status', 'tags'])
             ->where('company_id', $companyId)
             ->visibleTo($user)
-            ->whereNotNull('due_date');
+            ->whereNull('closed_at')
+            ->whereDoesntHave('status', fn($q) => $q->where('type', 'closed'));
 
-        // Apply filters
+        // Apply workspace filter
         if ($filters['workspace_id']) {
-            $query->where('workspace_id', $filters['workspace_id']);
+            $baseQuery->where('workspace_id', $filters['workspace_id']);
         }
 
+        // Apply assignee filter (always applied - either user's choice or enforced for regular members)
         if ($filters['assignee_id']) {
-            $query->where('assignee_id', $filters['assignee_id']);
+            $baseQuery->where('assignee_id', $filters['assignee_id']);
         }
 
-        if ($filters['status'] === 'open') {
-            $query->whereNull('closed_at');
-        } elseif ($filters['status'] === 'closed') {
-            $query->whereNotNull('closed_at');
-        } elseif ($filters['status'] === 'overdue') {
-            $query->whereNull('closed_at')
-                ->where('due_date', '<', now()->startOfDay());
-        }
-
-        // Get tasks for the date range
-        $tasks = $query->whereBetween('due_date', [$listStartDate, $listEndDate])
+        // Get overdue tasks (for both tabs - stats and overdue tab)
+        $overdueTasks = (clone $baseQuery)
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', $today)
             ->orderBy('due_date', 'asc')
-            ->orderBy('created_at', 'asc')
             ->get();
 
-        // Query tasks without due dates (unscheduled tasks, filtered by visibility)
-        $unscheduledQuery = Task::query()
-            ->with(['workspace', 'assignee', 'creator', 'status', 'tags'])
-            ->where('company_id', $companyId)
-            ->visibleTo($user)
-            ->whereNull('due_date')
-            ->whereNull('closed_at'); // Only show open unscheduled tasks
+        // Get today's tasks
+        $todayTasks = (clone $baseQuery)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', $today)
+            ->orderBy('due_date', 'asc')
+            ->get();
 
-        // Apply same filters for unscheduled
-        if ($filters['workspace_id']) {
-            $unscheduledQuery->where('workspace_id', $filters['workspace_id']);
-        }
+        // Get tomorrow's tasks
+        $tomorrowTasks = (clone $baseQuery)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', $tomorrow)
+            ->orderBy('due_date', 'asc')
+            ->get();
 
-        if ($filters['assignee_id']) {
-            $unscheduledQuery->where('assignee_id', $filters['assignee_id']);
-        }
+        // Get upcoming tasks (after tomorrow, within 30 days)
+        $upcomingTasks = (clone $baseQuery)
+            ->whereNotNull('due_date')
+            ->where('due_date', '>', $tomorrow->copy()->endOfDay())
+            ->where('due_date', '<=', $endDate)
+            ->orderBy('due_date', 'asc')
+            ->get();
 
-        $unscheduledTasks = $unscheduledQuery->orderBy('created_at', 'desc')->get();
-
-        // Group tasks by date for list view
-        $tasksByDate = $tasks->groupBy(function ($task) {
+        // Group upcoming tasks by date
+        $upcomingByDate = $upcomingTasks->groupBy(function ($task) {
             return $task->due_date->format('Y-m-d');
         })->sortKeys();
 
@@ -107,24 +116,32 @@ class CalendarController extends Controller
 
         // Calculate stats
         $stats = [
-            'total' => $tasks->count() + $unscheduledTasks->count(),
-            'overdue' => $tasks->filter(fn($t) => $t->isOverdue())->count(),
-            'upcoming' => $tasks->filter(fn($t) => $t->due_date->isFuture() && !$t->isClosed())->count(),
-            'completed' => $tasks->filter(fn($t) => $t->isClosed())->count(),
-            'unscheduled' => $unscheduledTasks->count(),
+            'all' => $todayTasks->count() + $tomorrowTasks->count() + $upcomingTasks->count(),
+            'overdue' => $overdueTasks->count(),
+            'today' => $todayTasks->count(),
+            'tomorrow' => $tomorrowTasks->count(),
+            'upcoming' => $upcomingTasks->count(),
         ];
+
+        // For calendar view compatibility
+        $startOfMonth = Carbon::create($filters['year'], $filters['month'], 1)->startOfMonth();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
         return view('calendar::index', compact(
             'view',
-            'tasks',
-            'tasksByDate',
-            'unscheduledTasks',
+            'tab',
+            'overdueTasks',
+            'todayTasks',
+            'tomorrowTasks',
+            'upcomingTasks',
+            'upcomingByDate',
             'workspaces',
             'teamMembers',
             'filters',
             'stats',
             'startOfMonth',
-            'endOfMonth'
+            'endOfMonth',
+            'canViewAllAssignees'
         ));
     }
 
@@ -135,6 +152,7 @@ class CalendarController extends Controller
     {
         $user = $request->user();
         $companyId = $user->company_id;
+        $canViewAllAssignees = $user->isAdminOrHigher();
 
         $start = $request->get('start') ? Carbon::parse($request->get('start')) : now()->startOfMonth();
         $end = $request->get('end') ? Carbon::parse($request->get('end')) : now()->endOfMonth();
@@ -151,8 +169,16 @@ class CalendarController extends Controller
             $query->where('workspace_id', $request->get('workspace_id'));
         }
 
-        if ($request->get('assignee_id')) {
-            $query->where('assignee_id', $request->get('assignee_id'));
+        // Apply assignee filter with same restrictions as index
+        $assigneeId = $request->get('assignee_id');
+        if (!$canViewAllAssignees) {
+            // Regular members can only see their own tasks
+            $assigneeId = $user->id;
+        }
+        // Owner/admin: use whatever filter they set (including empty = all tasks)
+
+        if ($assigneeId) {
+            $query->where('assignee_id', $assigneeId);
         }
 
         $tasks = $query->get();

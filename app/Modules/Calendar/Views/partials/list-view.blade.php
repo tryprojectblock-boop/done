@@ -1,274 +1,173 @@
-@if($tasksByDate->isEmpty() && (!isset($unscheduledTasks) || $unscheduledTasks->isEmpty()))
+@php
+    $activeTab = $tab ?? 'all';
+    $hasAnyTasks = ($activeTab === 'overdue')
+        ? $overdueTasks->isNotEmpty()
+        : ($todayTasks->isNotEmpty() || $tomorrowTasks->isNotEmpty() || $upcomingByDate->isNotEmpty());
+@endphp
+
+@if(!$hasAnyTasks)
     <div class="card bg-base-100 shadow">
         <div class="card-body text-center py-12">
             <div class="text-base-content/50">
-                <span class="icon-[tabler--calendar-off] size-12 block mx-auto mb-4"></span>
-                <p class="text-lg font-medium">No tasks found</p>
-                <p class="text-sm">Create a task to get started</p>
+                @if($activeTab === 'overdue')
+                    <span class="icon-[tabler--mood-happy] size-12 block mx-auto mb-4 text-success"></span>
+                    <p class="text-lg font-medium">No overdue tasks!</p>
+                    <p class="text-sm">Great job staying on top of your work</p>
+                @else
+                    <span class="icon-[tabler--calendar-off] size-12 block mx-auto mb-4"></span>
+                    <p class="text-lg font-medium">No upcoming tasks</p>
+                    <p class="text-sm">Create a task to get started</p>
+                @endif
             </div>
+            @if($activeTab !== 'overdue')
             <div class="mt-4">
                 <a href="{{ route('tasks.create') }}" class="btn btn-primary">
                     <span class="icon-[tabler--plus] size-4"></span>
                     Create Task
                 </a>
             </div>
+            @endif
         </div>
     </div>
 @else
     <div class="space-y-6">
-        <!-- Unscheduled Tasks (No Due Date) -->
-        @if(isset($unscheduledTasks) && $unscheduledTasks->isNotEmpty())
-            <div class="card bg-base-100 shadow border-l-4 border-l-warning">
+        @if($activeTab === 'overdue')
+            {{-- Overdue Tab: Show all overdue tasks --}}
+            <div class="card bg-base-100 shadow border-l-4 border-l-error">
                 <div class="card-body p-0">
-                    <!-- Header -->
-                    <div class="flex items-center gap-4 p-4 border-b border-base-200 bg-warning/5">
-                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-warning/20 text-warning">
-                            <span class="icon-[tabler--calendar-off] size-8"></span>
+                    <div class="flex items-center gap-4 p-4 border-b border-base-200 bg-error/5">
+                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-error text-error-content">
+                            <span class="icon-[tabler--alert-triangle] size-8"></span>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-semibold text-lg">No Due Date</h3>
+                            <h3 class="font-semibold text-lg text-error">Overdue Tasks</h3>
                             <p class="text-sm text-base-content/60">
-                                Unscheduled tasks
-                                <span class="mx-2">-</span>
-                                <span class="badge badge-sm badge-warning">
-                                    {{ $unscheduledTasks->count() }} {{ Str::plural('task', $unscheduledTasks->count()) }}
+                                <span class="badge badge-sm badge-error">
+                                    {{ $overdueTasks->count() }} {{ Str::plural('task', $overdueTasks->count()) }}
                                 </span>
+                                require your attention
                             </p>
                         </div>
                     </div>
-
-                    <!-- Tasks List -->
                     <div class="divide-y divide-base-200">
-                        @foreach($unscheduledTasks as $task)
-                            <div class="p-4 hover:bg-base-50 transition-colors cursor-pointer task-item"
-                                 data-task-uuid="{{ $task->uuid }}"
-                                 onclick="openTaskDrawer('{{ $task->uuid }}')">
-                                <div class="flex items-start gap-4">
-                                    <!-- Status Indicator -->
-                                    <div class="flex-shrink-0 mt-1">
-                                        <span class="icon-[tabler--circle] size-5 text-base-content/30"></span>
-                                    </div>
-
-                                    <!-- Task Content -->
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-xs text-base-content/50 font-mono">{{ $task->task_number }}</span>
-                                            @if($task->status)
-                                                <span class="badge badge-xs border" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}; border-color: {{ $task->status->background_color }}40;">
-                                                    {{ $task->status->name }}
-                                                </span>
-                                            @endif
-                                            @if($task->priority)
-                                                <span class="badge badge-xs border" style="background-color: {{ $task->priority->color() }}20; color: {{ $task->priority->color() }}; border-color: {{ $task->priority->color() }}40;">
-                                                    <span class="icon-[{{ $task->priority->icon() }}] size-3 mr-1"></span>
-                                                    {{ $task->priority->label() }}
-                                                </span>
-                                            @endif
-                                        </div>
-
-                                        <h4 class="font-medium">{{ $task->title }}</h4>
-
-                                        @if($task->description)
-                                            <p class="text-sm text-base-content/60 line-clamp-2 mt-1">
-                                                {{ Str::limit(strip_tags($task->description), 100) }}
-                                            </p>
-                                        @endif
-
-                                        <!-- Task Meta -->
-                                        <div class="flex items-center flex-wrap gap-3 mt-2 text-xs text-base-content/50">
-                                            @if($task->workspace)
-                                                <span class="flex items-center gap-1">
-                                                    <span class="icon-[tabler--briefcase] size-3.5"></span>
-                                                    {{ $task->workspace->name }}
-                                                </span>
-                                            @endif
-
-                                            <span class="flex items-center gap-1">
-                                                <span class="icon-[tabler--clock] size-3.5"></span>
-                                                Created {{ $task->created_at->diffForHumans() }}
-                                            </span>
-
-                                            @if($task->tags->isNotEmpty())
-                                                <div class="flex items-center gap-1">
-                                                    @foreach($task->tags->take(2) as $tag)
-                                                        <span class="badge badge-xs border" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }}; border-color: {{ $tag->color }}40;">
-                                                            {{ $tag->name }}
-                                                        </span>
-                                                    @endforeach
-                                                    @if($task->tags->count() > 2)
-                                                        <span class="text-base-content/40">+{{ $task->tags->count() - 2 }}</span>
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Assignee -->
-                                    <div class="flex-shrink-0">
-                                        @if($task->assignee)
-                                            <div class="tooltip" data-tip="{{ $task->assignee->name }}">
-                                                <div class="avatar">
-                                                    <div class="w-8 h-8 rounded-full">
-                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="tooltip" data-tip="Unassigned">
-                                                <div class="avatar placeholder">
-                                                    <div class="bg-base-200 text-base-content/50 rounded-full w-8 h-8">
-                                                        <span class="icon-[tabler--user] size-4"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
+                        @foreach($overdueTasks as $task)
+                            @include('calendar::partials.task-item', ['task' => $task])
                         @endforeach
                     </div>
                 </div>
             </div>
+        @else
+            {{-- All Tab: Today, Tomorrow, By Date --}}
+
+            {{-- Today Section --}}
+            <div class="card bg-base-100 shadow border-l-4 border-l-primary">
+                <div class="card-body p-0">
+                    <div class="flex items-center gap-4 p-4 border-b border-base-200 bg-primary/5">
+                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-primary text-primary-content">
+                            <span class="text-xs uppercase font-medium">{{ now()->format('M') }}</span>
+                            <span class="text-2xl font-bold">{{ now()->format('d') }}</span>
+                            <span class="text-xs">{{ now()->format('D') }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-lg">Today</h3>
+                            <p class="text-sm text-base-content/60">
+                                {{ now()->format('l, F j, Y') }}
+                                <span class="mx-2">-</span>
+                                <span class="badge badge-sm badge-primary">
+                                    {{ $todayTasks->count() }} {{ Str::plural('task', $todayTasks->count()) }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    @if($todayTasks->isNotEmpty())
+                        <div class="divide-y divide-base-200">
+                            @foreach($todayTasks as $task)
+                                @include('calendar::partials.task-item', ['task' => $task])
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="p-8 text-center text-base-content/50">
+                            <span class="icon-[tabler--calendar-check] size-8 block mx-auto mb-2"></span>
+                            <p class="text-sm">No tasks due today</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Tomorrow Section --}}
+            <div class="card bg-base-100 shadow border-l-4 border-l-info">
+                <div class="card-body p-0">
+                    @php $tomorrowDate = now()->addDay(); @endphp
+                    <div class="flex items-center gap-4 p-4 border-b border-base-200 bg-info/5">
+                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-info text-info-content">
+                            <span class="text-xs uppercase font-medium">{{ $tomorrowDate->format('M') }}</span>
+                            <span class="text-2xl font-bold">{{ $tomorrowDate->format('d') }}</span>
+                            <span class="text-xs">{{ $tomorrowDate->format('D') }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-lg">Tomorrow</h3>
+                            <p class="text-sm text-base-content/60">
+                                {{ $tomorrowDate->format('l, F j, Y') }}
+                                <span class="mx-2">-</span>
+                                <span class="badge badge-sm badge-info">
+                                    {{ $tomorrowTasks->count() }} {{ Str::plural('task', $tomorrowTasks->count()) }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    @if($tomorrowTasks->isNotEmpty())
+                        <div class="divide-y divide-base-200">
+                            @foreach($tomorrowTasks as $task)
+                                @include('calendar::partials.task-item', ['task' => $task])
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="p-8 text-center text-base-content/50">
+                            <span class="icon-[tabler--calendar] size-8 block mx-auto mb-2"></span>
+                            <p class="text-sm">No tasks due tomorrow</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Upcoming by Date --}}
+            @if($upcomingByDate->isNotEmpty())
+                @foreach($upcomingByDate as $date => $dateTasks)
+                    @php
+                        $dateObj = \Carbon\Carbon::parse($date);
+                        $isThisWeek = $dateObj->isCurrentWeek();
+                    @endphp
+                    <div class="card bg-base-100 shadow">
+                        <div class="card-body p-0">
+                            <div class="flex items-center gap-4 p-4 border-b border-base-200">
+                                <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-base-200">
+                                    <span class="text-xs uppercase font-medium text-base-content/60">{{ $dateObj->format('M') }}</span>
+                                    <span class="text-2xl font-bold">{{ $dateObj->format('d') }}</span>
+                                    <span class="text-xs text-base-content/60">{{ $dateObj->format('D') }}</span>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">{{ $dateObj->format('l') }}</h3>
+                                    <p class="text-sm text-base-content/60">
+                                        {{ $dateObj->format('F j, Y') }}
+                                        <span class="mx-2">-</span>
+                                        <span class="badge badge-sm badge-ghost">
+                                            {{ $dateTasks->count() }} {{ Str::plural('task', $dateTasks->count()) }}
+                                        </span>
+                                        @if($isThisWeek)
+                                            <span class="badge badge-sm badge-outline ml-1">This Week</span>
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="divide-y divide-base-200">
+                                @foreach($dateTasks as $task)
+                                    @include('calendar::partials.task-item', ['task' => $task])
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
         @endif
-
-        @foreach($tasksByDate as $date => $dateTasks)
-            @php
-                $dateObj = \Carbon\Carbon::parse($date);
-                $isToday = $dateObj->isToday();
-                $isPast = $dateObj->isPast() && !$isToday;
-                $isTomorrow = $dateObj->isTomorrow();
-            @endphp
-
-            <!-- Date Card -->
-            <div class="card bg-base-100 shadow">
-                <div class="card-body p-0">
-                    <!-- Date Header -->
-                    <div class="flex items-center gap-4 p-4 border-b border-base-200 {{ $isToday ? 'bg-primary/5' : '' }}">
-                        <div class="flex flex-col items-center justify-center w-16 h-16 rounded-lg {{ $isToday ? 'bg-primary text-primary-content' : ($isPast ? 'bg-base-200' : 'bg-base-200') }}">
-                            <span class="text-xs uppercase font-medium {{ $isToday ? '' : 'text-base-content/60' }}">{{ $dateObj->format('M') }}</span>
-                            <span class="text-2xl font-bold">{{ $dateObj->format('d') }}</span>
-                            <span class="text-xs {{ $isToday ? '' : 'text-base-content/60' }}">{{ $dateObj->format('D') }}</span>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-lg">
-                                @if($isToday)
-                                    Today
-                                @elseif($isTomorrow)
-                                    Tomorrow
-                                @else
-                                    {{ $dateObj->format('l') }}
-                                @endif
-                            </h3>
-                            <p class="text-sm text-base-content/60">
-                                {{ $dateObj->format('F j, Y') }}
-                                <span class="mx-2">-</span>
-                                <span class="badge badge-sm {{ $isToday ? 'badge-primary' : 'badge-ghost' }}">
-                                    {{ $dateTasks->count() }} {{ Str::plural('task', $dateTasks->count()) }}
-                                </span>
-                                @if($isPast && $dateTasks->where('closed_at', null)->count() > 0)
-                                    <span class="badge badge-sm badge-error ml-1">
-                                        {{ $dateTasks->where('closed_at', null)->count() }} overdue
-                                    </span>
-                                @endif
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Tasks List -->
-                    <div class="divide-y divide-base-200">
-                        @foreach($dateTasks as $task)
-                            <div class="p-4 hover:bg-base-50 transition-colors cursor-pointer task-item"
-                                 data-task-uuid="{{ $task->uuid }}"
-                                 onclick="openTaskDrawer('{{ $task->uuid }}')">
-                                <div class="flex items-start gap-4">
-                                    <!-- Status Indicator -->
-                                    <div class="flex-shrink-0 mt-1">
-                                        @if($task->isClosed())
-                                            <span class="icon-[tabler--circle-check-filled] size-5 text-success"></span>
-                                        @elseif($task->isOverdue())
-                                            <span class="icon-[tabler--alert-circle-filled] size-5 text-error"></span>
-                                        @else
-                                            <span class="icon-[tabler--circle] size-5 text-base-content/30"></span>
-                                        @endif
-                                    </div>
-
-                                    <!-- Task Content -->
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-xs text-base-content/50 font-mono">{{ $task->task_number }}</span>
-                                            @if($task->status)
-                                                <span class="badge badge-xs border" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}; border-color: {{ $task->status->background_color }}40;">
-                                                    {{ $task->status->name }}
-                                                </span>
-                                            @endif
-                                            @if($task->priority)
-                                                <span class="badge badge-xs border" style="background-color: {{ $task->priority->color() }}20; color: {{ $task->priority->color() }}; border-color: {{ $task->priority->color() }}40;">
-                                                    <span class="icon-[{{ $task->priority->icon() }}] size-3 mr-1"></span>
-                                                    {{ $task->priority->label() }}
-                                                </span>
-                                            @endif
-                                        </div>
-
-                                        <h4 class="font-medium {{ $task->isClosed() ? 'line-through text-base-content/50' : '' }}">
-                                            {{ $task->title }}
-                                        </h4>
-
-                                        @if($task->description)
-                                            <p class="text-sm text-base-content/60 line-clamp-2 mt-1">
-                                                {{ Str::limit(strip_tags($task->description), 100) }}
-                                            </p>
-                                        @endif
-
-                                        <!-- Task Meta -->
-                                        <div class="flex items-center flex-wrap gap-3 mt-2 text-xs text-base-content/50">
-                                            @if($task->workspace)
-                                                <span class="flex items-center gap-1">
-                                                    <span class="icon-[tabler--briefcase] size-3.5"></span>
-                                                    {{ $task->workspace->name }}
-                                                </span>
-                                            @endif
-
-                                            @if($task->tags->isNotEmpty())
-                                                <div class="flex items-center gap-1">
-                                                    @foreach($task->tags->take(2) as $tag)
-                                                        <span class="badge badge-xs border" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }}; border-color: {{ $tag->color }}40;">
-                                                            {{ $tag->name }}
-                                                        </span>
-                                                    @endforeach
-                                                    @if($task->tags->count() > 2)
-                                                        <span class="text-base-content/40">+{{ $task->tags->count() - 2 }}</span>
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Assignee -->
-                                    <div class="flex-shrink-0">
-                                        @if($task->assignee)
-                                            <div class="tooltip" data-tip="{{ $task->assignee->name }}">
-                                                <div class="avatar">
-                                                    <div class="w-8 h-8 rounded-full">
-                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="tooltip" data-tip="Unassigned">
-                                                <div class="avatar placeholder">
-                                                    <div class="bg-base-200 text-base-content/50 rounded-full w-8 h-8">
-                                                        <span class="icon-[tabler--user] size-4"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        @endforeach
     </div>
 @endif

@@ -36,11 +36,21 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
+        // Check if user can view all assignees (owner/admin only)
+        $canViewAllAssignees = $user->isAdminOrHigher();
+
         $filters = $request->only([
             'workspace_id', 'status_id', 'priority', 'type', 'assignee_id',
             'created_by', 'tag_id', 'is_closed', 'due_date_from', 'due_date_to',
             'search', 'sort', 'direction', 'parent_tasks_only', 'task_filter'
         ]);
+
+        // For regular members: always show their own tasks only
+        // For owner/admin: show ALL tasks by default, can filter by assignee
+        if (!$canViewAllAssignees) {
+            $filters['assignee_id'] = $user->id;
+        }
+        // Owner/admin: use whatever filter they set (including empty = all tasks)
 
         // Handle task_filter tabs (all, overdue, closed)
         $taskFilter = $filters['task_filter'] ?? 'all';
@@ -56,8 +66,28 @@ class TaskController extends Controller
 
         $tasks = $this->taskService->getTasksForUser($user, $filters, 10);
 
-        // Get task stats for tabs
+        // Get task stats for tabs - apply same base filters (workspace, assignee, search)
         $baseQuery = Task::visibleTo($user);
+
+        // Apply workspace filter to stats
+        if (!empty($filters['workspace_id'])) {
+            $baseQuery->where('workspace_id', $filters['workspace_id']);
+        }
+
+        // Apply assignee filter to stats (same logic as listing)
+        if (!empty($filters['assignee_id'])) {
+            $baseQuery->where('assignee_id', $filters['assignee_id']);
+        }
+
+        // Apply search filter to stats
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('task_number', 'like', "%{$search}%");
+            });
+        }
+
         $taskStats = [
             'total' => (clone $baseQuery)->count(),
             'open' => (clone $baseQuery)
@@ -124,7 +154,8 @@ class TaskController extends Controller
             'tags',
             'filters',
             'viewMode',
-            'taskStats'
+            'taskStats',
+            'canViewAllAssignees'
         ));
     }
 

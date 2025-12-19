@@ -154,68 +154,70 @@
                             </div>
                         </div>
                     @endif
-                    <!-- Assignee Filter (Searchable) -->
-                    <input type="hidden" name="assignee_id" id="assignee-filter-value" value="{{ $filters['assignee_id'] ?? '' }}" />
-                    <div class="relative">
-                        <button type="button" id="assignee-filter-btn" onclick="toggleAssigneeDropdown()" class="btn btn-ghost btn-sm gap-2 border border-base-300 min-w-44">
-                            <span class="icon-[tabler--user] size-4"></span>
-                            <span id="assignee-filter-label">
-                                @if(($filters['assignee_id'] ?? '') == auth()->id())
-                                    Assigned to Me
-                                @elseif(!empty($filters['assignee_id']))
-                                    {{ $users->firstWhere('id', $filters['assignee_id'])?->name ?? 'All Assignees' }}
-                                @else
-                                    All Assignees
-                                @endif
-                            </span>
-                            <span class="icon-[tabler--chevron-down] size-4"></span>
-                        </button>
-                        <div id="assignee-dropdown" class="hidden absolute left-0 top-full mt-2 w-64 bg-base-100 rounded-xl shadow-xl border border-base-300 z-[100]">
-                            <!-- Search Input -->
-                            <div class="p-2 border-b border-base-200">
-                                <div class="relative">
-                                    <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"></span>
-                                    <input type="text"
-                                           id="assignee-search"
-                                           placeholder="Search members..."
-                                           class="input input-sm input-bordered w-full pl-9"
-                                           oninput="searchAssignees(this.value)"
-                                           autocomplete="off" />
+                    <!-- Assignee Filter (Searchable) - Only visible to owner/admin -->
+                    @if($canViewAllAssignees ?? false)
+                        <input type="hidden" name="assignee_id" id="assignee-filter-value" value="{{ $filters['assignee_id'] ?? '' }}" />
+                        <div class="relative">
+                            <button type="button" id="assignee-filter-btn" onclick="toggleAssigneeDropdown()" class="btn btn-ghost btn-sm gap-2 border border-base-300 min-w-44">
+                                <span class="icon-[tabler--user] size-4"></span>
+                                <span id="assignee-filter-label">
+                                    @if(($filters['assignee_id'] ?? '') == auth()->id())
+                                        Assigned to Me
+                                    @elseif(!empty($filters['assignee_id']))
+                                        {{ $users->firstWhere('id', $filters['assignee_id'])?->name ?? 'All Assignees' }}
+                                    @else
+                                        All Assignees
+                                    @endif
+                                </span>
+                                <span class="icon-[tabler--chevron-down] size-4"></span>
+                            </button>
+                            <div id="assignee-dropdown" class="hidden absolute left-0 top-full mt-2 w-64 bg-base-100 rounded-xl shadow-xl border border-base-300 z-[100]">
+                                <!-- Search Input -->
+                                <div class="p-2 border-b border-base-200">
+                                    <div class="relative">
+                                        <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"></span>
+                                        <input type="text"
+                                               id="assignee-search"
+                                               placeholder="Search members..."
+                                               class="input input-sm input-bordered w-full pl-9"
+                                               oninput="searchAssignees(this.value)"
+                                               autocomplete="off" />
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Options List -->
-                            <ul class="p-2 max-h-64 overflow-y-auto" id="assignee-list">
-                                <li class="assignee-option" data-name="all">
-                                    <button type="button" onclick="selectAssignee('', 'All Assignees')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
-                                        <span class="icon-[tabler--users] size-4 text-base-content/60"></span>
-                                        <span>All Assignees</span>
-                                    </button>
-                                </li>
-                                <li class="assignee-option" data-name="assigned to me">
-                                    <button type="button" onclick="selectAssignee('{{ auth()->id() }}', 'Assigned to Me')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
-                                        <span class="icon-[tabler--user-check] size-4 text-primary"></span>
-                                        <span class="font-medium">Assigned to Me</span>
-                                    </button>
-                                </li>
-                                @if($users->count() > 0)
-                                    <li class="border-t border-base-200 my-1"></li>
-                                    <li class="px-3 py-1 text-xs text-base-content/50 uppercase tracking-wide">Team Members</li>
-                                    @foreach($users as $member)
-                                        <li class="assignee-option" data-name="{{ strtolower($member->name) }}">
-                                            <button type="button" onclick="selectAssignee('{{ $member->id }}', '{{ $member->name }}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
-                                                <div class="avatar">
-                                                    <div class="w-5 h-5 rounded-full">
-                                                        <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
+                                <!-- Options List -->
+                                <ul class="p-2 max-h-64 overflow-y-auto" id="assignee-list">
+                                    <li class="assignee-option" data-name="all">
+                                        <button type="button" onclick="selectAssignee('', 'All Assignees')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
+                                            <span class="icon-[tabler--users] size-4 text-base-content/60"></span>
+                                            <span>All Assignees</span>
+                                        </button>
+                                    </li>
+                                    <li class="assignee-option" data-name="assigned to me">
+                                        <button type="button" onclick="selectAssignee('{{ auth()->id() }}', 'Assigned to Me')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
+                                            <span class="icon-[tabler--user-check] size-4 text-primary"></span>
+                                            <span class="font-medium">Assigned to Me</span>
+                                        </button>
+                                    </li>
+                                    @if($users->count() > 0)
+                                        <li class="border-t border-base-200 my-1"></li>
+                                        <li class="px-3 py-1 text-xs text-base-content/50 uppercase tracking-wide">Team Members</li>
+                                        @foreach($users as $member)
+                                            <li class="assignee-option" data-name="{{ strtolower($member->name) }}">
+                                                <button type="button" onclick="selectAssignee('{{ $member->id }}', '{{ $member->name }}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-base-200 flex items-center gap-2">
+                                                    <div class="avatar">
+                                                        <div class="w-5 h-5 rounded-full">
+                                                            <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <span>{{ $member->name }}</span>
-                                            </button>
-                                        </li>
-                                    @endforeach
-                                @endif
-                            </ul>
+                                                    <span>{{ $member->name }}</span>
+                                                </button>
+                                            </li>
+                                        @endforeach
+                                    @endif
+                                </ul>
+                            </div>
                         </div>
-                    </div>
+                    @endif
                     <!-- Priority Filter (Searchable) -->
                     <input type="hidden" name="priority" id="priority-filter-value" value="{{ $filters['priority'] ?? '' }}" />
                     <div class="relative">
@@ -250,7 +252,19 @@
                             </ul>
                         </div>
                     </div>
-                    @if(!empty(array_filter($filters ?? [])))
+                    @php
+                        // For regular members, don't count assignee_id in clear button since it's forced
+                        $clearableFilters = collect($filters ?? [])->filter(function ($value, $key) use ($canViewAllAssignees) {
+                            if (empty($value)) return false;
+                            if ($key === 'task_filter' && $value === 'all') return false;
+                            if ($key === 'is_closed') return false;
+                            if ($key === 'overdue_only') return false;
+                            // For regular members, assignee_id is forced so don't count it
+                            if (!($canViewAllAssignees ?? false) && $key === 'assignee_id') return false;
+                            return true;
+                        });
+                    @endphp
+                    @if($clearableFilters->isNotEmpty())
                         <a href="{{ route('tasks.index') }}" class="btn btn-ghost btn-sm text-error">
                             <span class="icon-[tabler--x] size-4"></span>
                             Clear
