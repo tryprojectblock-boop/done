@@ -29,6 +29,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('tasks/{task}/type', [TaskController::class, 'updateType'])->name('tasks.update-type');
     Route::patch('tasks/{task}/department', [TaskController::class, 'updateDepartment'])->name('tasks.update-department');
     Route::patch('tasks/{task}/workspace-priority', [TaskController::class, 'updateWorkspacePriority'])->name('tasks.update-workspace-priority');
+    Route::patch('tasks/{task}/progress', [TaskController::class, 'updateProgress'])->name('tasks.update-progress');
 
     // Task comments
     Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');

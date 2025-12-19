@@ -592,6 +592,57 @@
                             </div>
                             @endif
 
+                            <!-- Progress -->
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Progress</label>
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('progress')" title="Edit progress">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="progress-display" class="mt-2">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-1 bg-base-200 rounded-full h-2.5">
+                                            <div class="bg-primary h-2.5 rounded-full transition-all" style="width: {{ $task->progress ?? 0 }}%"></div>
+                                        </div>
+                                        <span class="text-sm font-medium min-w-[3rem] text-right">{{ $task->progress ?? 0 }}%</span>
+                                    </div>
+                                </div>
+                                <!-- Edit Mode -->
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
+                                <div id="progress-edit" class="hidden mt-2">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <input type="range"
+                                               id="progress-slider"
+                                               min="0"
+                                               max="100"
+                                               step="5"
+                                               value="{{ $task->progress ?? 0 }}"
+                                               class="range range-primary range-sm flex-1"
+                                        />
+                                        <span class="text-sm font-medium min-w-[3rem] text-right" id="progress-percentage">{{ $task->progress ?? 0 }}%</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-base-content/50 mb-2 px-1">
+                                        <span>0%</span>
+                                        <span>25%</span>
+                                        <span>50%</span>
+                                        <span>75%</span>
+                                        <span>100%</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveProgressAndClose()">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="cancelProgressEdit()">Cancel</button>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+
                             <!-- Assignee -->
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
@@ -1649,6 +1700,73 @@ if (typeof MutationObserver !== 'undefined') {
     proseContainers.forEach(container => {
         observer.observe(container, { childList: true, subtree: true });
     });
+}
+
+// Progress Slider
+const progressSlider = document.getElementById('progress-slider');
+const progressPercentage = document.getElementById('progress-percentage');
+let originalProgress = {{ $task->progress ?? 0 }};
+
+if (progressSlider) {
+    // Update percentage display on input
+    progressSlider.addEventListener('input', function() {
+        progressPercentage.textContent = this.value + '%';
+    });
+}
+
+function saveProgressAndClose() {
+    const newProgress = parseInt(progressSlider.value);
+    saveProgress(newProgress);
+}
+
+function cancelProgressEdit() {
+    // Reset to original value
+    progressSlider.value = originalProgress;
+    progressPercentage.textContent = originalProgress + '%';
+    toggleEdit('progress');
+}
+
+async function saveProgress(progress) {
+    const saveBtn = document.querySelector('#progress-edit .btn-primary');
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
+
+    try {
+        const response = await fetch('{{ route("tasks.update-progress", $task) }}', {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ progress: progress })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Update display
+            originalProgress = progress;
+            const displayBar = document.querySelector('#progress-display .bg-primary');
+            const displayText = document.querySelector('#progress-display span');
+            if (displayBar) displayBar.style.width = progress + '%';
+            if (displayText) displayText.textContent = progress + '%';
+
+            // Close edit mode
+            toggleEdit('progress');
+        } else {
+            console.error('Failed to update progress:', data.message);
+            alert('Failed to update progress');
+        }
+    } catch (error) {
+        console.error('Error updating progress:', error);
+        alert('Error updating progress');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
+    }
 }
 </script>
 @endpush

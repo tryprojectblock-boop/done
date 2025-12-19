@@ -34,6 +34,7 @@ class Task extends Model
         'description',
         'type',
         'priority',
+        'progress',
         'status_id',
         'assignee_id',
         'created_by',

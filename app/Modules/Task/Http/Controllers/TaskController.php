@@ -767,6 +767,45 @@ class TaskController extends Controller
     }
 
     /**
+     * Update task progress (0-100%).
+     */
+    public function updateProgress(Request $request, Task $task): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to update progress.',
+            ], 403);
+        }
+
+        $request->validate([
+            'progress' => 'required|integer|min:0|max:100',
+        ]);
+
+        $oldProgress = $task->progress;
+        $newProgress = (int) $request->input('progress');
+
+        $task->update(['progress' => $newProgress]);
+
+        // Log activity
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::PROGRESS_UPDATED,
+            ['progress' => $oldProgress],
+            ['progress' => $newProgress]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Progress updated successfully.',
+            'progress' => $newProgress,
+        ]);
+    }
+
+    /**
      * Store a new subtask via AJAX.
      */
     public function storeSubtask(Request $request, Task $task): \Illuminate\Http\JsonResponse

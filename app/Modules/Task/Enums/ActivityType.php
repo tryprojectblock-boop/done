@@ -35,6 +35,7 @@ enum ActivityType: string
     case PARENT_CHANGED = 'parent_changed';
     case DEPARTMENT_CHANGED = 'department_changed';
     case WORKSPACE_PRIORITY_CHANGED = 'workspace_priority_changed';
+    case PROGRESS_UPDATED = 'progress_updated';
 
     public function label(): string
     {
@@ -68,6 +69,7 @@ enum ActivityType: string
             self::PARENT_CHANGED => 'changed the parent task',
             self::DEPARTMENT_CHANGED => 'changed the department',
             self::WORKSPACE_PRIORITY_CHANGED => 'changed the priority',
+            self::PROGRESS_UPDATED => 'updated the progress',
         };
     }
 
@@ -97,6 +99,7 @@ enum ActivityType: string
             self::PARENT_CHANGED => 'tabler--subtask',
             self::DEPARTMENT_CHANGED => 'tabler--building',
             self::WORKSPACE_PRIORITY_CHANGED => 'tabler--flag',
+            self::PROGRESS_UPDATED => 'tabler--chart-bar',
         };
     }
 }

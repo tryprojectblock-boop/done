@@ -6,6 +6,7 @@
                     <th>Task</th>
                     <th>Status</th>
                     <th>Priority</th>
+                    <th>Progress</th>
                     <th>Assignee</th>
                     <th>Due Date</th>
                     <th class="text-right">Actions</th>
@@ -162,6 +163,15 @@
                         @else
                             <span class="text-base-content/40">-</span>
                         @endif
+                    </td>
+                    <!-- Progress -->
+                    <td>
+                        <div class="flex items-center gap-2 min-w-[100px]">
+                            <div class="flex-1 bg-base-200 rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full transition-all" style="width: {{ $task->progress ?? 0 }}%"></div>
+                            </div>
+                            <span class="text-xs text-base-content/60 min-w-[2rem] text-right">{{ $task->progress ?? 0 }}%</span>
+                        </div>
                     </td>
                     <!-- Assignee - Inline Editable with Search -->
                     <td>
