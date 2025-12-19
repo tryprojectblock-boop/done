@@ -7,6 +7,7 @@ namespace App\Modules\Task\Models;
 use App\Models\User;
 use App\Models\WorkflowStatus;
 use App\Modules\Auth\Models\Company;
+use App\Modules\Discussion\Models\Discussion;
 use App\Modules\Task\Enums\TaskPriority;
 use App\Modules\Task\Enums\TaskType;
 use App\Modules\Workspace\Models\Workspace;
@@ -239,6 +240,13 @@ class Task extends Model
     {
         return $this->belongsToMany(User::class, 'task_watchers')
             ->withPivot('added_by')
+            ->withTimestamps();
+    }
+
+    public function discussions(): BelongsToMany
+    {
+        return $this->belongsToMany(Discussion::class, 'discussion_tasks')
+            ->withPivot('linked_by')
             ->withTimestamps();
     }
 

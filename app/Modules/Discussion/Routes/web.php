@@ -24,6 +24,14 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::post('discussions/{discussion}/create-task', [DiscussionController::class, 'createTask'])
         ->name('discussions.create-task');
 
+    // Link Tasks to Discussion
+    Route::get('discussions/{discussion}/workspace/{workspaceId}/tasks', [DiscussionController::class, 'getWorkspaceTasks'])
+        ->name('discussions.workspace-tasks');
+    Route::post('discussions/{discussion}/link-tasks', [DiscussionController::class, 'linkTasks'])
+        ->name('discussions.link-tasks');
+    Route::delete('discussions/{discussion}/unlink-task/{task}', [DiscussionController::class, 'unlinkTask'])
+        ->name('discussions.unlink-task');
+
     // Team Channels
     Route::prefix('channels')->name('channels.')->group(function () {
         Route::get('/', [TeamChannelController::class, 'index'])->name('index');
@@ -50,6 +58,7 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
 
         // Thread Replies
         Route::post('/{channel}/threads/{thread}/replies', [TeamChannelThreadController::class, 'storeReply'])->name('threads.replies.store');
+        Route::get('/{channel}/threads/{thread}/replies/poll', [TeamChannelThreadController::class, 'pollReplies'])->name('threads.replies.poll');
     });
 
     // Reply management (outside channel context)

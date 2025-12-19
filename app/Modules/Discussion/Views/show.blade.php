@@ -62,10 +62,36 @@
             </div>
         </div>
 
+        <!-- Tab Navigation -->
+        <div class="mb-6">
+            <div class="tabs tabs-bordered" role="tablist">
+                <button type="button"
+                        class="tab tab-bordered tab-active"
+                        id="tab-discussion-btn"
+                        role="tab"
+                        aria-selected="true"
+                        onclick="switchTab('discussion')">
+                    <span class="icon-[tabler--message-circle] size-4 mr-2"></span>
+                    Discussion
+                </button>
+                <button type="button"
+                        class="tab tab-bordered"
+                        id="tab-tasks-btn"
+                        role="tab"
+                        aria-selected="false"
+                        onclick="switchTab('tasks')">
+                    <span class="icon-[tabler--subtask] size-4 mr-2"></span>
+                    Linked Tasks
+                    <span class="badge badge-sm ml-2" id="linked-tasks-count">{{ $discussion->tasks->count() }}</span>
+                </button>
+            </div>
+        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Content -->
             <div class="lg:col-span-2 space-y-6">
+                <!-- Discussion Tab Content -->
+                <div id="tab-discussion-content">
                 <!-- Discussion Details -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
@@ -164,6 +190,66 @@
                         </div>
                     </div>
                 </div>
+                </div><!-- End Discussion Tab Content -->
+
+                <!-- Linked Tasks Tab Content -->
+                <div id="tab-tasks-content" class="hidden">
+                    <div class="card bg-base-100 shadow">
+                        <div class="card-body">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="card-title text-lg">
+                                    <span class="icon-[tabler--subtask] size-5"></span>
+                                    Linked Tasks
+                                </h2>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="openLinkTasksModal()">
+                                    <span class="icon-[tabler--link] size-4"></span>
+                                    Link Tasks
+                                </button>
+                            </div>
+
+                            <!-- Linked Tasks List -->
+                            <div id="linked-tasks-list" class="space-y-2">
+                                @forelse($discussion->tasks()->with(['workspace', 'status'])->get() as $task)
+                                    @php
+                                        $statusColor = $task->status?->color ?? '#6b7280';
+                                        $r = hexdec(substr($statusColor, 1, 2));
+                                        $g = hexdec(substr($statusColor, 3, 2));
+                                        $b = hexdec(substr($statusColor, 5, 2));
+                                    @endphp
+                                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors"
+                                         id="linked-task-{{ $task->id }}">
+                                        <a href="{{ route('tasks.show', $task->uuid) }}" class="flex-1 flex items-center gap-3">
+                                            <span class="badge badge-sm font-mono" style="background-color: rgba({{ $r }}, {{ $g }}, {{ $b }}, 0.15); color: {{ $statusColor }}; border: 1px solid rgba({{ $r }}, {{ $g }}, {{ $b }}, 0.3);">
+                                                {{ ($task->workspace?->prefix ?? 'T') . '-' . $task->task_number }}
+                                            </span>
+                                            <span class="flex-1 font-medium truncate">{{ $task->title }}</span>
+                                            @if($task->status)
+                                                <span class="badge badge-sm" style="background-color: rgba({{ $r }}, {{ $g }}, {{ $b }}, 0.15); color: {{ $statusColor }};">
+                                                    {{ $task->status->name }}
+                                                </span>
+                                            @endif
+                                            @if($task->workspace)
+                                                <span class="text-xs text-base-content/50">{{ $task->workspace->name }}</span>
+                                            @endif
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-ghost btn-xs text-error"
+                                                onclick="openUnlinkTaskModal({{ $task->id }}, '{{ $task->uuid }}', '{{ addslashes($task->title) }}')"
+                                                title="Unlink task">
+                                            <span class="icon-[tabler--link-off] size-4"></span>
+                                        </button>
+                                    </div>
+                                @empty
+                                    <div id="no-linked-tasks-message" class="text-center py-8 text-base-content/60">
+                                        <span class="icon-[tabler--subtask] size-12 mx-auto mb-3 opacity-30"></span>
+                                        <p>No tasks linked to this discussion yet.</p>
+                                        <p class="text-sm mt-1">Click "Link Tasks" to add existing tasks.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- End Linked Tasks Tab Content -->
             </div>
 
             <!-- Sidebar -->
@@ -304,10 +390,42 @@
 {{-- Task Creation Drawer --}}
 @include('discussion::partials.task-drawer', ['discussion' => $discussion, 'workspaces' => $workspaces])
 
+{{-- Link Tasks Modal --}}
+@include('discussion::partials.link-tasks-modal', ['discussion' => $discussion, 'workspaces' => $workspaces])
+
+{{-- Unlink Task Confirmation Modal --}}
+@include('discussion::partials.unlink-task-modal', ['discussion' => $discussion])
+
 @endsection
 
 @push('scripts')
 <script>
+/**
+ * Tab Switching
+ */
+function switchTab(tab) {
+    const discussionBtn = document.getElementById('tab-discussion-btn');
+    const tasksBtn = document.getElementById('tab-tasks-btn');
+    const discussionContent = document.getElementById('tab-discussion-content');
+    const tasksContent = document.getElementById('tab-tasks-content');
+
+    if (tab === 'discussion') {
+        discussionBtn.classList.add('tab-active');
+        discussionBtn.setAttribute('aria-selected', 'true');
+        tasksBtn.classList.remove('tab-active');
+        tasksBtn.setAttribute('aria-selected', 'false');
+        discussionContent.classList.remove('hidden');
+        tasksContent.classList.add('hidden');
+    } else {
+        tasksBtn.classList.add('tab-active');
+        tasksBtn.setAttribute('aria-selected', 'true');
+        discussionBtn.classList.remove('tab-active');
+        discussionBtn.setAttribute('aria-selected', 'false');
+        tasksContent.classList.remove('hidden');
+        discussionContent.classList.add('hidden');
+    }
+}
+
 /**
  * Real-time Discussion Comments Polling
  */

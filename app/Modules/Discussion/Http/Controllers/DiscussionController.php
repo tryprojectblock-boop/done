@@ -14,6 +14,7 @@ use App\Modules\Discussion\Models\Discussion;
 use App\Modules\Discussion\Models\DiscussionComment;
 use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -247,5 +248,143 @@ class DiscussionController extends Controller
         return redirect()
             ->route('discussions.show', $discussion->uuid)
             ->with('success', "Task '{$task->title}' created successfully! <a href='" . route('tasks.show', $task->uuid) . "' class='link link-primary'>View Task</a>");
+    }
+
+    /**
+     * Get tasks for a workspace (for AJAX).
+     */
+    public function getWorkspaceTasks(Request $request, Discussion $discussion, int $workspaceId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$discussion->canView($user)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Manually fetch workspace to avoid route model binding issues
+        $workspace = Workspace::find($workspaceId);
+
+        if (!$workspace) {
+            return response()->json(['error' => 'Workspace not found'], 404);
+        }
+
+        // Verify user has access to the workspace
+        if (!$workspace->hasMember($user) && !$user->isAdminOrHigher()) {
+            return response()->json(['error' => 'You do not have access to this workspace'], 403);
+        }
+
+        // Get tasks for workspace, excluding already linked ones
+        $linkedTaskIds = $discussion->tasks()->pluck('tasks.id')->toArray();
+
+        $query = Task::where('workspace_id', $workspace->id)
+            ->whereNotIn('id', $linkedTaskIds)
+            ->with(['status', 'assignee'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100);
+
+        // Only apply visibleTo scope for non-admin users
+        if (!$user->isAdminOrHigher()) {
+            $query->visibleTo($user);
+        }
+
+        $tasks = $query->get()
+            ->map(function ($task) use ($workspace) {
+                $statusColor = $task->status?->color ?? '#6b7280';
+                return [
+                    'id' => $task->id,
+                    'uuid' => $task->uuid,
+                    'task_number' => $task->task_number,
+                    'title' => $task->title,
+                    'full_number' => $workspace->prefix . '-' . $task->task_number,
+                    'status' => $task->status ? [
+                        'name' => $task->status->name,
+                        'color' => $statusColor,
+                    ] : null,
+                    'assignee' => $task->assignee ? [
+                        'name' => $task->assignee->name,
+                        'avatar_url' => $task->assignee->avatar_url,
+                    ] : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'tasks' => $tasks,
+            'workspace' => [
+                'id' => $workspace->id,
+                'name' => $workspace->name,
+                'prefix' => $workspace->prefix,
+            ],
+        ]);
+    }
+
+    /**
+     * Link tasks to a discussion.
+     */
+    public function linkTasks(Request $request, Discussion $discussion): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$discussion->canView($user)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'task_ids' => 'required|array|min:1',
+            'task_ids.*' => 'exists:tasks,id',
+        ]);
+
+        // Attach tasks with the linked_by user
+        $attachData = [];
+        foreach ($validated['task_ids'] as $taskId) {
+            $attachData[$taskId] = ['linked_by' => $user->id];
+        }
+
+        $discussion->tasks()->syncWithoutDetaching($attachData);
+
+        // Return updated linked tasks
+        $linkedTasks = $discussion->tasks()
+            ->with(['workspace', 'status'])
+            ->get()
+            ->map(function ($task) {
+                $statusColor = $task->status?->color ?? '#6b7280';
+                return [
+                    'id' => $task->id,
+                    'uuid' => $task->uuid,
+                    'task_number' => $task->task_number,
+                    'title' => $task->title,
+                    'full_number' => ($task->workspace?->prefix ?? 'T') . '-' . $task->task_number,
+                    'workspace_name' => $task->workspace?->name,
+                    'status' => $task->status ? [
+                        'name' => $task->status->name,
+                        'color' => $statusColor,
+                    ] : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'message' => count($validated['task_ids']) . ' task(s) linked successfully',
+            'linked_tasks' => $linkedTasks,
+        ]);
+    }
+
+    /**
+     * Unlink a task from a discussion.
+     */
+    public function unlinkTask(Request $request, Discussion $discussion, Task $task): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$discussion->canView($user)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $discussion->tasks()->detach($task->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task unlinked successfully',
+        ]);
     }
 }

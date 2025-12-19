@@ -765,4 +765,76 @@ class TaskController extends Controller
 
         return back()->with('success', 'Priority updated successfully.');
     }
+
+    /**
+     * Store a new subtask via AJAX.
+     */
+    public function storeSubtask(Request $request, Task $task): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+
+        // Check if user can create subtasks for this task
+        if (!$task->canEdit($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to create subtasks for this task.',
+            ], 403);
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'assignee_id' => 'nullable|exists:users,id',
+            'priority' => 'nullable|string|in:lowest,low,medium,high,highest',
+        ]);
+
+        try {
+            // Get the default status from the parent task's workspace workflow
+            $defaultStatus = $task->workspace->workflow?->statuses()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->first();
+
+            // Create the subtask using the same workspace and workflow as parent
+            $subtask = $this->taskService->createTask([
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'workspace_id' => $task->workspace_id,
+                'parent_task_id' => $task->id,
+                'type' => ['subtask'],
+                'status_id' => $defaultStatus?->id,
+                'assignee_id' => $request->input('assignee_id'),
+                'priority' => $request->input('priority', 'medium'),
+            ], $user);
+
+            // Load the status for the response
+            $subtask->load('status');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Subtask created successfully.',
+                'subtask' => [
+                    'id' => $subtask->id,
+                    'uuid' => $subtask->uuid,
+                    'task_number' => $subtask->task_number,
+                    'title' => $subtask->title,
+                    'status' => $subtask->status ? [
+                        'id' => $subtask->status->id,
+                        'name' => $subtask->status->name,
+                        'background_color' => $subtask->status->background_color,
+                    ] : null,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create subtask', [
+                'parent_task_id' => $task->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create subtask. Please try again.',
+            ], 500);
+        }
+    }
 }

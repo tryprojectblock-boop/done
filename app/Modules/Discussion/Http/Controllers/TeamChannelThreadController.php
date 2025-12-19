@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Modules\Discussion\Models\TeamChannel;
 use App\Modules\Discussion\Models\TeamChannelThread;
 use App\Modules\Discussion\Models\TeamChannelReply;
+use App\Modules\Task\Models\Task;
 use App\Services\NotificationService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -33,10 +35,20 @@ class TeamChannelThreadController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Get open tasks visible to user for task attachment
+        $tasks = Task::where('company_id', $user->company_id)
+            ->visibleTo($user)
+            ->whereNull('closed_at')
+            ->with(['workspace', 'status'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+
         return view('discussion::channels.threads.create', [
             'channel' => $channel,
             'allChannels' => $allChannels,
             'user' => $user,
+            'tasks' => $tasks,
         ]);
     }
 
@@ -54,6 +66,8 @@ class TeamChannelThreadController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string|max:50000',
+            'task_ids' => 'nullable|array',
+            'task_ids.*' => 'exists:tasks,id',
         ]);
 
         DB::transaction(function () use ($channel, $user, $validated) {
@@ -65,6 +79,11 @@ class TeamChannelThreadController extends Controller
                 'content' => $validated['content'] ?? null,
                 'last_reply_at' => now(),
             ]);
+
+            // Sync attached tasks
+            if (!empty($validated['task_ids'])) {
+                $thread->tasks()->sync($validated['task_ids']);
+            }
 
             $channel->updateThreadsCount();
             $channel->updateLastActivity();
@@ -85,7 +104,7 @@ class TeamChannelThreadController extends Controller
             abort(403, 'You do not have permission to view this thread.');
         }
 
-        $thread->load(['creator', 'replies.user', 'replies.replies.user']);
+        $thread->load(['creator', 'tasks.workspace', 'tasks.status', 'replies.user', 'replies.replies.user']);
 
         // Get all channels for sidebar
         $allChannels = TeamChannel::visibleTo($user)
@@ -245,5 +264,112 @@ class TeamChannelThreadController extends Controller
 
         return redirect()->route('channels.threads.show', [$channel, $thread])
             ->with('success', 'Reply deleted successfully.');
+    }
+
+    /**
+     * Poll for new replies since a given timestamp.
+     */
+    public function pollReplies(Request $request, TeamChannel $channel, TeamChannelThread $thread): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$thread->canView($user)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $lastTs = $request->input('last_ts');
+        $lastTimestamp = null;
+
+        if ($lastTs) {
+            try {
+                $lastTimestamp = Carbon::parse($lastTs);
+            } catch (\Exception $e) {
+                $lastTimestamp = null;
+            }
+        }
+
+        // Get new top-level replies since the timestamp (oldest first for natural order)
+        $newTopLevelQuery = $thread->replies()
+            ->whereNull('parent_id')
+            ->with(['user', 'replies.user'])
+            ->orderBy('created_at', 'asc');
+
+        if ($lastTimestamp) {
+            $newTopLevelQuery->where('created_at', '>', $lastTimestamp);
+        }
+
+        $newTopLevelReplies = $newTopLevelQuery->get();
+
+        // Also get parent replies that have new nested replies since the timestamp
+        $updatedParentIds = [];
+        if ($lastTimestamp) {
+            $updatedParentIds = $thread->allReplies()
+                ->whereNotNull('parent_id')
+                ->where('created_at', '>', $lastTimestamp)
+                ->pluck('parent_id')
+                ->unique()
+                ->toArray();
+        }
+
+        // Render new top-level replies
+        $repliesHtml = [];
+        foreach ($newTopLevelReplies as $reply) {
+            $repliesHtml[] = [
+                'id' => $reply->id,
+                'uuid' => $reply->uuid,
+                'html' => view('discussion::channels.partials.reply', [
+                    'reply' => $reply,
+                    'channel' => $channel,
+                    'thread' => $thread,
+                ])->render(),
+                'created_at' => $reply->created_at->toIso8601String(),
+                'type' => 'new',
+            ];
+        }
+
+        // Render updated parent replies (with new nested replies)
+        $updatedReplies = [];
+        if (!empty($updatedParentIds)) {
+            $parentsWithNewReplies = $thread->replies()
+                ->whereIn('id', $updatedParentIds)
+                ->whereNull('parent_id')
+                ->with(['user', 'replies.user'])
+                ->get();
+
+            foreach ($parentsWithNewReplies as $reply) {
+                // Skip if this reply is already in the new replies list
+                if ($newTopLevelReplies->contains('id', $reply->id)) {
+                    continue;
+                }
+
+                $updatedReplies[] = [
+                    'id' => $reply->id,
+                    'uuid' => $reply->uuid,
+                    'html' => view('discussion::channels.partials.reply', [
+                        'reply' => $reply,
+                        'channel' => $channel,
+                        'thread' => $thread,
+                    ])->render(),
+                    'created_at' => $reply->created_at->toIso8601String(),
+                    'type' => 'updated',
+                ];
+            }
+        }
+
+        // Get the latest timestamp from all replies
+        $latestReply = $thread->allReplies()
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $latestTs = $latestReply
+            ? $latestReply->created_at->format('Y-m-d\TH:i:s.u\Z')
+            : ($lastTs ?: now()->format('Y-m-d\TH:i:s.u\Z'));
+
+        return response()->json([
+            'replies' => $repliesHtml,
+            'updated_replies' => $updatedReplies,
+            'last_ts' => $latestTs,
+            'count' => $thread->allReplies()->count(),
+        ]);
     }
 }

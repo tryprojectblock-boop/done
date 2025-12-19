@@ -72,6 +72,8 @@ class TeamChannelThreadController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'content' => 'nullable|string|max:10000',
+            'task_ids' => 'nullable|array',
+            'task_ids.*' => 'exists:tasks,id',
         ]);
 
         if ($validator->fails()) {
@@ -93,6 +95,11 @@ class TeamChannelThreadController extends Controller
                 'content' => $request->content,
             ]);
 
+            // Sync attached tasks
+            if ($request->has('task_ids') && is_array($request->task_ids)) {
+                $thread->tasks()->sync($request->task_ids);
+            }
+
             $channel->updateThreadsCount();
             $channel->updateLastActivity();
 
@@ -101,7 +108,7 @@ class TeamChannelThreadController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Thread created successfully',
-                'data' => new TeamChannelThreadResource($thread->load('creator')),
+                'data' => new TeamChannelThreadResource($thread->load(['creator', 'tasks.workspace', 'tasks.status'])),
             ], 201);
 
         } catch (\Exception $e) {
@@ -137,9 +144,11 @@ class TeamChannelThreadController extends Controller
             ], 403);
         }
 
-        // Load thread with creator and replies (including nested replies)
+        // Load thread with creator, tasks, and replies (including nested replies)
         $thread->load([
             'creator',
+            'tasks.workspace',
+            'tasks.status',
             'replies' => function ($query) {
                 $query->with(['user', 'replies.user'])
                     ->orderBy('created_at', 'asc');
@@ -177,6 +186,8 @@ class TeamChannelThreadController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|string|max:255',
             'content' => 'nullable|string|max:10000',
+            'task_ids' => 'nullable|array',
+            'task_ids.*' => 'exists:tasks,id',
         ]);
 
         if ($validator->fails()) {
@@ -189,10 +200,15 @@ class TeamChannelThreadController extends Controller
 
         $thread->update($request->only(['title', 'content']));
 
+        // Sync attached tasks if provided
+        if ($request->has('task_ids')) {
+            $thread->tasks()->sync($request->task_ids ?? []);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Thread updated successfully',
-            'data' => new TeamChannelThreadResource($thread->fresh()->load('creator')),
+            'data' => new TeamChannelThreadResource($thread->fresh()->load(['creator', 'tasks.workspace', 'tasks.status'])),
         ]);
     }
 

@@ -6,9 +6,11 @@ namespace App\Modules\Discussion\Models;
 
 use App\Models\User;
 use App\Modules\Auth\Models\Company;
+use App\Modules\Task\Models\Task;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -24,6 +26,7 @@ class TeamChannelThread extends Model
         'created_by',
         'title',
         'content',
+        'task_id',
         'replies_count',
         'last_reply_at',
         'is_pinned',
@@ -69,6 +72,20 @@ class TeamChannelThread extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
+    }
+
+    /**
+     * Many-to-many relationship with tasks.
+     */
+    public function tasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'team_channel_thread_tasks', 'thread_id', 'task_id')
+            ->withTimestamps();
     }
 
     public function replies(): HasMany

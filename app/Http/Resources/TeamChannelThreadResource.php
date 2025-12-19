@@ -26,6 +26,26 @@ class TeamChannelThreadResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
             'creator' => new UserSimpleResource($this->whenLoaded('creator')),
+            'tasks' => $this->when($this->relationLoaded('tasks'), function () {
+                return $this->tasks->map(function ($task) {
+                    return [
+                        'id' => $task->id,
+                        'uuid' => $task->uuid,
+                        'task_number' => $task->task_number,
+                        'title' => $task->title,
+                        'workspace' => $task->workspace ? [
+                            'id' => $task->workspace->id,
+                            'name' => $task->workspace->name,
+                            'prefix' => $task->workspace->prefix,
+                        ] : null,
+                        'status' => $task->status ? [
+                            'id' => $task->status->id,
+                            'name' => $task->status->name,
+                            'color' => $task->status->color,
+                        ] : null,
+                    ];
+                });
+            }),
             'replies' => TeamChannelReplyResource::collection($this->whenLoaded('replies')),
         ];
     }

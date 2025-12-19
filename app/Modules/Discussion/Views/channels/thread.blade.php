@@ -113,32 +113,82 @@
                 </div>
                 @endif
 
+                <!-- Attached Tasks -->
+                @if($thread->tasks->isNotEmpty())
+                <div class="card bg-base-100 shadow mb-6 border-l-4 border-primary">
+                    <div class="card-body py-4">
+                        <div class="flex items-center gap-2 text-xs text-base-content/60 mb-3">
+                            <span class="icon-[tabler--link] size-3"></span>
+                            <span>Linked Tasks ({{ $thread->tasks->count() }})</span>
+                        </div>
+                        <div class="space-y-3">
+                            @foreach($thread->tasks as $linkedTask)
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <span class="icon-[tabler--subtask] size-4 text-primary"></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <a href="{{ route('tasks.show', $linkedTask) }}" class="font-medium text-sm text-primary hover:underline block truncate">
+                                        {{ $linkedTask->workspace?->prefix }}-{{ $linkedTask->task_number }}: {{ $linkedTask->title }}
+                                    </a>
+                                    <div class="flex items-center gap-2 mt-0.5 text-xs text-base-content/50">
+                                        @if($linkedTask->status)
+                                        @php
+                                            $statusColor = $linkedTask->status->color ?? '#6b7280';
+                                            $r = hexdec(substr($statusColor, 1, 2));
+                                            $g = hexdec(substr($statusColor, 3, 2));
+                                            $b = hexdec(substr($statusColor, 5, 2));
+                                        @endphp
+                                        <span class="badge badge-xs font-medium" style="background-color: rgba({{ $r }}, {{ $g }}, {{ $b }}, 0.15); color: {{ $statusColor }}; border-color: rgba({{ $r }}, {{ $g }}, {{ $b }}, 0.3);">
+                                            {{ $linkedTask->status->name }}
+                                        </span>
+                                        @endif
+                                        @if($linkedTask->workspace)
+                                        <span>{{ $linkedTask->workspace->name }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <a href="{{ route('tasks.show', $linkedTask) }}" class="btn btn-ghost btn-xs">
+                                    <span class="icon-[tabler--external-link] size-3"></span>
+                                </a>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Replies Section -->
+                @php
+                    $lastReply = $thread->allReplies()->orderBy('created_at', 'desc')->first();
+                    $lastReplyTs = $lastReply ? $lastReply->created_at->format('Y-m-d\TH:i:s.u\Z') : now()->format('Y-m-d\TH:i:s.u\Z');
+                @endphp
                 <div class="mb-6">
                     <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <span class="icon-[tabler--messages] size-5"></span>
                         Replies
-                        @if($thread->replies_count > 0)
-                        <span class="badge badge-ghost">{{ $thread->replies_count }}</span>
-                        @endif
+                        <span id="replies-count-badge" class="badge badge-ghost {{ $thread->replies_count > 0 ? '' : 'hidden' }}">{{ $thread->replies_count }}</span>
                     </h2>
 
-                    @if($thread->replies->isEmpty())
-                    <div class="card bg-base-100 shadow">
-                        <div class="card-body text-center py-8">
-                            <div class="text-base-content/50">
-                                <span class="icon-[tabler--message-2] size-8 block mx-auto mb-2"></span>
-                                <p>No replies yet. Be the first to respond!</p>
+                    <div id="thread-replies-container"
+                         class="space-y-3"
+                         data-poll-url="{{ route('channels.threads.replies.poll', [$channel, $thread]) }}"
+                         data-last-ts="{{ $lastReplyTs }}">
+                        @if($thread->replies->isEmpty())
+                        <div id="no-replies-message" class="card bg-base-100 shadow">
+                            <div class="card-body text-center py-8">
+                                <div class="text-base-content/50">
+                                    <span class="icon-[tabler--message-2] size-8 block mx-auto mb-2"></span>
+                                    <p>No replies yet. Be the first to respond!</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    @else
-                    <div class="space-y-3">
+                        @else
                         @foreach($thread->replies as $reply)
                         @include('discussion::channels.partials.reply', ['reply' => $reply, 'channel' => $channel, 'thread' => $thread])
                         @endforeach
+                        @endif
                     </div>
-                    @endif
                 </div>
 
                 <!-- Reply Form -->
@@ -255,5 +305,124 @@ document.addEventListener('keydown', function(e) {
         document.body.style.overflow = '';
     }
 });
+
+// Real-time reply polling
+(function initThreadReplyPolling() {
+    const container = document.getElementById('thread-replies-container');
+    if (!container) return;
+
+    const pollUrl = container.dataset.pollUrl;
+    let lastTs = container.dataset.lastTs || '';
+    const POLL_INTERVAL = 5000; // 5 seconds
+    let isPolling = false;
+
+    async function pollReplies() {
+        if (isPolling) return;
+        isPolling = true;
+
+        try {
+            const url = `${pollUrl}?last_ts=${encodeURIComponent(lastTs)}`;
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Poll request failed');
+            }
+
+            const data = await response.json();
+
+            // Update last timestamp
+            if (data.last_ts) {
+                lastTs = data.last_ts;
+                container.dataset.lastTs = lastTs;
+            }
+
+            // Remove "no replies" message if we have new replies
+            if (data.replies && data.replies.length > 0) {
+                const noRepliesMsg = document.getElementById('no-replies-message');
+                if (noRepliesMsg) {
+                    noRepliesMsg.remove();
+                }
+            }
+
+            // Append new replies with animation
+            if (data.replies && data.replies.length > 0) {
+                data.replies.forEach(reply => {
+                    // Check if reply already exists
+                    if (!document.getElementById(`thread-reply-${reply.uuid}`)) {
+                        const temp = document.createElement('div');
+                        temp.innerHTML = reply.html;
+                        const replyEl = temp.firstElementChild;
+                        if (replyEl) {
+                            replyEl.style.opacity = '0';
+                            replyEl.style.transform = 'translateY(-10px)';
+                            replyEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                            container.appendChild(replyEl);
+                            // Trigger animation
+                            requestAnimationFrame(() => {
+                                replyEl.style.opacity = '1';
+                                replyEl.style.transform = 'translateY(0)';
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Update existing replies that have new nested replies
+            if (data.updated_replies && data.updated_replies.length > 0) {
+                data.updated_replies.forEach(reply => {
+                    const existingReply = document.getElementById(`thread-reply-${reply.uuid}`);
+                    if (existingReply) {
+                        const temp = document.createElement('div');
+                        temp.innerHTML = reply.html;
+                        const newReplyEl = temp.firstElementChild;
+                        if (newReplyEl) {
+                            existingReply.replaceWith(newReplyEl);
+                            // Brief highlight animation
+                            newReplyEl.style.backgroundColor = 'rgba(var(--color-primary), 0.1)';
+                            newReplyEl.style.transition = 'background-color 1s ease';
+                            setTimeout(() => {
+                                newReplyEl.style.backgroundColor = '';
+                            }, 1000);
+                        }
+                    }
+                });
+            }
+
+            // Update reply count badge
+            if (data.count !== undefined) {
+                updateReplyCount(data.count);
+            }
+
+        } catch (error) {
+            console.error('Reply polling error:', error);
+        } finally {
+            isPolling = false;
+            // Schedule next poll
+            setTimeout(pollReplies, POLL_INTERVAL);
+        }
+    }
+
+    function updateReplyCount(count) {
+        const badge = document.getElementById('replies-count-badge');
+        if (badge) {
+            badge.textContent = count;
+            if (count > 0) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+
+    // Start polling after a short delay
+    setTimeout(pollReplies, POLL_INTERVAL);
+})();
 </script>
 @endsection

@@ -173,39 +173,43 @@
                     </div>
                 </div>
 
-                <!-- Subtasks -->
-                @if($task->subtasks->isNotEmpty())
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--subtask] size-5"></span>
-                            Subtasks
-                            <span class="badge badge-sm">{{ $task->subtasks->count() }}</span>
-                        </h2>
-                        <div class="space-y-2">
-                            @foreach($task->subtasks as $subtask)
-                                <a href="{{ route('tasks.show', $subtask) }}"
-                                   class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors {{ $subtask->isClosed() ? 'opacity-60' : '' }}">
-                                    @if($subtask->types && count($subtask->types) > 0)
-                                        <span class="icon-[{{ $subtask->types[0]->icon() }}] size-4 text-base-content/70"></span>
-                                    @else
-                                        <span class="icon-[tabler--checkbox] size-4 text-base-content/70"></span>
-                                    @endif
-                                    <span class="font-mono text-sm text-base-content/60">{{ $subtask->task_number }}</span>
-                                    <span class="{{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
-                                    @if($subtask->status)
-                                        <span class="badge badge-sm ml-auto" style="background-color: {{ $subtask->status->background_color }}20; color: {{ $subtask->status->background_color }}">
-                                            {{ $subtask->status->name }}
-                                        </span>
-                                    @endif
-                                </a>
-                            @endforeach
-                        </div>
-                        <div class="mt-3">
-                            <a href="{{ route('tasks.create', ['parent_task_id' => $task->id]) }}" class="btn btn-sm btn-ghost">
-                                <span class="icon-[tabler--plus] size-4"></span>
-                                Add Subtask
-                            </a>
+                <!-- Subtasks (only show for parent tasks, not for subtasks) -->
+                @if(!$task->parentTask)
+                <div id="subtasks-section">
+                    <div class="card bg-base-100 shadow" id="subtasks-card">
+                        <div class="card-body">
+                            <h2 class="card-title text-lg">
+                                <span class="icon-[tabler--subtask] size-5"></span>
+                                Subtasks
+                                <span class="badge badge-sm" id="subtasks-count">{{ $task->subtasks->count() }}</span>
+                            </h2>
+                            <div class="space-y-2" id="subtasks-list">
+                                @forelse($task->subtasks as $subtask)
+                                    <a href="{{ route('tasks.show', $subtask) }}"
+                                       class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors {{ $subtask->isClosed() ? 'opacity-60' : '' }}">
+                                        @if($subtask->types && count($subtask->types) > 0)
+                                            <span class="icon-[{{ $subtask->types[0]->icon() }}] size-4 text-base-content/70"></span>
+                                        @else
+                                            <span class="icon-[tabler--checkbox] size-4 text-base-content/70"></span>
+                                        @endif
+                                        <span class="font-mono text-sm text-base-content/60">{{ $subtask->task_number }}</span>
+                                        <span class="{{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
+                                        @if($subtask->status)
+                                            <span class="badge badge-sm ml-auto" style="background-color: {{ $subtask->status->background_color }}20; color: {{ $subtask->status->background_color }}">
+                                                {{ $subtask->status->name }}
+                                            </span>
+                                        @endif
+                                    </a>
+                                @empty
+                                    <p id="subtasks-empty-message" class="text-base-content/60 text-sm">No subtasks yet</p>
+                                @endforelse
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" onclick="openSubtaskDrawer()" class="btn btn-sm btn-ghost">
+                                    <span class="icon-[tabler--plus] size-4"></span>
+                                    Add Subtask
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -424,6 +428,20 @@
                         <h2 class="card-title text-lg">Details</h2>
 
                         <div class="divide-y divide-base-200">
+                            <!-- Parent Task (shown first for subtasks) -->
+                            @if($task->parentTask)
+                            <div class="py-3 first:pt-0">
+                                <label class="text-sm font-medium text-base-content/70">Parent Task</label>
+                                <div class="mt-2">
+                                    <a href="{{ route('tasks.show', $task->parentTask) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
+                                        <span class="icon-[tabler--subtask] size-4"></span>
+                                        <span class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded">{{ $task->parentTask->task_number }}</span>
+                                        <span class="text-sm">{{ Str::limit($task->parentTask->title, 20) }}</span>
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
+
                             <!-- Status -->
                             <div class="py-3 first:pt-0">
                                 <div class="flex items-center justify-between">
@@ -862,20 +880,6 @@
                                     </a>
                                 </div>
                             </div>
-
-                            <!-- Parent Task -->
-                            @if($task->parentTask)
-                            <div class="py-3">
-                                <label class="text-sm font-medium text-base-content/70">Parent Task</label>
-                                <div class="mt-2">
-                                    <a href="{{ route('tasks.show', $task->parentTask) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
-                                        <span class="icon-[tabler--subtask] size-4"></span>
-                                        <span class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded">{{ $task->parentTask->task_number }}</span>
-                                        <span class="text-sm">{{ Str::limit($task->parentTask->title, 20) }}</span>
-                                    </a>
-                                </div>
-                            </div>
-                            @endif
 
                             <!-- Estimated Time -->
                             @if($task->estimated_time)
@@ -1651,5 +1655,10 @@ if (typeof MutationObserver !== 'undefined') {
 
 <!-- On Hold Modal -->
 @include('task::partials.on-hold-modal')
+
+<!-- Subtask Drawer (only for parent tasks) -->
+@if(!$task->parentTask)
+@include('task::partials.subtask-drawer', ['task' => $task, 'users' => $users])
+@endif
 
 @endsection

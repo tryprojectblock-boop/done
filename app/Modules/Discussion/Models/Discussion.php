@@ -6,6 +6,7 @@ namespace App\Modules\Discussion\Models;
 
 use App\Models\User;
 use App\Modules\Discussion\Enums\DiscussionType;
+use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -96,6 +97,13 @@ class Discussion extends Model
     {
         return $this->hasMany(DiscussionComment::class)
             ->orderBy('created_at', 'desc');
+    }
+
+    public function tasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'discussion_tasks')
+            ->withPivot('linked_by')
+            ->withTimestamps();
     }
 
     // ==================== SCOPES ====================

@@ -1,4 +1,5 @@
-<div class="card bg-base-100 shadow" id="reply-{{ $reply->uuid }}">
+@php $user = $user ?? auth()->user(); @endphp
+<div class="card bg-base-100 shadow" id="thread-reply-{{ $reply->uuid }}">
     <div class="card-body p-4">
         <div class="flex items-start gap-3">
             <!-- Avatar -->
@@ -66,7 +67,7 @@
         @if($reply->replies->count() > 0)
         <div class="ml-12 mt-4 space-y-3 border-l-2 border-base-200 pl-4">
             @foreach($reply->replies as $nestedReply)
-                @include('discussion::channels.partials.reply', ['reply' => $nestedReply])
+                @include('discussion::channels.partials.reply', ['reply' => $nestedReply, 'channel' => $channel, 'thread' => $thread, 'user' => $user ?? auth()->user()])
             @endforeach
         </div>
         @endif

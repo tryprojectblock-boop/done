@@ -21,6 +21,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
     Route::post('tasks/{task}/hold', [TaskController::class, 'hold'])->name('tasks.hold');
     Route::post('tasks/{task}/resume', [TaskController::class, 'resume'])->name('tasks.resume');
+    Route::post('tasks/{task}/subtasks', [TaskController::class, 'storeSubtask'])->name('tasks.subtasks.store');
     Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
     Route::patch('tasks/{task}/assignee', [TaskController::class, 'updateAssignee'])->name('tasks.update-assignee');
     Route::patch('tasks/{task}/priority', [TaskController::class, 'updatePriority'])->name('tasks.update-priority');
