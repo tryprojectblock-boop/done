@@ -65,6 +65,34 @@
             </li>
 
             <li class="menu-title mt-4">
+                <span>Marketing</span>
+            </li>
+
+            <!-- Funnel Builder -->
+            <li>
+                <details {{ request()->routeIs('backoffice.funnel.*') ? 'open' : '' }}>
+                    <summary class="{{ request()->routeIs('backoffice.funnel.*') ? 'active' : '' }}">
+                        <span class="icon-[tabler--filter] size-5"></span>
+                        Funnel
+                    </summary>
+                    <ul>
+                        <li>
+                            <a href="{{ route('backoffice.funnel.index') }}" class="{{ request()->routeIs('backoffice.funnel.index') || request()->routeIs('backoffice.funnel.create') || request()->routeIs('backoffice.funnel.edit') ? 'active' : '' }}">
+                                <span class="icon-[tabler--filter] size-4"></span>
+                                Funnel Builder
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('backoffice.funnel.logs') }}" class="{{ request()->routeIs('backoffice.funnel.logs*') ? 'active' : '' }}">
+                                <span class="icon-[tabler--mail] size-4"></span>
+                                Email Logs
+                            </a>
+                        </li>
+                    </ul>
+                </details>
+            </li>
+
+            <li class="menu-title mt-4">
                 <span>System</span>
             </li>
 

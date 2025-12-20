@@ -12,6 +12,9 @@ use App\Modules\Admin\Http\Controllers\AdminUsersController;
 use App\Modules\Admin\Http\Controllers\AppSettingsController;
 use App\Modules\Admin\Http\Controllers\AppController;
 use App\Modules\Admin\Http\Controllers\ScheduledTasksController;
+use App\Modules\Admin\Http\Controllers\FunnelController;
+use App\Modules\Admin\Http\Controllers\FunnelEmailLogController;
+use App\Modules\Admin\Http\Controllers\FunnelTrackingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -126,5 +129,31 @@ Route::prefix('backoffice')->name('backoffice.')->group(function () {
                 Route::delete('/{admin}', [AdminUsersController::class, 'destroy'])->name('destroy');
             });
         });
+
+        // Funnel (Email Automation)
+        Route::prefix('funnel')->name('funnel.')->group(function () {
+            Route::get('/', [FunnelController::class, 'index'])->name('index');
+            Route::get('/create', [FunnelController::class, 'create'])->name('create');
+            Route::post('/', [FunnelController::class, 'store'])->name('store');
+            Route::get('/{funnel}/edit', [FunnelController::class, 'edit'])->name('edit');
+            Route::put('/{funnel}', [FunnelController::class, 'update'])->name('update');
+            Route::delete('/{funnel}', [FunnelController::class, 'destroy'])->name('destroy');
+            Route::post('/{funnel}/toggle', [FunnelController::class, 'toggle'])->name('toggle');
+            Route::post('/{funnel}/duplicate', [FunnelController::class, 'duplicate'])->name('duplicate');
+
+            // Steps
+            Route::post('/{funnel}/steps', [FunnelController::class, 'storeStep'])->name('steps.store');
+            Route::put('/{funnel}/steps/{step}', [FunnelController::class, 'updateStep'])->name('steps.update');
+            Route::delete('/{funnel}/steps/{step}', [FunnelController::class, 'destroyStep'])->name('steps.destroy');
+            Route::post('/{funnel}/steps/reorder', [FunnelController::class, 'reorderSteps'])->name('steps.reorder');
+
+            // Email Logs
+            Route::get('/logs', [FunnelEmailLogController::class, 'index'])->name('logs');
+            Route::get('/logs/{log}', [FunnelEmailLogController::class, 'show'])->name('logs.show');
+        });
     });
+
+    // Public Tracking Routes (no auth required for email open/click tracking)
+    Route::get('/funnel/t/o/{uuid}', [FunnelTrackingController::class, 'trackOpen'])->name('funnel.track.open');
+    Route::get('/funnel/t/c/{uuid}/{linkId}', [FunnelTrackingController::class, 'trackClick'])->name('funnel.track.click');
 });

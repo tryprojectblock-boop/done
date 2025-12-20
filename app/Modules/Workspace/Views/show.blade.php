@@ -194,6 +194,29 @@
                 @endif
             </a>
             @endif
+            @if($workspace->isStandupEnabled())
+            <div class="dropdown">
+                <button type="button" class="dropdown-toggle flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 text-base-content/60 hover:text-primary hover:bg-primary/10" aria-haspopup="menu" aria-expanded="false">
+                    <span class="icon-[tabler--checkbox] size-5"></span>
+                    <span>Standup</span>
+                    <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 transition-transform"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-44" role="menu">
+                    <li>
+                        <a class="dropdown-item" href="{{ route('standups.index', $workspace) }}">
+                            <span class="icon-[tabler--checkbox] size-5"></span>
+                            Daily Standup
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('standups.tracker.index', $workspace) }}">
+                            <span class="icon-[tabler--chart-dots] size-5"></span>
+                            Tracker
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            @endif
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'files']) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'files' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--files] size-5"></span>

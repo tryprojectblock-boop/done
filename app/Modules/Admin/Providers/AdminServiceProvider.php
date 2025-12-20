@@ -2,11 +2,19 @@
 
 namespace App\Modules\Admin\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
+use App\Modules\Admin\Console\Commands\CreateAdminCommand;
+use App\Modules\Admin\Console\Commands\ProcessFunnels;
 use App\Modules\Admin\Http\Middleware\AdminAuthenticate;
 use App\Modules\Admin\Http\Middleware\AdminIsAdministrator;
-use App\Modules\Admin\Console\Commands\CreateAdminCommand;
+use App\Modules\Admin\Listeners\FunnelTagListener;
+use App\Modules\Admin\Observers\FunnelTaskObserver;
+use App\Modules\Auth\Events\RegistrationCompleted;
+use App\Modules\Auth\Events\UserRegistered;
+use App\Modules\Task\Models\Task;
+use App\Modules\Workspace\Events\MemberInvited;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
 
 class AdminServiceProvider extends ServiceProvider
 {
@@ -29,6 +37,8 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerMiddleware();
         $this->registerRoutes();
         $this->registerCommands();
+        $this->registerEventListeners();
+        $this->registerObservers();
     }
 
     /**
@@ -59,7 +69,26 @@ class AdminServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CreateAdminCommand::class,
+                ProcessFunnels::class,
             ]);
         }
+    }
+
+    /**
+     * Register event listeners for funnel tags.
+     */
+    protected function registerEventListeners(): void
+    {
+        Event::listen(UserRegistered::class, [FunnelTagListener::class, 'handleUserRegistered']);
+        Event::listen(RegistrationCompleted::class, [FunnelTagListener::class, 'handleRegistrationCompleted']);
+        Event::listen(MemberInvited::class, [FunnelTagListener::class, 'handleMemberInvited']);
+    }
+
+    /**
+     * Register model observers for funnel tags.
+     */
+    protected function registerObservers(): void
+    {
+        Task::observe(FunnelTaskObserver::class);
     }
 }

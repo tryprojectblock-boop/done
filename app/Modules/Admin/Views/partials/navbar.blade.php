@@ -10,6 +10,19 @@
     </div>
 
     <div class="flex-none gap-2">
+        <!-- Funnel Tab -->
+        <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost gap-1 {{ request()->routeIs('backoffice.funnel.*') ? 'btn-active' : '' }}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                <span class="icon-[tabler--filter] size-5"></span>
+                <span class="hidden sm:inline">Funnel</span>
+                <span class="icon-[tabler--chevron-down] size-4"></span>
+            </div>
+            <ul tabindex="0" class="dropdown-menu dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                <li><a href="{{ route('backoffice.funnel.index') }}" class="{{ request()->routeIs('backoffice.funnel.index') || request()->routeIs('backoffice.funnel.create') || request()->routeIs('backoffice.funnel.edit') ? 'active' : '' }}"><span class="icon-[tabler--filter] size-4 me-2"></span>Funnel Builder</a></li>
+                <li><a href="{{ route('backoffice.funnel.logs') }}" class="{{ request()->routeIs('backoffice.funnel.logs*') ? 'active' : '' }}"><span class="icon-[tabler--mail] size-4 me-2"></span>Email Logs</a></li>
+            </ul>
+        </div>
+
         <!-- Quick Actions -->
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-circle" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">

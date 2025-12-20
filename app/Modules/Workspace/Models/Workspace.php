@@ -8,6 +8,9 @@ use App\Models\User;
 use App\Models\Workflow;
 use App\Modules\Core\Support\BaseModel;
 use App\Modules\Discussion\Models\Discussion;
+use App\Modules\Standup\Models\MemberTracker;
+use App\Modules\Standup\Models\StandupEntry;
+use App\Modules\Standup\Models\StandupTemplate;
 use App\Modules\Task\Models\Task;
 use App\Modules\Core\Traits\BelongsToTenant;
 use App\Modules\Core\Traits\HasUuid;
@@ -114,6 +117,48 @@ class Workspace extends BaseModel
     public function milestones(): HasMany
     {
         return $this->hasMany(\App\Models\Milestone::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Standup Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function standupTemplate(): HasOne
+    {
+        return $this->hasOne(StandupTemplate::class);
+    }
+
+    public function standupEntries(): HasMany
+    {
+        return $this->hasMany(StandupEntry::class);
+    }
+
+    /**
+     * Alias for standupEntries - needed for route model binding.
+     */
+    public function entries(): HasMany
+    {
+        return $this->standupEntries();
+    }
+
+    public function memberTrackers(): HasMany
+    {
+        return $this->hasMany(MemberTracker::class);
+    }
+
+    /**
+     * Check if standup is enabled for this workspace.
+     */
+    public function isStandupEnabled(): bool
+    {
+        // Only check company level - if company has enabled Daily Standup from marketplace,
+        // it's available for all workspaces (similar to milestones)
+        if (!auth()->check() || !auth()->user()->company) {
+            return false;
+        }
+        return auth()->user()->company->isDailyStandupEnabled();
     }
 
     /*

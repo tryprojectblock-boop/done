@@ -66,8 +66,33 @@ class TaskController extends Controller
 
         $tasks = $this->taskService->getTasksForUser($user, $filters, 10);
 
-        // Get task stats for tabs - apply same base filters (workspace, assignee, search)
-        $baseQuery = Task::visibleTo($user);
+        // Get task stats for tabs - apply same base filters as TaskService::getTasksForUser()
+        // Get all company IDs the user belongs to
+        $companyIds = \DB::table('company_user')
+            ->where('user_id', $user->id)
+            ->pluck('company_id')
+            ->toArray();
+        if ($user->company_id && !in_array($user->company_id, $companyIds)) {
+            $companyIds[] = $user->company_id;
+        }
+
+        $baseQuery = Task::query()
+            ->where(function ($q) use ($companyIds) {
+                $q->whereIn('company_id', $companyIds)
+                    ->orWhere(function ($q2) use ($companyIds) {
+                        $q2->whereNull('company_id')
+                            ->whereHas('workspace.owner', function ($ownerQuery) use ($companyIds) {
+                                $ownerQuery->whereIn('company_id', $companyIds);
+                            });
+                    });
+            })
+            ->visibleTo($user)
+            ->where(function ($q) use ($user) {
+                // Same filter as TaskService: show tasks where user is assignee, creator, or watcher
+                $q->where('assignee_id', $user->id)
+                    ->orWhere('created_by', $user->id)
+                    ->orWhereHas('watchers', fn ($wq) => $wq->where('user_id', $user->id));
+            });
 
         // Apply workspace filter to stats
         if (!empty($filters['workspace_id'])) {
@@ -145,7 +170,6 @@ class TaskController extends Controller
                 'pagination' => $tasks->hasPages() ? $tasks->withQueryString()->links()->render() : '',
             ]);
         }
-
         return view('task::index', compact(
             'tasks',
             'workspaces',

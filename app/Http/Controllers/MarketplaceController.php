@@ -460,4 +460,90 @@ class MarketplaceController extends Controller
             'status_color' => $isEnabled ? 'success' : 'warning',
         ];
     }
+
+    /**
+     * Display the Daily Standup detail page.
+     */
+    public function dailyStandup(Request $request): View
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to access this feature.');
+        }
+
+        $company = $user->company;
+        $dailyStandupStatus = $this->getDailyStandupStatus($company);
+
+        return view('marketplace.daily-standup', [
+            'user' => $user,
+            'company' => $company,
+            'dailyStandupStatus' => $dailyStandupStatus,
+        ]);
+    }
+
+    /**
+     * Enable Daily Standup feature for the company.
+     */
+    public function enableDailyStandup(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to enable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['daily_standup_enabled'] = true;
+        $settings['daily_standup_enabled_at'] = now()->toISOString();
+        $settings['daily_standup_enabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.daily-standup')
+            ->with('success', 'Daily Standup has been enabled. Workspaces can now enable standups for their teams.');
+    }
+
+    /**
+     * Disable Daily Standup feature for the company.
+     */
+    public function disableDailyStandup(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->isAdminOrHigher()) {
+            abort(403, 'You do not have permission to disable this feature.');
+        }
+
+        $company = $user->company;
+
+        $settings = $company->settings ?? [];
+        $settings['daily_standup_enabled'] = false;
+        $settings['daily_standup_disabled_at'] = now()->toISOString();
+        $settings['daily_standup_disabled_by'] = $user->id;
+
+        $company->update(['settings' => $settings]);
+
+        return redirect()->route('marketplace.daily-standup')
+            ->with('success', 'Daily Standup has been disabled for your organization.');
+    }
+
+    /**
+     * Get the Daily Standup status for a company.
+     */
+    public function getDailyStandupStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['daily_standup_enabled'] ?? false;
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
 }

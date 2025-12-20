@@ -144,6 +144,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/marketplace/out-of-office', [MarketplaceController::class, 'outOfOffice'])->name('marketplace.out-of-office');
     Route::post('/marketplace/out-of-office/enable', [MarketplaceController::class, 'enableOutOfOffice'])->name('marketplace.out-of-office.enable');
     Route::post('/marketplace/out-of-office/disable', [MarketplaceController::class, 'disableOutOfOffice'])->name('marketplace.out-of-office.disable');
+    Route::get('/marketplace/daily-standup', [MarketplaceController::class, 'dailyStandup'])->name('marketplace.daily-standup');
+    Route::post('/marketplace/daily-standup/enable', [MarketplaceController::class, 'enableDailyStandup'])->name('marketplace.daily-standup.enable');
+    Route::post('/marketplace/daily-standup/disable', [MarketplaceController::class, 'disableDailyStandup'])->name('marketplace.daily-standup.disable');
 
     // Google Calendar OAuth routes
     Route::get('/auth/google/connect', [GoogleCalendarController::class, 'connect'])->name('google.connect');

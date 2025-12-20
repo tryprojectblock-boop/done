@@ -1,3 +1,42 @@
+<!-- Today's Standup Card (Full Width - Hidden when submitted) -->
+@if($workspace->isStandupEnabled())
+@php
+    $todayStandupEntry = \App\Modules\Standup\Models\StandupEntry::query()
+        ->where('workspace_id', $workspace->id)
+        ->where('user_id', auth()->id())
+        ->whereDate('standup_date', today())
+        ->first();
+    $hasSubmittedToday = $todayStandupEntry !== null;
+@endphp
+@if(!$hasSubmittedToday)
+<div class="card bg-primary/5 border border-primary/20 mb-6">
+    <div class="card-body">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span class="icon-[tabler--calendar-check] size-7 text-primary"></span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-base-content">Today's Standup</h2>
+                    <p class="text-base-content/60">{{ today()->format('l, F j, Y') }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="badge badge-warning gap-1">
+                    <span class="icon-[tabler--clock] size-4"></span>
+                    Pending
+                </span>
+                <a href="{{ route('standups.create', $workspace) }}" class="btn btn-primary">
+                    <span class="icon-[tabler--plus] size-5"></span>
+                    Submit Standup
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@endif
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main Content -->
     <div class="lg:col-span-2 space-y-6">

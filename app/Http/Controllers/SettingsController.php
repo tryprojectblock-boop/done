@@ -30,6 +30,7 @@ class SettingsController extends Controller
         $googleDriveStatus = null;
         $milestonesStatus = null;
         $outOfOfficeStatus = null;
+        $dailyStandupStatus = null;
         $moduleSettings = [];
         $defaultWorkspace = null;
 
@@ -39,6 +40,7 @@ class SettingsController extends Controller
             $googleDriveStatus = $this->getGoogleDriveStatus($company);
             $milestonesStatus = $this->getMilestonesStatus($company);
             $outOfOfficeStatus = $this->getOutOfOfficeStatus($company);
+            $dailyStandupStatus = $this->getDailyStandupStatus($company);
             $moduleSettings = $this->getModuleSettings($company);
             // Get first workspace for module links
             $defaultWorkspace = Workspace::first();
@@ -53,6 +55,7 @@ class SettingsController extends Controller
             'googleDriveStatus' => $googleDriveStatus,
             'milestonesStatus' => $milestonesStatus,
             'outOfOfficeStatus' => $outOfOfficeStatus,
+            'dailyStandupStatus' => $dailyStandupStatus,
             'moduleSettings' => $moduleSettings,
             'defaultWorkspace' => $defaultWorkspace,
         ]);
@@ -136,6 +139,23 @@ class SettingsController extends Controller
     {
         $settings = $company->settings ?? [];
         $isEnabled = $settings['out_of_office_enabled'] ?? false;
+
+        return [
+            'installed' => true,
+            'enabled' => $isEnabled,
+            'status' => $isEnabled ? 'enabled' : 'disabled',
+            'status_label' => $isEnabled ? 'Enabled' : 'Disabled',
+            'status_color' => $isEnabled ? 'success' : 'warning',
+        ];
+    }
+
+    /**
+     * Get the Daily Standup status for a company.
+     */
+    private function getDailyStandupStatus($company): array
+    {
+        $settings = $company->settings ?? [];
+        $isEnabled = $settings['daily_standup_enabled'] ?? false;
 
         return [
             'installed' => true,

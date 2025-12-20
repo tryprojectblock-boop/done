@@ -16,6 +16,15 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| System Scheduled Tasks (Hardcoded)
+|--------------------------------------------------------------------------
+*/
+
+// Process funnels every 5 minutes
+Schedule::command('funnel:process')->everyFiveMinutes();
+
 // Load scheduled tasks from database
 try {
     $tasks = ScheduledTask::where('is_active', true)->get();

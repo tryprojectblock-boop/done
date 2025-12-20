@@ -314,6 +314,15 @@ class Company extends BaseModel
     }
 
     /**
+     * Check if the daily standup feature is enabled for this company
+     */
+    public function isDailyStandupEnabled(): bool
+    {
+        $settings = $this->settings ?? [];
+        return $settings['daily_standup_enabled'] ?? false;
+    }
+
+    /**
      * Check if a specific module is enabled
      */
     public function isModuleEnabled(string $module): bool

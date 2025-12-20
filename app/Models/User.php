@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Admin\Models\FunnelTag;
 use App\Modules\Auth\Models\Company;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -309,6 +310,15 @@ class User extends Authenticatable
         return $this->belongsToMany(Workspace::class, 'workspace_members', 'user_id', 'workspace_id')
             ->withPivot(['role', 'joined_at', 'invited_by', 'permissions'])
             ->withTimestamps();
+    }
+
+    /**
+     * Get all funnel tags for this user.
+     */
+    public function funnelTags(): BelongsToMany
+    {
+        return $this->belongsToMany(FunnelTag::class, 'user_funnel_tags')
+            ->withPivot('tagged_at');
     }
 
     /**

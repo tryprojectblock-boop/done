@@ -61,6 +61,12 @@
                     Invoices
                 </a>
 
+                <a href="{{ route('backoffice.funnel.index') }}"
+                   class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ request()->routeIs('backoffice.funnel.*') ? 'border-primary text-primary' : 'border-transparent text-base-content/70 hover:text-base-content hover:border-base-300' }}">
+                    <span class="icon-[tabler--filter] size-4 inline-block mr-1.5 align-middle"></span>
+                    Funnel
+                </a>
+
                 @if(auth()->guard('admin')->user()->canManageSettings())
                 <a href="{{ route('backoffice.app.index') }}"
                    class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ request()->routeIs('backoffice.app.*') ? 'border-primary text-primary' : 'border-transparent text-base-content/70 hover:text-base-content hover:border-base-300' }}">
