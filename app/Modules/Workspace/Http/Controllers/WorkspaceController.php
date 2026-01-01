@@ -93,7 +93,7 @@ class WorkspaceController extends Controller
             ->join('company_user', 'users.id', '=', 'company_user.user_id')
             ->where('company_user.company_id', $request->user()->company_id)
             ->where('users.id', '!=', $request->user()->id)
-            ->where('users.status', User::STATUS_ACTIVE)
+            ->whereIn('users.status', [User::STATUS_ACTIVE, User::STATUS_INVITED])
             ->select('users.*', 'company_user.role as company_role')
             ->orderBy('users.name')
             ->get();

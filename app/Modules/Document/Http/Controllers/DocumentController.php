@@ -63,9 +63,13 @@ class DocumentController extends Controller
     public function create(): View
     {
         $user = auth()->user();
-        $members = \App\Models\User::where('company_id', $user->company_id)
-            ->where('id', '!=', $user->id)
-            ->orderBy('name')
+        $members = \App\Models\User::query()
+            ->join('company_user', 'users.id', '=', 'company_user.user_id')
+            ->where('company_user.company_id', $user->company_id)
+            ->where('users.id', '!=', $user->id)
+            ->whereIn('users.status', ['active', 'invited'])
+            ->select('users.*')
+            ->orderBy('users.name')
             ->get();
 
         $workspaces = \App\Modules\Workspace\Models\Workspace::where(function ($query) use ($user) {
