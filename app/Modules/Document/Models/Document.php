@@ -122,26 +122,32 @@ class Document extends Model
     public function scopeAccessibleBy($query, User $user)
     {
         return $query->where(function ($q) use ($user) {
-            // User is creator
-            $q->where('created_by', $user->id)
-                // Or user is a collaborator
-                ->orWhereHas('collaborators', function ($sub) use ($user) {
-                    $sub->where('user_id', $user->id);
-                });
-        })->where('company_id', $user->company_id);
+            // User is creator of a document in their company
+            $q->where(function ($sub) use ($user) {
+                $sub->where('created_by', $user->id)
+                    ->where('company_id', $user->company_id);
+            })
+            // Or user is a collaborator (on any document they've been shared on)
+            ->orWhereHas('collaborators', function ($sub) use ($user) {
+                $sub->where('users.id', $user->id);
+            });
+        });
     }
 
     public function scopeEditableBy($query, User $user)
     {
         return $query->where(function ($q) use ($user) {
-            // User is creator
-            $q->where('created_by', $user->id)
-                // Or user is an editor collaborator
-                ->orWhereHas('collaborators', function ($sub) use ($user) {
-                    $sub->where('user_id', $user->id)
-                        ->where('role', CollaboratorRole::EDITOR->value);
-                });
-        })->where('company_id', $user->company_id);
+            // User is creator of a document in their company
+            $q->where(function ($sub) use ($user) {
+                $sub->where('created_by', $user->id)
+                    ->where('company_id', $user->company_id);
+            })
+            // Or user is an editor collaborator (on any document they've been shared on)
+            ->orWhereHas('collaborators', function ($sub) use ($user) {
+                $sub->where('users.id', $user->id)
+                    ->where('document_collaborators.role', CollaboratorRole::EDITOR->value);
+            });
+        });
     }
 
     // ==================== HELPER METHODS ====================
