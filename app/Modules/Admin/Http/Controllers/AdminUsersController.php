@@ -53,9 +53,8 @@ class AdminUsersController extends Controller
     public function edit(AdminUser $admin): View
     {
         $roles = AdminRole::cases();
-        $adminUser = $admin;
 
-        return view('admin::settings.admin-users.edit', compact('adminUser', 'roles'));
+        return view('admin::settings.admin-users.edit', compact('admin', 'roles'));
     }
 
     public function update(Request $request, AdminUser $admin): RedirectResponse
