@@ -13,6 +13,12 @@
 
 /* Import theme configuration - all customizable styles in one place */
 @import './theme.css';
+@import './custom.css';
+:root:has(input.theme-controller[value=light]:checked),
+[data-theme="light"] {
+    --color-primary: oklch(0.7 0.16 248.41);
+    --color-primary-content: oklch(1 0 0);
+}
 
 /* Fixed navbar */
 nav.navbar {

@@ -3,20 +3,20 @@
 @section('content')
 <div class="card bg-base-100 shadow-xl">
     <div class="card-body">
-        <h2 class="card-title justify-center text-2xl mb-2">Forgot Password</h2>
-        <p class="text-center text-base-content/60 mb-6">Enter your email address and we'll send you a link to reset your password.</p>
+        <h2 class="card-title justify-center text-2xl text-center text-primary-color mb-2">Forgot Password</h2>
+        <p class="text-center text-base-content/60 mb-3 text-secondary-color">Enter your email address and we'll send you a link to reset your password.</p>
 
         <div id="forgot-password-form">
             <form id="forgotPasswordForm" class="space-y-4">
                 <div class="form-control">
                     <label class="label" for="email">
-                        <span class="label-text">Email Address</span>
+                        <span class="label-text label-text-alt">Email Address</span>
                     </label>
                     <input type="email" id="email" name="email" class="input input-bordered w-full" placeholder="Enter your email" required />
                     <div id="email-error" class="text-error text-sm mt-1 hidden"></div>
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn btn-primary w-full">
+                <button type="submit" id="submitBtn" class="btn border-0 w-full btn-primary-color">
                     <span class="loading loading-spinner loading-sm hidden" id="loading"></span>
                     <span id="btnText">Send Reset Link</span>
                 </button>
@@ -30,10 +30,10 @@
             </div>
         </div>
 
-        <div class="divider">OR</div>
+        <div class="divider mt-3">OR</div>
 
         <div class="text-center">
-            <a href="{{ route('login') }}" class="link link-primary">Back to Login</a>
+            <a href="{{ route('login') }}" class="link text-link-color">Back to Login</a>
         </div>
     </div>
 </div>

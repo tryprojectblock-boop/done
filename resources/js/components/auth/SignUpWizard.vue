@@ -12,7 +12,7 @@
                                     ? 'bg-primary text-primary-content'
                                     : currentStep === step + 1 - 0.5
                                     ? 'bg-primary/20 text-primary'
-                                    : 'bg-base-300 text-base-content/50'
+                                    : 'circle-border text-base-content/50'
                             ]"
                         >
                             <span v-if="currentStep > step + 1" class="icon-[tabler--check] size-4"></span>
@@ -23,12 +23,12 @@
                         v-if="step < 4"
                         :class="[
                             'flex-1 h-0.5 mx-2',
-                            currentStep > step + 1 ? 'bg-primary' : 'bg-base-300'
+                            currentStep > step + 1 ? 'bg-primary' : 'border-bg-line'
                         ]"
                     ></div>
                 </template>
             </div>
-            <div class="flex justify-between mt-2 text-xs text-base-content/60">
+            <div class="flex justify-between mt-2  font-semibold text-sm text-base-content/60 text-secondary-color">
                 <span>Profile</span>
                 <span>Company</span>
                 <span>Team</span>
@@ -64,11 +64,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <p class="mt-6 text-center text-sm text-base-content/60">
-            Already have an account?
-            <a href="/login" class="text-primary font-medium hover:underline">Sign in</a>
-        </p>
     </div>
 </template>
 

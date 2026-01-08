@@ -2,8 +2,8 @@
     <div class="w-full">
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <h2 class="text-xl font-bold text-base-content mb-2">Welcome back</h2>
-                <p class="text-base-content/60 mb-6">Sign in to your account</p>
+                <h2 class="text-2xl text-center text-primary-color font-semibold">Welcome back</h2>
+                <p class="text-base-content/60 mb-4 text-secondary-color text-center">Sign in to your account</p>
 
                 <!-- Error Alert -->
                 <div v-if="error" class="alert alert-error mb-4">
@@ -18,7 +18,7 @@
                     <!-- Email -->
                     <div class="form-control mb-4">
                         <label class="label" for="email">
-                            <span class="label-text">Email Address</span>
+                            <span class="label-text label-text-alt">Email Address</span>
                         </label>
                         <div class="input flex items-center gap-2" :class="{ 'input-error': errors.email }">
                             <span class="icon-[tabler--mail] size-5 text-base-content/50"></span>
@@ -40,7 +40,7 @@
                     <!-- Password -->
                     <div class="form-control mb-4">
                         <label class="label" for="password">
-                            <span class="label-text">Password</span>
+                            <span class="label-text label-text-alt">Password</span>
                         </label>
                         <div class="input flex items-center gap-2" :class="{ 'input-error': errors.password }">
                             <span class="icon-[tabler--lock] size-5 text-base-content/50"></span>
@@ -67,7 +67,7 @@
 
                     <!-- Remember Me & Forgot Password -->
                     <div class="flex items-center justify-between mb-6">
-                        <label class="label cursor-pointer gap-2">
+                        <label class="label cursor-pointer gap-2 flex items-center">
                             <input
                                 v-model="form.remember"
                                 type="checkbox"
@@ -75,28 +75,29 @@
                             />
                             <span class="label-text">Remember me</span>
                         </label>
-                        <a href="/forgot-password" class="text-sm text-primary hover:underline">
+                        <a href="/forgot-password" class="text-sm text-link-color hover:underline">
                             Forgot password?
                         </a>
                     </div>
 
                     <button
                         type="submit"
-                        class="btn btn-primary w-full"
+                        class="btn btn-primary w-full btn-primary-color border-0"
                         :disabled="loading"
                     >
                         <span v-if="loading" class="loading loading-spinner loading-sm"></span>
                         <span v-else>Sign In</span>
                     </button>
+
+                            <!-- Footer -->
+        <p class="mt-6 text-center text-sm text-base-content/60 text-secondary-color">
+            Don't have an account?
+            <a href="/register" class="text-link-color font-medium hover:underline">Create one</a>
+        </p>
                 </form>
             </div>
         </div>
 
-        <!-- Footer -->
-        <p class="mt-6 text-center text-sm text-base-content/60">
-            Don't have an account?
-            <a href="/register" class="text-primary font-medium hover:underline">Create one</a>
-        </p>
     </div>
 </template>
 

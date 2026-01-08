@@ -1,0 +1,49 @@
+body{font-family: 'Figtree', sans-serif;}
+#signup-app h2{font-weight: 600;color: #17151C;font-family: 'Figtree', sans-serif;}
+.label-text-alt{font-weight: 500; color: #525158;}
+.md-font{font-weight: 500;}
+.text-primary-color{color: #17151C;}
+.text-secondary-color{color: #525158;}
+.text-link-color{color: #3BA5FF;}
+.circle-border{border: 1px solid #B8B7BB;border-radius: 50%;}
+.border-bg-line{background: #DDDDE0;}
+.completed-step-bg{background: #00A63E;}
+#signup-app .card {
+    border: 1px solid #EDECF0;
+    border-radius: 12px;
+    box-shadow: 0px 1px 2px 0px #B8B7BB1A;
+    padding: 16px;
+}
+
+.form-control .input{border: 1px solid #B8B7BB;padding: 10px 12px;border-radius: 6px;}
+/* .form-control .input:focus{outline: 2px solid #3BA5FF !important;} */
+.info-div {
+    display: flex;
+    align-items: center;
+}
+.info-div .size-5 {
+    color: #3BA5FF;
+    width: 14px;
+    height: 14px;
+    margin-right: 5px;
+    position: relative;
+    top: -1px;
+}
+.btn-primary-color{background-color: #3BA5FF;}
+.input:focus, .input:focus-within {
+outline: 1px solid #3BA5FF !important;
+outline-offset: 0px;
+}
+#forgotPasswordForm .input:focus{    outline-offset: 0px;}
+.terms-text{font-weight: 500;color: #525158;}
+.terms-text a{color: #3BA5FF;}
+.btn-primary {
+    background-color: var(--color-primary) !important;
+    color: var(--color-primary-content) !important;
+}
+.icon-\[tabler--checkbox\] {
+    background: url(../img/logo-icon.svg) !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% !important;
+    mask-image: none;
+}
