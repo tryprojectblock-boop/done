@@ -1,7 +1,7 @@
 <template>
     <div>
         <h2 class="text-2xl text-center font-bold text-base-content mb-2">Create your account</h2>
-        <p class="text-center text-base-content/60 mb-6">Enter your work email to get started</p>
+        <p class="text-center text-base-content/60 mb-6 text-secondary-color">Enter your work email to get started</p>
 
         <form @submit.prevent="handleSubmit">
             <div class="form-control">
@@ -53,9 +53,16 @@
                 <span class="text-xs">An invite code is required to create an account.</span>
             </div>
 
+            <p class="text-base text-base-content/50 mt-3 terms-text">
+            By creating an account, you agree to our
+            <a href="#" class="text-primary hover:underline">Terms of Service</a>
+            and
+            <a href="#" class="text-primary hover:underline">Privacy Policy</a>
+        </p>
+
             <button
                 type="submit"
-                class="btn btn-primary-color w-full mt-6"
+                class="btn btn-primary-color w-full mt-6 border-0"
                 :disabled="!canSubmit"
             >
                 <span v-if="state.loading" class="loading loading-spinner loading-sm"></span>
@@ -63,13 +70,11 @@
             </button>
         </form>
 
-        <div class="divider text-sm text-base-content/50 my-6">No credit card required</div>
-
-        <p class="text-xs text-base-content/50 text-center">
-            By creating an account, you agree to our
-            <a href="#" class="text-primary hover:underline">Terms of Service</a>
-            and
-            <a href="#" class="text-primary hover:underline">Privacy Policy</a>
+        <div class="text-sm text-base-content/50 mt-2 text-center"><i class="fa-solid fa-credit-card"></i> No credit card required</div>
+                <!-- Footer -->
+        <p class="mt-6 text-center text-sm text-base-content/60 text-secondary-color">
+            Already have an account?
+            <a href="/login" class="text-primary text-link-color font-medium hover:underline">Sign in</a>
         </p>
     </div>
 </template>

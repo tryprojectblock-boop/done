@@ -1,13 +1,13 @@
 <template>
     <div>
-        <h2 class="text-xl font-bold text-base-content mb-2">Set up your profile</h2>
-        <p class="text-base-content/60 mb-6">Tell us about yourself</p>
+        <h2 class="text-2xl text-center font-semibold text-primary-color mb-2">Set up your profile</h2>
+        <p class="text-base-content/60 mb-6 text-center text-secondary-color">Tell us about yourself</p>
 
         <form @submit.prevent="handleSubmit">
             <!-- Email (readonly) -->
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text">Email Address</span>
+                    <span class="label-text label-text-alt">Email Address</span>
                 </label>
                 <div class="input flex items-center gap-2 bg-base-200">
                     <span class="icon-[tabler--mail] size-5 text-base-content/50"></span>
@@ -24,7 +24,7 @@
             <!-- First Name -->
             <div class="form-control mb-4">
                 <label class="label" for="first_name">
-                    <span class="label-text">First Name</span>
+                    <span class="label-text label-text-alt">First Name</span>
                 </label>
                 <input
                     id="first_name"
@@ -44,7 +44,7 @@
             <!-- Last Name -->
             <div class="form-control mb-4">
                 <label class="label" for="last_name">
-                    <span class="label-text">Last Name</span>
+                    <span class="label-text label-text-alt">Last Name</span>
                 </label>
                 <input
                     id="last_name"
@@ -63,7 +63,7 @@
             <!-- Password -->
             <div class="form-control mb-4">
                 <label class="label" for="password">
-                    <span class="label-text">Password</span>
+                    <span class="label-text label-text-alt">Password</span>
                 </label>
                 <div class="input flex items-center gap-2" :class="{ 'input-error': errors.password }">
                     <span class="icon-[tabler--lock] size-5 text-base-content/50"></span>
@@ -123,7 +123,7 @@
             <!-- Confirm Password -->
             <div class="form-control mb-6">
                 <label class="label" for="password_confirmation">
-                    <span class="label-text">Confirm Password</span>
+                    <span class="label-text label-text-alt">Confirm Password</span>
                 </label>
                 <div class="input flex items-center gap-2" :class="{ 'input-error': passwordMismatch }">
                     <span class="icon-[tabler--lock-check] size-5 text-base-content/50"></span>

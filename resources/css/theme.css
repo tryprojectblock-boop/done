@@ -18,7 +18,7 @@
 
 @theme {
     /* Primary Colors - Main brand color used for buttons, links, accents */
-    --color-primary: oklch(0.546 0.245 262.881);
+     --color-primary: oklch(0.54 0.23 14.76);
     --color-primary-content: oklch(1 0 0);
 
     /* Secondary Colors - Supporting brand color */
