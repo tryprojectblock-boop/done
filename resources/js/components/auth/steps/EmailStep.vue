@@ -1,12 +1,12 @@
 <template>
     <div>
-        <h2 class="text-xl font-bold text-base-content mb-2">Create your account</h2>
-        <p class="text-base-content/60 mb-6">Enter your work email to get started</p>
+        <h2 class="text-2xl text-center font-bold text-base-content mb-2">Create your account</h2>
+        <p class="text-center text-base-content/60 mb-6">Enter your work email to get started</p>
 
         <form @submit.prevent="handleSubmit">
             <div class="form-control">
                 <label class="label" for="email">
-                    <span class="label-text">Work Email Address</span>
+                    <span class="label-text label-text-alt">Work Email Address</span> 
                 </label>
                 <div class="input flex items-center gap-2" :class="{ 'input-error': errors.email }">
                     <span class="icon-[tabler--mail] size-5 text-base-content/50"></span>
@@ -28,7 +28,7 @@
             <!-- Invite Code Input (always visible) -->
             <div class="form-control mt-4">
                 <label class="label" for="inviteCode">
-                    <span class="label-text">Invite Code <span class="text-error">*</span></span>
+                    <span class="label-text label-text-alt">Invite Code <span class="text-error">*</span></span>
                 </label>
                 <div class="input flex items-center gap-2" :class="{ 'input-error': inviteCode && !isValidInviteCode, 'input-success': isValidInviteCode }">
                     <span class="icon-[tabler--ticket] size-5 text-base-content/50"></span>
@@ -48,14 +48,14 @@
             </div>
 
             <!-- Info message -->
-            <div class="alert alert-info mt-2">
+            <div class="info-div mt-2">
                 <span class="icon-[tabler--info-circle] size-5"></span>
-                <span class="text-sm">An invite code is required to create an account.</span>
+                <span class="text-xs">An invite code is required to create an account.</span>
             </div>
 
             <button
                 type="submit"
-                class="btn btn-primary w-full mt-6"
+                class="btn btn-primary-color w-full mt-6"
                 :disabled="!canSubmit"
             >
                 <span v-if="state.loading" class="loading loading-spinner loading-sm"></span>

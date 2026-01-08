@@ -13,6 +13,7 @@
 
 /* Import theme configuration - all customizable styles in one place */
 @import './theme.css';
+@import './custom.css';
 
 /* Fixed navbar */
 nav.navbar {
