@@ -1,13 +1,13 @@
 <template>
     <div>
-        <h2 class="text-xl font-bold text-base-content mb-2">Tell us about your company</h2>
-        <p class="text-base-content/60 mb-6">This helps us personalize your experience</p>
+        <h2 class="text-2xl text-center font-semibold text-primary-color mb-2">Tell us about your company</h2>
+        <p class="text-base-content/60 mb-6 text-center text-secondary-color">This helps us personalize your experience</p>
 
         <form @submit.prevent="handleSubmit">
             <!-- Company Name -->
             <div class="form-control mb-4">
                 <label class="label" for="company_name">
-                    <span class="label-text">Company Name</span>
+                    <span class="label-text label-text-alt">Company Name</span>
                 </label>
                 <input
                     id="company_name"
@@ -27,7 +27,7 @@
             <!-- Company Size -->
             <div class="form-control mb-4">
                 <label class="label" for="company_size">
-                    <span class="label-text">Company Size</span>
+                    <span class="label-text label-text-alt">Company Size</span>
                 </label>
                 <select
                     id="company_size"
@@ -53,7 +53,7 @@
             <!-- Website URL -->
             <div class="form-control mb-4">
                 <label class="label" for="website_url">
-                    <span class="label-text">Website URL <span class="text-base-content/40">(optional)</span></span>
+                    <span class="label-text label-text-alt">Website URL <span class="text-base-content/40">(optional)</span></span>
                 </label>
                 <div class="join w-full">
                     <select
@@ -80,7 +80,7 @@
             <!-- Industry Type -->
             <div class="form-control mb-6">
                 <label class="label" for="industry_type">
-                    <span class="label-text">Industry</span>
+                    <span class="label-text label-text-alt">Industry</span>
                 </label>
                 <div class="relative">
                     <input

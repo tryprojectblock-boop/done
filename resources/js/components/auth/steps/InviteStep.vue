@@ -1,7 +1,7 @@
 <template>
     <div>
-        <h2 class="text-xl font-bold text-base-content mb-2">Invite your team</h2>
-        <p class="text-base-content/60 mb-6">Add team members to collaborate with you</p>
+        <h2 class="text-2xl text-center font-semibold text-primary-color mb-2">Invite your team</h2>
+        <p class="text-base-content/60 mb-6 text-center text-secondary-color">Add team members to collaborate with you</p>
 
         <form @submit.prevent="handleSubmit">
             <!-- Email Inputs -->
@@ -29,10 +29,10 @@
                         <button
                             v-if="index > 0"
                             type="button"
-                            class="btn btn-ghost btn-square"
+                            class="btn btn-ghost btn-square btn-bg-none"
                             @click="removeEmail(index)"
                         >
-                            <span class="icon-[tabler--trash] size-4 text-base-content/50"></span>
+                            <span class="icon-[tabler--trash] size-4 text-base-content/50 danger-btn"></span>
                         </button>
                     </div>
                     <label v-if="emailErrors[index]" class="label">
@@ -45,14 +45,14 @@
             <button
                 v-if="emails.length < maxEmails"
                 type="button"
-                class="btn btn-ghost btn-sm mb-6"
+                class="btn btn-ghost btn-sm btn-bg-none text-primary-color font-semibold"
                 @click="addEmail"
             >
                 <span class="icon-[tabler--plus] size-4"></span>
                 Add another teammate
             </button>
 
-            <div class="divider text-sm text-base-content/50 my-6">
+            <div class="divider text-sm text-base-content/50 my-6 text-primary-color">
                 {{ validEmailCount }} invitation{{ validEmailCount !== 1 ? 's' : '' }} ready to send
             </div>
 
@@ -84,7 +84,7 @@
             </div>
         </form>
 
-        <p class="text-xs text-base-content/50 text-center mt-6">
+        <p class="text-sm text-primary-color text-base-content/50 text-center mt-6">
             You can always invite more team members later from your workspace settings.
         </p>
     </div>
