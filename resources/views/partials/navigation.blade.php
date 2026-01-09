@@ -167,18 +167,18 @@
             </div>
 
             <!-- Settings (only for team members) -->
-            <a href="/settings" class="btn btn-ghost btn-circle btn-sm">
+            <a href="/settings" class="btn btn-ghost btn-circle btn-sm nav-btn">
                 <span class="icon-[tabler--settings] size-5"></span>
             </a>
 
             <!-- Store -->
-            <button type="button" class="btn btn-ghost btn-circle btn-sm hidden sm:flex" title="Store">
-                <span class="icon-[tabler--building-store] size-5"></span>
+            <button type="button" class="btn btn-ghost btn-circle btn-sm nav-btn hidden sm:flex" title="Store">
+                <span class="icon-[tabler--layout-grid] size-5"></span>
             </button>
 
             <!-- Notifications -->
             <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
-                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications">
+                <button id="notifications-dropdown" type="button" class="dropdown-toggle btn btn-ghost btn-circle btn-sm nav-btn indicator" aria-haspopup="menu" aria-expanded="false" aria-label="Notifications">
                     <span class="icon-[tabler--bell] size-5"></span>
                     @if($unreadNotificationCount > 0)
                         <span class="badge badge-primary badge-xs indicator-item">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
@@ -465,7 +465,7 @@
 
         <!-- Profile Dropdown -->
         <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
-            <button id="profile-dropdown" type="button" class="dropdown-toggle btn btn-ghost gap-2 px-2" aria-haspopup="menu" aria-expanded="false" aria-label="Profile menu">
+            <button id="profile-dropdown" type="button" class="dropdown-toggle nav-btn btn btn-ghost gap-2 px-2" aria-haspopup="menu" aria-expanded="false" aria-label="Profile menu">
                 @include('partials.user-avatar', ['user' => $user, 'size' => 'sm', 'showOOO' => true, 'compact' => true])
                 <span class="hidden md:inline text-sm font-medium">{{ $user->first_name ?? 'User' }}</span>
                 @if($isGuestOnly)
