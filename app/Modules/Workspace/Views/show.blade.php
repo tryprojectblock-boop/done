@@ -150,7 +150,7 @@
         @endif
 
         <!-- Module Tabs (Pill Style) -->
-        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6 flex-wrap gap-1">
+        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6 flex-wrap gap-1 tablist-layout">
             <a href="{{ route('workspace.show', $workspace) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ !request()->has('tab') || request('tab') === 'overview' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--home] size-5"></span>
@@ -163,7 +163,7 @@
                 <span class="icon-[{{ $isInbox ? 'tabler--ticket' : 'tabler--list-check' }}] size-5"></span>
                 <span>{{ $tasksLabel }}</span>
                 @if($tasks->count() > 0)
-                    <span class="badge badge-sm {{ request('tab') === 'tasks' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $tasks->count() }}</span>
+                    <span class="tab-badge badge badge-sm {{ request('tab') === 'tasks' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $tasks->count() }}</span>
                 @endif
             </a>
             <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'board']) }}"
@@ -176,7 +176,7 @@
                 <span class="icon-[tabler--messages] size-5"></span>
                 <span>Discussions</span>
                 @if($discussions->count() > 0)
-                    <span class="badge badge-sm {{ request('tab') === 'discussions' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $discussions->count() }}</span>
+                    <span class="tab-badge badge badge-sm {{ request('tab') === 'discussions' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $discussions->count() }}</span>
                 @endif
             </a>
             @php
@@ -237,7 +237,7 @@
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ request('tab') === 'people' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
                 <span class="icon-[tabler--users] size-5"></span>
                 <span>People</span>
-                <span class="badge badge-sm {{ request('tab') === 'people' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $workspace->members->count() + $workspace->guests->count() }}</span>
+                <span class="tab-badge badge badge-sm {{ request('tab') === 'people' ? 'bg-primary-content/20 text-primary-content border-0' : 'badge-ghost' }}">{{ $workspace->members->count() + $workspace->guests->count() }}</span>
             </a>
         </div>
 

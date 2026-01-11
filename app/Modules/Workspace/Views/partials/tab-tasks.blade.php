@@ -23,27 +23,27 @@
     </div>
 
     <!-- Task Stats -->
-    <div class="stats stats-horizontal shadow w-full">
+    <div class="stats-container w-full">
         <div class="stat">
             <div class="stat-figure text-primary">
                 <span class="icon-[tabler--list-check] size-8"></span>
             </div>
-            <div class="stat-title">Open</div>
-            <div class="stat-value text-primary">{{ $stats['open'] }}</div>
+            <div class="stat-value text-2xl text-primary-color">{{ $stats['open'] }}</div>
+            <div class="stat-title text-secondary-color text-base">Open</div>
         </div>
         <div class="stat">
             <div class="stat-figure text-success">
                 <span class="icon-[tabler--check] size-8"></span>
             </div>
-            <div class="stat-title">Completed</div>
-            <div class="stat-value text-success">{{ $stats['closed'] }}</div>
+            <div class="stat-value text-2xl text-primary-color">{{ $stats['closed'] }}</div>
+            <div class="stat-title text-secondary-color text-base">Completed</div>
         </div>
         <div class="stat">
             <div class="stat-figure text-error">
                 <span class="icon-[tabler--alert-triangle] size-8"></span>
             </div>
-            <div class="stat-title">Overdue</div>
-            <div class="stat-value text-error">{{ $stats['overdue'] }}</div>
+            <div class="stat-value text-2xl text-primary-color">{{ $stats['overdue'] }}</div>
+            <div class="stat-title text-secondary-color text-base">Overdue</div>
         </div>
     </div>
 

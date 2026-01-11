@@ -8,6 +8,7 @@
                         <div
                             :class="[
                                 'size-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                                currentStep > step + 1 ? ' completed-step ' : '',
                                 currentStep >= step + 1
                                     ? 'bg-primary text-primary-content'
                                     : currentStep === step + 1 - 0.5

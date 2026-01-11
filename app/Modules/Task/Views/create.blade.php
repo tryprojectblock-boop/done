@@ -6,14 +6,14 @@
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
-                <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="hover:text-primary text-secondary-color">Dashboard</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
-                <a href="{{ route('tasks.index') }}" class="hover:text-primary">Tasks</a>
+                <a href="{{ route('tasks.index') }}" class="hover:text-primary text-secondary-color">Tasks</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
                 <span>Add Task</span>
             </div>
-            <h1 class="text-2xl font-bold text-base-content">Add New Task</h1>
-            <p class="text-base-content/60">Create a new task for your team</p>
+            <h1 class="text-3xl font-semibold text-primary-color">Add New Task</h1>
+            <p class="text-base-content/60 text-secondary-color">Create a new task for your team</p>
         </div>
 
         <!-- Error Messages -->
@@ -43,8 +43,8 @@
             <!-- Card 1: Basic Info -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--file-text] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--file-text] size-5 mr-2"></span>
                         Task Information
                     </h2>
 
@@ -52,11 +52,11 @@
                         <!-- Workspace (Required) - Searchable -->
                         <div class="form-control">
                             <label class="label" for="workspace-search">
-                                <span class="label-text font-medium">Workspace <span class="text-error">*</span></span>
+                                <span class="label-text label-text-alt font-medium">Workspace <span class="text-error">*</span></span>
                             </label>
                             <div class="relative">
-                                <div id="workspace-select-container" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-2">
-                                    <span class="icon-[tabler--layout-grid] size-5 text-base-content/50"></span>
+                                <div id="workspace-select-container" class="min-h-1 p-2 border border-base-300 rounded-lg cursor-pointer flex items-center gap-2">
+                                    <span class="icon-[tabler--layout-grid] size-5 text-base-content/50"><i class="fa-light fa-magnifying-glass"></i></span>
                                     <input type="text" id="workspace-search" class="flex-1 bg-transparent border-0 outline-none text-sm" placeholder="Search and select workspace..." autocomplete="off">
                                     <span id="workspace-clear" class="icon-[tabler--x] size-4 text-base-content/50 hover:text-error cursor-pointer hidden" onclick="clearWorkspace(event)"></span>
                                     <span id="workspace-chevron" class="icon-[tabler--chevron-down] size-4 text-base-content/50"></span>
@@ -82,7 +82,7 @@
                         <!-- Task Name -->
                         <div class="form-control">
                             <label class="label" for="task-title">
-                                <span class="label-text font-medium">Task Name <span class="text-error">*</span></span>
+                                <span class="label-text label-text-alt font-medium">Task Name <span class="text-error">*</span></span>
                             </label>
                             <input type="text" name="title" id="task-title" value="{{ old('title') }}"
                                    class="input input-bordered w-full" placeholder="Enter task name" required>
@@ -101,7 +101,7 @@
                         <!-- File Upload -->
                         <div class="form-control">
                             <label class="label" for="file-input">
-                                <span class="label-text font-medium">Attachments <span class="font-normal text-base-content/50">(Optional)</span></span>
+                                <span class="label-text label-text-alt font-medium">Attachments <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <div id="file-drop-zone" class="border-2 border-dashed border-base-300 rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
                                 <input type="file" name="files[]" id="file-input" multiple class="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
@@ -120,14 +120,14 @@
                         <div class="form-control">
 {{--
                             <label class="label">
-                                <span class="label-text font-medium">Task Visibility</span>
+                                <span class="label-text label-text-alt font-medium">Task Visibility</span>
                             </label>
 --}}
                             <div class="flex items-center gap-4 p-3 border border-base-300 rounded-lg">
                                 <label class="flex items-center gap-3 cursor-pointer flex-1">
                                     <input type="checkbox" name="is_private" value="1" class="toggle toggle-primary" {{ old('is_private') ? 'checked' : '' }}>
                                     <div>
-                                        <span class="font-medium" id="visibility-label">{{ old('is_private') ? 'Private Task' : 'Public Task' }}</span>
+                                        <span class="font-medium label-text-alt" id="visibility-label">{{ old('is_private') ? 'Private Task' : 'Public Task' }}</span>
                                         <p class="text-xs text-base-content/50" id="visibility-description">{{ old('is_private') ? 'Only you, assignee, and selected watchers can see this task' : 'All workspace members can see this task' }}</p>
                                     </div>
                                 </label>
@@ -140,7 +140,7 @@
                         @if($parentTask)
                             <div class="form-control">
                                 <div class="label">
-                                    <span class="label-text font-medium">Parent Task</span>
+                                    <span class="label-text label-text-alt font-medium">Parent Task</span>
                                 </div>
                                 <input type="hidden" name="parent_task_id" value="{{ $parentTask->id }}">
                                 <div class="input input-bordered flex items-center gap-2 bg-base-200">
@@ -157,12 +157,13 @@
             <!-- Card 2: Task Settings -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--settings] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--settings] size-5 mr-2"></span>
                         Task Settings
                     </h2>
 
                     <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Priority -->
                         <div class="form-control">
                             <label class="label" for="task-priority">
@@ -183,7 +184,7 @@
                                 <span class="label-text font-medium">Task Type</span>
                             </label>
                             <div class="relative">
-                                <div id="tasktype-select" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex flex-wrap gap-2 items-center">
+                                <div id="tasktype-select" class="min-h-9 p-2 border border-base-300 rounded-lg cursor-pointer flex flex-wrap gap-2 items-center">
                                     <div id="selected-tasktypes" class="flex flex-wrap gap-2">
                                         <!-- Selected task types will be shown here -->
                                     </div>
@@ -207,7 +208,7 @@
                             <!-- Hidden inputs for form submission -->
                             <div id="tasktype-hidden-inputs"></div>
                         </div>
-
+                        </div>
                         <!-- Status (Dynamic based on workspace) -->
                         <div class="form-control">
                             <label class="label" for="status-select">
@@ -216,7 +217,7 @@
                             <select name="status_id" id="status-select" class="select select-bordered w-full">
                                 <option value="">Select workspace first</option>
                             </select>
-                            <p id="status-hint" class="text-xs text-base-content/50 mt-1">Select a workspace to see available statuses</p>
+                            <p id="status-hint" class="text-xs text-base-content/50 mt-1 flex items-center"><span class="icon-[tabler--info-circle] size-4 mr-1 text-link-color"></span> Select a workspace to see available statuses</p>
                         </div>
 
                         <!-- Milestone (Dynamic based on workspace) -->
@@ -242,13 +243,11 @@
                             <label class="label" for="tag-input">
                                 <span class="label-text font-medium">Tags <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
-                            <div id="tags-container" class="flex flex-wrap gap-2 p-3 border border-base-300 rounded-lg min-h-[3rem] focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
+                            <div id="tags-container" class="flex flex-wrap gap-2 p-2 border border-base-300 rounded-lg min-h-9 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
                                 <input type="text" id="tag-input" placeholder="Type and press Enter to add tags..." class="flex-1 min-w-[150px] outline-none bg-transparent text-sm">
                             </div>
                             <input type="hidden" name="tags" id="tags-hidden">
-                            <div class="label">
-                                <span class="label-text-alt text-base-content/50">Press Enter or comma to add a tag</span>
-                            </div>
+                            <p id="status-hint" class="text-xs text-base-content/50 mt-1 flex items-center"><span class="icon-[tabler--info-circle] size-4 mr-1 text-link-color"></span> Press Enter or comma to add a tag</p>
                         </div>
                     </div>
                 </div>
@@ -257,19 +256,19 @@
             <!-- Card 3: Team Assignment -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--users] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--users] size-5 mr-2"></span>
                         Team Assignment
                     </h2>
 
                     <div class="space-y-4">
                         <!-- Assignee (Optional) - Multi-select -->
                         <div class="form-control">
-                            <label class="label" for="assignee-search">
+                            <!-- <label class="label" for="assignee-search">
                                 <span class="label-text font-medium">Assignee <span class="font-normal text-base-content/50">(Optional)</span></span>
-                            </label>
+                            </label> -->
                             <div class="relative">
-                                <div id="assignee-select" class="min-h-12 p-2 border border-base-300 rounded-lg cursor-pointer flex flex-wrap gap-2 items-center">
+                                <div id="assignee-select" class="min-h-10 p-2 border border-base-300 rounded-lg cursor-pointer flex flex-wrap gap-2 items-center">
                                     <div id="selected-assignees" class="flex flex-wrap gap-2">
                                         <!-- Selected assignees will be shown here -->
                                     </div>
@@ -312,8 +311,9 @@
                             </div>
 
                             <!-- Notification Options -->
-                            <div class="space-y-3 p-4 border border-base-300 rounded-lg">
+                            <div class="space-y-3">
                                 <!-- Option 1: All workspace members (only for public tasks) -->
+                                 <div class="border-2 border-base-color-updated rounded-lg notify-option">
                                 <label id="notify-all-option" class="flex items-start gap-3 cursor-pointer p-2 rounded-lg hover:bg-base-200 transition-colors">
                                     <input type="radio" name="notify_option" value="all" class="radio radio-primary mt-0.5" {{ old('notify_option', 'all') === 'all' ? 'checked' : '' }}>
                                     <div class="flex-1">
@@ -352,8 +352,9 @@
                                         </div>
                                     </div>
                                 </label>
-
+                                 </div>
                                 <!-- Option 2: Select specific people -->
+                                 <div class="border-2 border-base-color-updated rounded-lg notify-option">
                                 <div id="notify-selected-option" class="flex items-start gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors">
                                     <input type="radio" name="notify_option" value="selected" id="notify-selected-radio" class="radio radio-primary mt-0.5 cursor-pointer" {{ old('notify_option') === 'selected' ? 'checked' : '' }}>
                                     <div class="flex-1">
@@ -372,14 +373,15 @@
                                             </div>
                                         </div>
                                         <!-- Button to open modal when no one selected -->
-                                        <button type="button" id="select-people-btn" onclick="openWatcherModal()" class="btn btn-outline btn-sm btn-primary gap-2 mt-1">
+                                        <button type="button" id="select-people-btn" onclick="openWatcherModal()" class="btn btn-outline btn-sm btn-bg-none btn-primary-color gap-2 mt-1">
                                             <span class="icon-[tabler--user-plus] size-4"></span>
                                             Select People
                                         </button>
                                     </div>
                                 </div>
-
+                                 </div>
                                 <!-- Option 3: No one -->
+                                 <div class="border-2 border-base-color-updated rounded-lg notify-option">
                                 <label class="flex items-start gap-3 cursor-pointer p-2 rounded-lg hover:bg-base-200 transition-colors">
                                     <input type="radio" name="notify_option" value="none" class="radio radio-primary mt-0.5" {{ old('notify_option') === 'none' ? 'checked' : '' }}>
                                     <div class="flex-1">
@@ -388,6 +390,7 @@
                                     </div>
                                     <span class="icon-[tabler--bell-off] size-5 text-base-content/50"></span>
                                 </label>
+                                 </div>
                             </div>
 
                             <!-- Hidden inputs for watchers -->
@@ -417,16 +420,16 @@
             <!-- Card 4: Schedule -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--calendar] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--calendar] size-5 mr-2"></span>
                         Schedule
                     </h2>
 
-                    <div class="space-y-4">
+                    <div class="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Due Date (Optional) with Custom Date Picker -->
                         <div class="form-control">
                             <label class="label" for="due-date-display">
-                                <span class="label-text font-medium">Due Date <span class="font-normal text-base-content/50">(Optional)</span></span>
+                                <span class="label-text label-text-alt font-medium">Due Date <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <!-- Date Display Input -->
                             <div class="relative w-full">
@@ -508,7 +511,7 @@
                         <!-- Estimated Hours -->
                         <div class="form-control">
                             <label class="label" for="task-estimated-hours">
-                                <span class="label-text font-medium">Estimated Hours <span class="font-normal text-base-content/50">(Optional)</span></span>
+                                <span class="label-text label-text-alt font-medium">Estimated Hours <span class="font-normal text-base-content/50">(Optional)</span></span>
                             </label>
                             <input type="number" name="estimated_hours" id="task-estimated-hours" value="{{ old('estimated_hours') }}"
                                    class="input input-bordered w-full" min="0" step="0.5" placeholder="Enter estimated hours">
@@ -529,7 +532,7 @@
                             <span class="icon-[tabler--plus] size-5"></span>
                             Create & Add More
                         </button>
-                        <a href="{{ route('tasks.index') }}" class="btn btn-ghost">
+                        <a href="{{ route('tasks.index') }}" class="btn btn-ghost bg-none text-primary-color shadow-none">
                             Cancel
                         </a>
                     </div>
@@ -2498,5 +2501,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const radios = document.querySelectorAll('input[name="notify_option"]');
+
+    function updateBorderActive() {
+        // Remove class from all
+        document.querySelectorAll('.notify-option').forEach(option => {
+            option.classList.remove('border-active');
+        });
+
+        // Add class to checked one
+        const checkedRadio = document.querySelector('input[name="notify_option"]:checked');
+        if (checkedRadio) {
+            checkedRadio.closest('.notify-option').classList.add('border-active');
+        }
+    }
+
+    // On change
+    radios.forEach(radio => {
+        radio.addEventListener('change', updateBorderActive);
+    });
+
+    // For default checked radio
+    updateBorderActive();
+});
+</script>
+
 @endpush
 @endsection
