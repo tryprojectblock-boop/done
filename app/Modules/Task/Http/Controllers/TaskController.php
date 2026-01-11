@@ -588,11 +588,14 @@ class TaskController extends Controller
         return back()->with('success', 'Status updated successfully.');
     }
 
-    public function updateAssignee(Request $request, Task $task): RedirectResponse
+    public function updateAssignee(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the assignee.'], 403);
+            }
             return back()->with('error', 'You do not have permission to change the assignee.');
         }
 
@@ -601,14 +604,56 @@ class TaskController extends Controller
         $assigneeId = $request->input('assignee_id');
         $this->taskService->changeAssignee($task, $assigneeId ? (int) $assigneeId : null, $user);
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Assignee updated successfully.']);
+        }
+
         return back()->with('success', 'Assignee updated successfully.');
     }
 
-    public function updatePriority(Request $request, Task $task): RedirectResponse
+    public function updateCreator(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the creator.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to change the creator.');
+        }
+
+        $request->validate(['created_by' => 'required|exists:users,id']);
+
+        $oldCreator = $task->creator;
+        $newCreatorId = $request->input('created_by');
+
+        $task->update(['created_by' => $newCreatorId]);
+
+        // Log activity
+        $newCreator = \App\Models\User::find($newCreatorId);
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::UPDATED,
+            ['field' => 'created_by', 'value' => $oldCreator->name],
+            ['field' => 'created_by', 'value' => $newCreator->name]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Creator updated successfully.']);
+        }
+
+        return back()->with('success', 'Creator updated successfully.');
+    }
+
+    public function updatePriority(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the priority.'], 403);
+            }
             return back()->with('error', 'You do not have permission to change the priority.');
         }
 
@@ -628,14 +673,21 @@ class TaskController extends Controller
             ['label' => $newPriority ? \App\Modules\Task\Enums\TaskPriority::from($newPriority)->label() : 'None']
         );
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Priority updated successfully.']);
+        }
+
         return back()->with('success', 'Priority updated successfully.');
     }
 
-    public function updateDueDate(Request $request, Task $task): RedirectResponse
+    public function updateDueDate(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the due date.'], 403);
+            }
             return back()->with('error', 'You do not have permission to change the due date.');
         }
 
@@ -655,7 +707,45 @@ class TaskController extends Controller
             ['date' => $newDueDate ? \Carbon\Carbon::parse($newDueDate)->format('M d, Y') : null]
         );
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Due date updated successfully.']);
+        }
+
         return back()->with('success', 'Due date updated successfully.');
+    }
+
+    public function updateCreatedDate(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the created date.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to change the created date.');
+        }
+
+        $request->validate(['created_at' => 'required|date']);
+
+        $oldCreatedAt = $task->created_at;
+        $newCreatedAt = $request->input('created_at');
+
+        $task->update(['created_at' => $newCreatedAt]);
+
+        // Log activity
+        TaskActivity::log(
+            $task,
+            $user,
+            ActivityType::UPDATED,
+            ['field' => 'created_at', 'value' => $oldCreatedAt?->format('M d, Y')],
+            ['field' => 'created_at', 'value' => \Carbon\Carbon::parse($newCreatedAt)->format('M d, Y')]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Created date updated successfully.']);
+        }
+
+        return back()->with('success', 'Created date updated successfully.');
     }
 
     public function updateType(Request $request, Task $task): RedirectResponse
@@ -831,16 +921,22 @@ class TaskController extends Controller
     /**
      * Update task workspace priority (inline edit for inbox workspaces).
      */
-    public function updateWorkspacePriority(Request $request, Task $task): RedirectResponse
+    public function updateWorkspacePriority(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canEdit($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to change the priority.'], 403);
+            }
             return back()->with('error', 'You do not have permission to change the priority.');
         }
 
         // Only allow workspace priority updates for inbox workspaces
         if ($task->workspace->type->value !== 'inbox') {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Workspace priority can only be set for inbox workspaces.'], 400);
+            }
             return back()->with('error', 'Workspace priority can only be set for inbox workspaces.');
         }
 
@@ -858,6 +954,9 @@ class TaskController extends Controller
         if ($priorityId) {
             $newPriority = $task->workspace->priorities()->find($priorityId);
             if (!$newPriority) {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Invalid priority selected.'], 400);
+                }
                 return back()->with('error', 'Invalid priority selected.');
             }
         }
@@ -874,6 +973,10 @@ class TaskController extends Controller
                 ['name' => $oldPriorityName],
                 ['name' => $newPriorityName]
             );
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Priority updated successfully.']);
         }
 
         return back()->with('success', 'Priority updated successfully.');

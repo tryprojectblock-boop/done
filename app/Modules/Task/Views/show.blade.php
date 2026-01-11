@@ -55,41 +55,7 @@
                             Back to Workspace Tasks
                         </a>
 
-                        <!-- On Hold Button (only for creator, assignee, and admins) -->
-                        @if(!$task->isClosed() && $task->canManageHold($user))
-                            @if($task->isOnHold())
-                                <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
-                                    <span class="icon-[tabler--player-play] size-4"></span>
-                                    Resume Task
-                                </button>
-                            @else
-                                <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
-                                    <span class="icon-[tabler--player-pause] size-4"></span>
-                                    On Hold
-                                </button>
-                            @endif
-                        @endif
-
-                        <!-- Watch Button -->
-                        <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="btn btn-ghost btn-sm">
-                                @if($task->isWatcher($user))
-                                    <span class="icon-[tabler--eye-off] size-4"></span>
-                                    Unwatch
-                                @else
-                                    <span class="icon-[tabler--eye] size-4"></span>
-                                    Watch
-                                @endif
-                            </button>
-                        </form>
-
                         @if($task->isOwner($user) && !$task->isOnHold())
-                            <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
-                                <span class="icon-[tabler--edit] size-4"></span>
-                                Edit
-                            </a>
-
                             @if($task->isClosed())
                                 <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
                                     @csrf
@@ -427,6 +393,48 @@
                     <div class="card-body">
                         <h2 class="card-title text-lg">Details</h2>
 
+                        @if(!$isClient)
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-2 pb-3 border-b border-base-200">
+                            <!-- Watch Button -->
+                            <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-ghost btn-sm">
+                                    @if($task->isWatcher($user))
+                                        <span class="icon-[tabler--eye-off] size-4"></span>
+                                        Unwatch
+                                    @else
+                                        <span class="icon-[tabler--eye] size-4"></span>
+                                        Watch
+                                    @endif
+                                </button>
+                            </form>
+
+                            <!-- On Hold Button (only for creator, assignee, and admins) -->
+                            @if(!$task->isClosed() && $task->canManageHold($user))
+                                @if($task->isOnHold())
+                                    <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
+                                        <span class="icon-[tabler--player-play] size-4"></span>
+                                        Resume
+                                    </button>
+                                @else
+                                    <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
+                                        <span class="icon-[tabler--player-pause] size-4"></span>
+                                        On Hold
+                                    </button>
+                                @endif
+                            @endif
+
+                            <!-- Edit Button -->
+                            @if($task->isOwner($user) && !$task->isOnHold())
+                                <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
+                                    <span class="icon-[tabler--edit] size-4"></span>
+                                    Edit
+                                </a>
+                            @endif
+                        </div>
+                        @endif
+
                         <div class="divide-y divide-base-200">
                             <!-- Parent Task (shown first for subtasks) -->
                             @if($task->parentTask)
@@ -442,45 +450,66 @@
                             </div>
                             @endif
 
-                            <!-- Status -->
+                            <!-- Status, Priority & Progress (Combined Inline) -->
                             <div class="py-3 first:pt-0">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Status</label>
+                                    <label class="text-sm font-medium text-base-content/70">Status / Priority / Progress</label>
                                     @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('status')" title="Edit status">
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('quick-stats')" title="Edit">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
                                     @endif
                                 </div>
                                 <!-- Display Mode -->
-                                <div id="status-display" class="mt-2">
-                                    @if($task->status)
-                                        <span class="badge" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
-                                            {{ $task->status->name }}
+                                <div id="quick-stats-display" class="mt-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <!-- Status Badge -->
+                                        @if($task->status)
+                                            <span class="badge badge-sm" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
+                                                {{ $task->status->name }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-sm badge-ghost">No Status</span>
+                                        @endif
+
+                                        <span class="text-base-content/30">•</span>
+
+                                        <!-- Priority -->
+                                        @if($task->workspace->type->value === 'inbox')
+                                            @if($task->workspacePriority)
+                                                <span class="badge badge-sm" style="background-color: {{ $task->workspacePriority->color }}15; color: {{ $task->workspacePriority->color }}">
+                                                    <span class="icon-[tabler--flag] size-3 mr-0.5"></span>
+                                                    {{ $task->workspacePriority->name }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-sm badge-ghost">No Priority</span>
+                                            @endif
+                                        @else
+                                            @if($task->priority)
+                                                <span class="badge badge-sm" style="background-color: {{ $task->priority->color() }}15; color: {{ $task->priority->color() }}">
+                                                    <span class="icon-[{{ $task->priority->icon() }}] size-3 mr-0.5"></span>
+                                                    {{ $task->priority->label() }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-sm badge-ghost">No Priority</span>
+                                            @endif
+                                        @endif
+
+                                        <span class="text-base-content/30">•</span>
+
+                                        <!-- Progress Percentage -->
+                                        <span class="badge badge-sm {{ ($task->progress ?? 0) == 100 ? 'badge-success' : 'badge-primary' }} badge-outline">
+                                            {{ $task->progress ?? 0 }}%
                                         </span>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not set</span>
-                                    @endif
+                                    </div>
                                 </div>
                                 <!-- Edit Mode -->
                                 @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="status-edit" action="{{ route('tasks.update-status', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    @php
-                                        // Check if there are any transitions available (excluding current status)
-                                        $availableTransitions = $statuses->filter(fn($s) => $s->id !== $task->status_id);
-                                    @endphp
-                                    @if($availableTransitions->isEmpty() && $task->status)
-                                        <div class="text-sm text-base-content/60 italic">
-                                            <span class="icon-[tabler--lock] size-4 inline-block align-middle mr-1"></span>
-                                            No transitions available from this status
-                                        </div>
-                                        <div class="flex gap-2 mt-2">
-                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Close</button>
-                                        </div>
-                                    @else
-                                        <select name="status_id" class="select select-bordered select-sm w-full">
+                                <div id="quick-stats-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                    <!-- Status Select -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Status</label>
+                                        <select id="quick-status-select" class="select select-bordered select-sm w-full">
                                             <option value="">No Status</option>
                                             @foreach($statuses as $status)
                                                 <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
@@ -488,15 +517,56 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <div class="flex gap-2 mt-2">
-                                            <button type="submit" class="btn btn-primary btn-xs">
-                                                <span class="icon-[tabler--check] size-3.5"></span>
-                                                Save
-                                            </button>
-                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('status')">Cancel</button>
+                                    </div>
+
+                                    <!-- Priority Select -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Priority</label>
+                                        @if($task->workspace->type->value === 'inbox')
+                                            <select id="quick-priority-select" data-type="workspace" class="select select-bordered select-sm w-full">
+                                                <option value="">No Priority</option>
+                                                @foreach($workspacePriorities as $wsPriority)
+                                                    <option value="{{ $wsPriority->id }}" {{ $task->workspace_priority_id == $wsPriority->id ? 'selected' : '' }}>
+                                                        {{ $wsPriority->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <select id="quick-priority-select" data-type="task" class="select select-bordered select-sm w-full">
+                                                <option value="">No Priority</option>
+                                                @foreach(\App\Modules\Task\Enums\TaskPriority::cases() as $priority)
+                                                    <option value="{{ $priority->value }}" {{ $task->priority == $priority ? 'selected' : '' }}>
+                                                        {{ $priority->label() }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+
+                                    <!-- Progress Slider -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Progress</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="range"
+                                                   id="quick-progress-slider"
+                                                   min="0"
+                                                   max="100"
+                                                   step="5"
+                                                   value="{{ $task->progress ?? 0 }}"
+                                                   class="range range-primary range-sm flex-1"
+                                            />
+                                            <span class="text-sm font-medium min-w-[3rem] text-right" id="quick-progress-percentage">{{ $task->progress ?? 0 }}%</span>
                                         </div>
-                                    @endif
-                                </form>
+                                    </div>
+
+                                    <div class="flex gap-2 pt-2">
+                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveQuickStats()">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save All
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('quick-stats')">Cancel</button>
+                                    </div>
+                                </div>
                                 @endif
                             </div>
 
@@ -546,197 +616,271 @@
                                 @endif
                             </div>
 
-                            <!-- Workspace Priority (Inbox workspaces only) -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Priority</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('workspace-priority')" title="Edit priority">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="workspace-priority-display" class="mt-2">
-                                    @if($task->workspacePriority)
-                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm" style="background-color: {{ $task->workspacePriority->color }}15; color: {{ $task->workspacePriority->color }}">
-                                            <span class="icon-[tabler--flag] size-4"></span>
-                                            {{ $task->workspacePriority->name }}
-                                        </span>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not set</span>
-                                    @endif
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="workspace-priority-edit" action="{{ route('tasks.update-workspace-priority', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <select name="workspace_priority_id" class="select select-bordered select-sm w-full">
-                                        <option value="">No Priority</option>
-                                        @foreach($workspacePriorities as $wsPriority)
-                                            <option value="{{ $wsPriority->id }}" {{ $task->workspace_priority_id == $wsPriority->id ? 'selected' : '' }}>
-                                                {{ $wsPriority->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('workspace-priority')">Cancel</button>
-                                    </div>
-                                </form>
-                                @endif
-                            </div>
                             @endif
 
-                            <!-- Progress -->
+                            <!-- Assignee & Created By (Combined Inline) -->
                             <div class="py-3">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Progress</label>
+                                    <label class="text-sm font-medium text-base-content/70">Assignee / Creator</label>
                                     @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('progress')" title="Edit progress">
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('people')" title="Edit">
                                             <span class="icon-[tabler--pencil] size-3.5"></span>
                                         </button>
                                     @endif
                                 </div>
                                 <!-- Display Mode -->
-                                <div id="progress-display" class="mt-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex-1 bg-base-200 rounded-full h-2.5">
-                                            <div class="bg-primary h-2.5 rounded-full transition-all" style="width: {{ $task->progress ?? 0 }}%"></div>
-                                        </div>
-                                        <span class="text-sm font-medium min-w-[3rem] text-right">{{ $task->progress ?? 0 }}%</span>
-                                    </div>
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <div id="progress-edit" class="hidden mt-2">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <input type="range"
-                                               id="progress-slider"
-                                               min="0"
-                                               max="100"
-                                               step="5"
-                                               value="{{ $task->progress ?? 0 }}"
-                                               class="range range-primary range-sm flex-1"
-                                        />
-                                        <span class="text-sm font-medium min-w-[3rem] text-right" id="progress-percentage">{{ $task->progress ?? 0 }}%</span>
-                                    </div>
-                                    <div class="flex justify-between text-xs text-base-content/50 mb-2 px-1">
-                                        <span>0%</span>
-                                        <span>25%</span>
-                                        <span>50%</span>
-                                        <span>75%</span>
-                                        <span>100%</span>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveProgressAndClose()">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="cancelProgressEdit()">Cancel</button>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
+                                <div id="people-display" class="mt-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <!-- Assignee -->
+                                        @if($task->assignee)
+                                            <div class="badge badge-sm gap-1.5 py-2.5">
+                                                <div class="avatar">
+                                                    <div class="w-4 rounded-full">
+                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
+                                                    </div>
+                                                </div>
+                                                {{ $task->assignee->name }}
+                                            </div>
+                                        @else
+                                            <span class="badge badge-sm badge-ghost gap-1">
+                                                <span class="icon-[tabler--user-off] size-3"></span>
+                                                Unassigned
+                                            </span>
+                                        @endif
 
-                            <!-- Assignee -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Assignee</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('assignee')" title="Edit assignee">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="assignee-display" class="mt-2">
-                                    @if($task->assignee)
-                                        <div class="flex items-center gap-2">
+                                        <span class="text-base-content/30">•</span>
+
+                                        <!-- Creator -->
+                                        <div class="badge badge-sm badge-outline gap-1.5 py-2.5">
                                             <div class="avatar">
-                                                <div class="w-6 rounded-full">
-                                                    <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
+                                                <div class="w-4 rounded-full">
+                                                    <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
                                                 </div>
                                             </div>
-                                            <span class="text-sm">{{ $task->assignee->name }}</span>
+                                            {{ $task->creator->name }}
                                         </div>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Unassigned</span>
-                                    @endif
+                                    </div>
                                 </div>
                                 <!-- Edit Mode -->
                                 @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="assignee-edit" action="{{ route('tasks.update-assignee', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="assignee_id" id="assignee-input" value="{{ $task->assignee_id }}">
+                                <div id="people-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                    <input type="hidden" id="people-assignee-input" value="{{ $task->assignee_id }}">
+                                    <input type="hidden" id="people-creator-input" value="{{ $task->created_by }}">
 
-                                    <!-- Search Input -->
-                                    <div class="relative">
-                                        <input type="text"
-                                               id="assignee-search"
-                                               class="input input-bordered input-sm w-full pr-8"
-                                               placeholder="Search users..."
-                                               autocomplete="off"
-                                               value="{{ $task->assignee?->name ?? '' }}">
-                                        <span class="icon-[tabler--search] size-4 absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40"></span>
-                                    </div>
-
-                                    <!-- Dropdown Results -->
-                                    <div id="assignee-dropdown" class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden">
-                                        <div class="p-1">
-                                            <button type="button" class="assignee-option w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2" data-id="" data-name="Unassigned">
-                                                <div class="avatar placeholder">
-                                                    <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
-                                                        <span class="icon-[tabler--user-off] size-3"></span>
+                                    <!-- Assignee - Click to show dropdown -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Assignee</label>
+                                        <button type="button" onclick="togglePeopleDropdown('assignee')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                            @if($task->assignee)
+                                                <div class="avatar">
+                                                    <div class="w-5 rounded-full">
+                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
                                                     </div>
                                                 </div>
-                                                <span>Unassigned</span>
-                                            </button>
-                                            @foreach($users as $u)
-                                            <button type="button" class="assignee-option w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->assignee_id == $u->id ? 'bg-primary/10' : '' }}" data-id="{{ $u->id }}" data-name="{{ $u->name }}">
-                                                <div class="avatar placeholder">
-                                                    <div class="bg-primary text-primary-content rounded-full w-6 h-6 flex items-center justify-center">
-                                                        <span class="text-xs">{{ substr($u->name, 0, 1) }}</span>
+                                            @else
+                                                <span class="icon-[tabler--user] size-4"></span>
+                                            @endif
+                                            <span id="people-assignee-display">{{ $task->assignee?->name ?? 'Unassigned' }}</span>
+                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-assignee-chevron"></span>
+                                        </button>
+                                        <!-- Assignee Dropdown (hidden by default) -->
+                                        <div id="people-assignee-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
+                                            <div class="p-1">
+                                                <button type="button" onclick="selectPerson('assignee', '', 'Unassigned')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2">
+                                                    <div class="avatar placeholder">
+                                                        <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
+                                                            <span class="icon-[tabler--user-off] size-3"></span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <span>{{ $u->name }}</span>
-                                                @if($task->assignee_id == $u->id)
-                                                <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
-                                                @endif
-                                            </button>
-                                            @endforeach
+                                                    <span>Unassigned</span>
+                                                </button>
+                                                @foreach($users as $u)
+                                                <button type="button" onclick="selectPerson('assignee', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->assignee_id == $u->id ? 'bg-primary/10' : '' }}">
+                                                    <div class="avatar">
+                                                        <div class="w-6 rounded-full">
+                                                            <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
+                                                        </div>
+                                                    </div>
+                                                    <span>{{ $u->name }}</span>
+                                                    @if($task->assignee_id == $u->id)
+                                                    <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                    @endif
+                                                </button>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
+                                    <!-- Creator - Click to show dropdown -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Created By</label>
+                                        <button type="button" onclick="togglePeopleDropdown('creator')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                            <div class="avatar">
+                                                <div class="w-5 rounded-full">
+                                                    <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
+                                                </div>
+                                            </div>
+                                            <span id="people-creator-display">{{ $task->creator->name }}</span>
+                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-creator-chevron"></span>
+                                        </button>
+                                        <!-- Creator Dropdown (hidden by default) -->
+                                        <div id="people-creator-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
+                                            <div class="p-1">
+                                                @foreach($users as $u)
+                                                <button type="button" onclick="selectPerson('creator', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->created_by == $u->id ? 'bg-primary/10' : '' }}">
+                                                    <div class="avatar">
+                                                        <div class="w-6 rounded-full">
+                                                            <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
+                                                        </div>
+                                                    </div>
+                                                    <span>{{ $u->name }}</span>
+                                                    @if($task->created_by == $u->id)
+                                                    <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                    @endif
+                                                </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2 pt-2">
+                                        <button type="button" class="btn btn-primary btn-xs" onclick="savePeople()">
                                             <span class="icon-[tabler--check] size-3.5"></span>
                                             Save
                                         </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('assignee')">Cancel</button>
-                                    </div>
-                                </form>
-                                @endif
-                            </div>
-
-                            <!-- Creator -->
-                            <div class="py-3">
-                                <label class="text-sm font-medium text-base-content/70">Created By</label>
-                                <div class="mt-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="avatar">
-                                            <div class="w-6 rounded-full">
-                                                <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
-                                            </div>
-                                        </div>
-                                        <span class="text-sm">{{ $task->creator->name }}</span>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('people')">Cancel</button>
                                     </div>
                                 </div>
+                                @endif
+                            </div>
+                            <!-- Due Date & Created Date (Combined Inline) -->
+                            <div class="py-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-base-content/70">Created / Due</label>
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('dates')" title="Edit dates">
+                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                                <!-- Display Mode -->
+                                <div id="dates-display" class="mt-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <!-- Created Date -->
+                                        <span class="badge badge-sm badge-outline gap-1">
+                                            <span class="icon-[tabler--calendar-plus] size-3"></span>
+                                            {{ $task->created_at->format('M d, Y') }}
+                                        </span>
+
+                                        <span class="text-base-content/30">•</span>
+
+                                        <!-- Due Date -->
+                                        @if($task->due_date)
+                                            <span class="badge badge-sm {{ $task->isOverdue() ? 'badge-error' : 'badge-warning' }} gap-1">
+                                                <span class="icon-[tabler--calendar-due] size-3"></span>
+                                                {{ $task->due_date->format('M d, Y') }}
+                                                @if($task->isOverdue())
+                                                    (Overdue)
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="badge badge-sm badge-ghost gap-1">
+                                                <span class="icon-[tabler--calendar-due] size-3"></span>
+                                                No Due Date
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <!-- Edit Mode -->
+                                @if($task->canInlineEdit($user) && !$task->isClosed())
+                                <div id="dates-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                    <input type="hidden" id="dates-due-date-input" value="{{ $task->due_date?->format('Y-m-d') }}">
+                                    <input type="hidden" id="dates-created-date-input" value="{{ $task->created_at->format('Y-m-d') }}">
+
+                                    <!-- Created Date - Click to show calendar -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Created Date</label>
+                                        <button type="button" onclick="toggleDatesCalendar('created')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                            <span class="icon-[tabler--calendar-plus] size-4"></span>
+                                            <span id="dates-created-display">{{ $task->created_at->format('M d, Y') }}</span>
+                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-created-chevron"></span>
+                                        </button>
+                                        <!-- Created Date Calendar (hidden by default) -->
+                                        <div id="dates-created-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <button type="button" onclick="changeDatesMonth('created', -1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
+                                                </button>
+                                                <span id="dates-created-month-year" class="font-semibold text-sm"></span>
+                                                <button type="button" onclick="changeDatesMonth('created', 1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                            </div>
+                                            <div id="dates-created-days" class="grid grid-cols-7 gap-1"></div>
+                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                                <button type="button" onclick="setDatesQuickDate('created', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                                <button type="button" onclick="setDatesQuickDate('created', 'yesterday', event)" class="btn btn-soft btn-primary btn-xs">Yesterday</button>
+                                                <button type="button" onclick="setDatesQuickDate('created', 'last-week', event)" class="btn btn-soft btn-primary btn-xs">Last Week</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Due Date - Click to show calendar -->
+                                    <div>
+                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Due Date</label>
+                                        <button type="button" onclick="toggleDatesCalendar('due')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                            <span class="icon-[tabler--calendar-due] size-4"></span>
+                                            <span id="dates-due-display">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}</span>
+                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-due-chevron"></span>
+                                        </button>
+                                        <!-- Due Date Calendar (hidden by default) -->
+                                        <div id="dates-due-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <button type="button" onclick="changeDatesMonth('due', -1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
+                                                </button>
+                                                <span id="dates-due-month-year" class="font-semibold text-sm"></span>
+                                                <button type="button" onclick="changeDatesMonth('due', 1)" class="btn btn-ghost btn-xs btn-circle">
+                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
+                                                </button>
+                                            </div>
+                                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                            </div>
+                                            <div id="dates-due-days" class="grid grid-cols-7 gap-1"></div>
+                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                                <button type="button" onclick="setDatesQuickDate('due', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                                <button type="button" onclick="setDatesQuickDate('due', 'tomorrow', event)" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
+                                                <button type="button" onclick="setDatesQuickDate('due', 'next-week', event)" class="btn btn-soft btn-primary btn-xs">Next Week</button>
+                                                <button type="button" onclick="clearDatesField('due', event)" class="btn btn-soft btn-error btn-xs">Clear</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2 pt-2">
+                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveDates()">
+                                            <span class="icon-[tabler--check] size-3.5"></span>
+                                            Save
+                                        </button>
+                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('dates')">Cancel</button>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
 
                             <!-- Task Type(s) -->
@@ -764,160 +908,28 @@
                                 </div>
                                 <!-- Edit Mode -->
                                 @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <div class="space-y-2 p-2 bg-base-200/50 rounded-lg">
-                                        @foreach(\App\Modules\Task\Enums\TaskType::cases() as $type)
-                                            <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
-                                                <input type="checkbox" name="type[]" value="{{ $type->value }}"
-                                                    class="checkbox checkbox-sm checkbox-primary"
-                                                    {{ $task->types && in_array($type, $task->types) ? 'checked' : '' }}>
-                                                <span class="icon-[{{ $type->icon() }}] size-4 text-base-content/70"></span>
-                                                <span class="text-sm">{{ $type->label() }}</span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('type')">Cancel</button>
-                                    </div>
-                                </form>
-                                @endif
-                            </div>
-
-                            <!-- Priority (Non-inbox workspaces only - inbox uses Workspace Priority) -->
-                            @if($task->workspace->type->value !== 'inbox')
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Priority</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('priority')" title="Edit priority">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="priority-display" class="mt-2">
-                                    @if($task->priority)
-                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm" style="background-color: {{ $task->priority->color() }}15; color: {{ $task->priority->color() }}">
-                                            <span class="icon-[{{ $task->priority->icon() }}] size-4"></span>
-                                            {{ $task->priority->label() }}
-                                        </span>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not set</span>
-                                    @endif
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="priority-edit" action="{{ route('tasks.update-priority', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <select name="priority" class="select select-bordered select-sm w-full">
-                                        <option value="">No Priority</option>
-                                        @foreach(\App\Modules\Task\Enums\TaskPriority::cases() as $priority)
-                                            <option value="{{ $priority->value }}" {{ $task->priority == $priority ? 'selected' : '' }}>
-                                                {{ $priority->label() }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('priority')">Cancel</button>
-                                    </div>
-                                </form>
-                                @endif
-                            </div>
-                            @endif
-
-                            <!-- Due Date -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Due Date</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('due-date')" title="Edit due date">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="due-date-display" class="mt-2">
-                                    @if($task->due_date)
-                                        <span class="inline-flex items-center gap-1.5 {{ $task->isOverdue() ? 'text-error font-medium' : 'text-base-content' }}">
-                                            <span class="icon-[tabler--calendar] size-4"></span>
-                                            {{ $task->due_date->format('M d, Y') }}
-                                            @if($task->isOverdue())
-                                                <span class="badge badge-error badge-xs">Overdue</span>
-                                            @endif
-                                        </span>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not set</span>
-                                    @endif
-                                </div>
-                                <!-- Edit Mode with Calendar -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <div id="due-date-edit" class="hidden mt-2">
-                                    <form action="{{ route('tasks.update-due-date', $task) }}" method="POST" id="due-date-form">
+                                    <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
                                         @csrf
                                         @method('PATCH')
-                                        <input type="hidden" name="due_date" id="due-date-input" value="{{ $task->due_date?->format('Y-m-d') }}">
-
-                                        <!-- Calendar Widget -->
-                                        <div class="bg-base-200/50 rounded-lg p-3">
-                                            <!-- Month/Year Header -->
-                                            <div class="flex items-center justify-between mb-3">
-                                                <button type="button" onclick="changeMonth(-1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
-                                                </button>
-                                                <span id="calendar-month-year" class="font-semibold text-sm"></span>
-                                                <button type="button" onclick="changeMonth(1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
-                                                </button>
-                                            </div>
-
-                                            <!-- Days of Week -->
-                                            <div class="grid grid-cols-7 gap-1 mb-2">
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
-                                            </div>
-
-                                            <!-- Calendar Days -->
-                                            <div id="calendar-days" class="grid grid-cols-7 gap-1"></div>
-
-                                            <!-- Quick Actions -->
-                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
-                                                <button type="button" onclick="setQuickDate('today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
-                                                <button type="button" onclick="setQuickDate('tomorrow', event)" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
-                                                <button type="button" onclick="setQuickDate('next-week', event)" class="btn btn-soft btn-primary btn-xs">Next Week</button>
-                                                <button type="button" onclick="clearDate(event)" class="btn btn-soft btn-error btn-xs">No Due Date</button>
-                                            </div>
+                                        <div class="space-y-2 p-2 bg-base-200/50 rounded-lg">
+                                            @foreach(\App\Modules\Task\Enums\TaskType::cases() as $type)
+                                                <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
+                                                    <input type="checkbox" name="type[]" value="{{ $type->value }}"
+                                                           class="checkbox checkbox-sm checkbox-primary"
+                                                        {{ $task->types && in_array($type, $task->types) ? 'checked' : '' }}>
+                                                    <span class="icon-[{{ $type->icon() }}] size-4 text-base-content/70"></span>
+                                                    <span class="text-sm">{{ $type->label() }}</span>
+                                                </label>
+                                            @endforeach
                                         </div>
-
-                                        <!-- Selected Date Display -->
-                                        <div class="mt-2 text-sm text-base-content/70">
-                                            Selected: <span id="selected-date-display" class="font-medium">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}</span>
-                                        </div>
-
                                         <div class="flex gap-2 mt-2">
                                             <button type="submit" class="btn btn-primary btn-xs">
                                                 <span class="icon-[tabler--check] size-3.5"></span>
                                                 Save
                                             </button>
-                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('due-date')">Cancel</button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('type')">Cancel</button>
                                         </div>
                                     </form>
-                                </div>
                                 @endif
                             </div>
 
@@ -1261,14 +1273,30 @@ function toggleEdit(field) {
             if (input) {
                 setTimeout(() => input.focus(), 100);
             }
+
+            // Initialize dates calendar when opening dates edit
+            if (field === 'dates' && typeof initDatesCalendar === 'function') {
+                initDatesCalendar();
+            }
         }
     }
 }
 
 // Close edit mode when clicking outside
 document.addEventListener('click', function(e) {
-    // Don't close if clicking inside card-body, edit button, or calendar elements
-    if (!e.target.closest('.card-body') && !e.target.closest('.edit-btn') && !e.target.closest('#calendar-days') && !e.target.closest('#due-date-edit')) {
+    // Don't close if clicking inside card-body, edit button, or calendar/edit elements
+    if (!e.target.closest('.card-body') &&
+        !e.target.closest('.edit-btn') &&
+        !e.target.closest('#calendar-days') &&
+        !e.target.closest('#dates-calendar-days') &&
+        !e.target.closest('#dates-due-calendar') &&
+        !e.target.closest('#dates-created-calendar') &&
+        !e.target.closest('#due-date-edit') &&
+        !e.target.closest('#dates-edit') &&
+        !e.target.closest('#quick-stats-edit') &&
+        !e.target.closest('#people-edit') &&
+        !e.target.closest('#people-assignee-dropdown') &&
+        !e.target.closest('#people-creator-dropdown')) {
         document.querySelectorAll('[id$="-edit"]:not(.hidden)').forEach(form => {
             const field = form.id.replace('-edit', '');
             const display = document.getElementById(field + '-display');
@@ -1702,72 +1730,464 @@ if (typeof MutationObserver !== 'undefined') {
     });
 }
 
-// Progress Slider
-const progressSlider = document.getElementById('progress-slider');
-const progressPercentage = document.getElementById('progress-percentage');
-let originalProgress = {{ $task->progress ?? 0 }};
+// Quick Stats (Status, Priority, Progress) - Combined Edit
+const quickProgressSlider = document.getElementById('quick-progress-slider');
+const quickProgressPercentage = document.getElementById('quick-progress-percentage');
 
-if (progressSlider) {
-    // Update percentage display on input
-    progressSlider.addEventListener('input', function() {
-        progressPercentage.textContent = this.value + '%';
+if (quickProgressSlider) {
+    quickProgressSlider.addEventListener('input', function() {
+        quickProgressPercentage.textContent = this.value + '%';
     });
 }
 
-function saveProgressAndClose() {
-    const newProgress = parseInt(progressSlider.value);
-    saveProgress(newProgress);
-}
-
-function cancelProgressEdit() {
-    // Reset to original value
-    progressSlider.value = originalProgress;
-    progressPercentage.textContent = originalProgress + '%';
-    toggleEdit('progress');
-}
-
-async function saveProgress(progress) {
-    const saveBtn = document.querySelector('#progress-edit .btn-primary');
+async function saveQuickStats() {
+    const saveBtn = document.querySelector('#quick-stats-edit .btn-primary');
     const originalBtnText = saveBtn.innerHTML;
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
+    saveBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Saving...';
+
+    const statusSelect = document.getElementById('quick-status-select');
+    const statusId = statusSelect ? statusSelect.value : '';
+    const prioritySelect = document.getElementById('quick-priority-select');
+    const priorityValue = prioritySelect ? prioritySelect.value : '';
+    const priorityType = prioritySelect ? prioritySelect.dataset.type : 'task';
+    const progressSlider = document.getElementById('quick-progress-slider');
+    const progress = progressSlider ? parseInt(progressSlider.value) : 0;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     try {
-        const response = await fetch('{{ route("tasks.update-progress", $task) }}', {
-            method: 'PATCH',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ progress: progress })
-        });
+        const errors = [];
 
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            // Update display
-            originalProgress = progress;
-            const displayBar = document.querySelector('#progress-display .bg-primary');
-            const displayText = document.querySelector('#progress-display span');
-            if (displayBar) displayBar.style.width = progress + '%';
-            if (displayText) displayText.textContent = progress + '%';
-
-            // Close edit mode
-            toggleEdit('progress');
-        } else {
-            console.error('Failed to update progress:', data.message);
-            alert('Failed to update progress');
+        // Status - only update if a status is selected (required field)
+        if (statusId && statusId !== '') {
+            try {
+                const statusResponse = await fetch('{{ route("tasks.update-status", $task) }}', {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ status_id: parseInt(statusId) })
+                });
+                if (!statusResponse.ok) {
+                    const errorData = await statusResponse.json().catch(() => ({ message: 'Unknown error' }));
+                    errors.push('Status: ' + (errorData.message || 'Update failed'));
+                }
+            } catch (e) {
+                errors.push('Status: Network error');
+            }
         }
+
+        // Priority
+        try {
+            if (priorityType === 'workspace') {
+                const priorityResponse = await fetch('{{ route("tasks.update-workspace-priority", $task) }}', {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ workspace_priority_id: priorityValue ? parseInt(priorityValue) : null })
+                });
+                if (!priorityResponse.ok) {
+                    const errorData = await priorityResponse.json().catch(() => ({ message: 'Unknown error' }));
+                    errors.push('Priority: ' + (errorData.message || 'Update failed'));
+                }
+            } else {
+                const priorityResponse = await fetch('{{ route("tasks.update-priority", $task) }}', {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ priority: priorityValue || null })
+                });
+                if (!priorityResponse.ok) {
+                    const errorData = await priorityResponse.json().catch(() => ({ message: 'Unknown error' }));
+                    errors.push('Priority: ' + (errorData.message || 'Update failed'));
+                }
+            }
+        } catch (e) {
+            errors.push('Priority: Network error');
+        }
+
+        // Progress
+        try {
+            const progressResponse = await fetch('{{ route("tasks.update-progress", $task) }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ progress: progress })
+            });
+            if (!progressResponse.ok) {
+                const errorData = await progressResponse.json().catch(() => ({ message: 'Unknown error' }));
+                errors.push('Progress: ' + (errorData.message || 'Update failed'));
+            }
+        } catch (e) {
+            errors.push('Progress: Network error');
+        }
+
+        if (errors.length > 0) {
+            console.error('Save errors:', errors);
+        }
+
+        // Reload page to show updated values
+        window.location.reload();
+
     } catch (error) {
-        console.error('Error updating progress:', error);
-        alert('Error updating progress');
-    } finally {
+        console.error('Error saving quick stats:', error);
+        alert('Error saving changes: ' + error.message);
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnText;
     }
 }
+
+// People (Assignee / Creator combined section)
+function togglePeopleDropdown(type) {
+    const dropdown = document.getElementById(`people-${type}-dropdown`);
+    const chevron = document.getElementById(`people-${type}-chevron`);
+
+    if (dropdown) {
+        const isHidden = dropdown.classList.contains('hidden');
+        // Close all other dropdowns first
+        document.querySelectorAll('[id^="people-"][id$="-dropdown"]').forEach(d => {
+            if (d.id !== `people-${type}-dropdown`) {
+                d.classList.add('hidden');
+            }
+        });
+        document.querySelectorAll('[id^="people-"][id$="-chevron"]').forEach(c => {
+            if (c.id !== `people-${type}-chevron`) {
+                c.style.transform = '';
+            }
+        });
+
+        dropdown.classList.toggle('hidden');
+
+        if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+        }
+    }
+}
+
+function selectPerson(type, id, name) {
+    document.getElementById(`people-${type}-input`).value = id;
+    document.getElementById(`people-${type}-display`).textContent = name;
+    togglePeopleDropdown(type);
+}
+
+async function savePeople() {
+    const saveBtn = document.querySelector('#people-edit .btn-primary');
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Saving...';
+
+    const assigneeId = document.getElementById('people-assignee-input')?.value || null;
+    const creatorId = document.getElementById('people-creator-input')?.value || null;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    try {
+        const errors = [];
+
+        // Update assignee
+        try {
+            const assigneeResponse = await fetch('{{ route("tasks.update-assignee", $task) }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ assignee_id: assigneeId || null })
+            });
+            if (!assigneeResponse.ok) {
+                errors.push('Assignee update failed');
+            }
+        } catch (e) {
+            errors.push('Assignee: Network error');
+        }
+
+        // Update creator
+        try {
+            const creatorResponse = await fetch('{{ route("tasks.update-creator", $task) }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ created_by: creatorId })
+            });
+            if (!creatorResponse.ok) {
+                errors.push('Creator update failed');
+            }
+        } catch (e) {
+            errors.push('Creator: Network error');
+        }
+
+        if (errors.length > 0) {
+            console.error('Save errors:', errors);
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+        console.error('Error saving people:', error);
+        alert('Error saving: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
+    }
+}
+
+// Dates Calendar (Due Date / Created Date combined section)
+let datesCalendarState = {
+    due: {
+        currentMonth: new Date(),
+        selectedDate: @json($task->due_date?->format('Y-m-d'))
+    },
+    created: {
+        currentMonth: new Date(),
+        selectedDate: @json($task->created_at->format('Y-m-d'))
+    }
+};
+
+function initDatesCalendar() {
+    // Initialize due date calendar month
+    if (datesCalendarState.due.selectedDate) {
+        datesCalendarState.due.currentMonth = new Date(datesCalendarState.due.selectedDate + 'T00:00:00');
+    }
+    // Initialize created date calendar month
+    if (datesCalendarState.created.selectedDate) {
+        datesCalendarState.created.currentMonth = new Date(datesCalendarState.created.selectedDate + 'T00:00:00');
+    }
+}
+
+function toggleDatesCalendar(type) {
+    const calendar = document.getElementById(`dates-${type}-calendar`);
+    const chevron = document.getElementById(`dates-${type}-chevron`);
+
+    if (calendar) {
+        const isHidden = calendar.classList.contains('hidden');
+        calendar.classList.toggle('hidden');
+
+        if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+        }
+
+        // Render calendar when showing
+        if (isHidden) {
+            renderDatesCalendar(type);
+        }
+    }
+}
+
+function renderDatesCalendar(type) {
+    const calendarDays = document.getElementById(`dates-${type}-days`);
+    const monthYearDisplay = document.getElementById(`dates-${type}-month-year`);
+    const state = datesCalendarState[type];
+
+    if (!calendarDays || !monthYearDisplay || !state) return;
+
+    const year = state.currentMonth.getFullYear();
+    const month = state.currentMonth.getMonth();
+
+    monthYearDisplay.textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let html = '';
+
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div></div>';
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const date = new Date(year, month, day);
+        const isToday = date.getTime() === today.getTime();
+        const isSelected = dateStr === state.selectedDate;
+
+        let classes = 'btn btn-ghost btn-xs h-8 w-full';
+        if (isSelected) {
+            classes = 'btn btn-primary btn-xs h-8 w-full';
+        } else if (isToday) {
+            classes = 'btn btn-outline btn-primary btn-xs h-8 w-full';
+        }
+
+        html += `<button type="button" onclick="selectDatesDate('${type}', '${dateStr}', event)" class="${classes}">${day}</button>`;
+    }
+
+    calendarDays.innerHTML = html;
+}
+
+function changeDatesMonth(type, delta) {
+    datesCalendarState[type].currentMonth.setMonth(datesCalendarState[type].currentMonth.getMonth() + delta);
+    renderDatesCalendar(type);
+}
+
+function selectDatesDate(type, dateStr, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    datesCalendarState[type].selectedDate = dateStr;
+
+    const inputId = type === 'due' ? 'dates-due-date-input' : 'dates-created-date-input';
+    const displayId = `dates-${type}-display`;
+
+    document.getElementById(inputId).value = dateStr;
+
+    const date = new Date(dateStr + 'T00:00:00');
+    document.getElementById(displayId).textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    renderDatesCalendar(type);
+
+    // Close only the calendar, not the edit panel
+    const calendar = document.getElementById(`dates-${type}-calendar`);
+    const chevron = document.getElementById(`dates-${type}-chevron`);
+    if (calendar) calendar.classList.add('hidden');
+    if (chevron) chevron.style.transform = '';
+}
+
+function setDatesQuickDate(type, quickType, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const today = new Date();
+    let targetDate;
+
+    switch (quickType) {
+        case 'today':
+            targetDate = today;
+            break;
+        case 'tomorrow':
+            targetDate = new Date(today);
+            targetDate.setDate(targetDate.getDate() + 1);
+            break;
+        case 'yesterday':
+            targetDate = new Date(today);
+            targetDate.setDate(targetDate.getDate() - 1);
+            break;
+        case 'next-week':
+            targetDate = new Date(today);
+            targetDate.setDate(targetDate.getDate() + 7);
+            break;
+        case 'last-week':
+            targetDate = new Date(today);
+            targetDate.setDate(targetDate.getDate() - 7);
+            break;
+    }
+
+    const dateStr = targetDate.toISOString().split('T')[0];
+    datesCalendarState[type].currentMonth = new Date(targetDate);
+    selectDatesDate(type, dateStr, event);
+}
+
+function clearDatesField(type, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (type === 'due') {
+        datesCalendarState.due.selectedDate = null;
+        document.getElementById('dates-due-date-input').value = '';
+        document.getElementById('dates-due-display').textContent = 'No Due Date';
+        renderDatesCalendar('due');
+        // Close only the calendar
+        const calendar = document.getElementById('dates-due-calendar');
+        const chevron = document.getElementById('dates-due-chevron');
+        if (calendar) calendar.classList.add('hidden');
+        if (chevron) chevron.style.transform = '';
+    }
+}
+
+async function saveDates() {
+    const saveBtn = document.querySelector('#dates-edit .btn-primary');
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="loading loading-spinner loading-xs"></span> Saving...';
+
+    const dueDate = document.getElementById('dates-due-date-input')?.value || null;
+    const createdDate = document.getElementById('dates-created-date-input')?.value || null;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    try {
+        const errors = [];
+
+        // Update due date
+        try {
+            const dueDateResponse = await fetch('{{ route("tasks.update-due-date", $task) }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ due_date: dueDate })
+            });
+            if (!dueDateResponse.ok) {
+                errors.push('Due date update failed');
+            }
+        } catch (e) {
+            errors.push('Due date: Network error');
+        }
+
+        // Update created date
+        try {
+            const createdDateResponse = await fetch('{{ route("tasks.update-created-date", $task) }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ created_at: createdDate })
+            });
+            if (!createdDateResponse.ok) {
+                errors.push('Created date update failed');
+            }
+        } catch (e) {
+            errors.push('Created date: Network error');
+        }
+
+        if (errors.length > 0) {
+            console.error('Save errors:', errors);
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+        console.error('Error saving dates:', error);
+        alert('Error saving dates: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
+    }
+}
+
 </script>
 @endpush
 

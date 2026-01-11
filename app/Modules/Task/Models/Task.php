@@ -38,6 +38,7 @@ class Task extends Model
         'status_id',
         'assignee_id',
         'created_by',
+        'created_at',
         'due_date',
         'start_date',
         'completed_at',
