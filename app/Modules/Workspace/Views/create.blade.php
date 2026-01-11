@@ -6,14 +6,14 @@
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
-                <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="hover:text-primary text-secondary-color">Dashboard</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
-                <a href="{{ route('workspace.index') }}" class="hover:text-primary">Workspaces</a>
+                <a href="{{ route('workspace.index') }}" class="hover:text-primary text-secondary-color">Workspaces</a>
                 <span class="icon-[tabler--chevron-right] size-4"></span>
                 <span>Create</span>
             </div>
-            <h1 class="text-2xl font-bold text-base-content">Create Workspace</h1>
-            <p class="text-base-content/60">Set up a new workspace for your team</p>
+            <h1 class="text-3xl font-semibold text-primary-color">Create Workspace</h1>
+            <p class="text-base-content/60 text-secondary-color">Set up a new workspace for your team</p>
         </div>
 
         <!-- Error Messages -->
@@ -34,17 +34,17 @@
             <!-- Card 1: Workspace Type Selection -->
             <div class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--layout-grid] size-5"></span>
+                    <h2 class="card-title text-xl mb-1 text-primary-color flex items-center">
+                        <span class="icon-[tabler--layout-grid] size-5 mr-2"></span>
                         Select Workspace Type
                     </h2>
-                    <p class="text-sm text-base-content/60 mb-4">Choose the type of workspace that best fits your needs.</p>
+                    <p class="text-sm text-base-content/60 mb-4 text-secondary-color">Choose the type of workspace that best fits your needs.</p>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Classic Workspace -->
-                        <label class="cursor-pointer block">
-                            <input type="radio" name="type" value="classic" class="peer sr-only workspace-type-radio" {{ old('type', 'classic') === 'classic' ? 'checked' : '' }}>
-                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="type" value="classic" class="peer sr-only-update workspace-type-radio" {{ old('type', 'classic') === 'classic' ? 'checked' : '' }}>
+                            <div class="bg-none shadow-none relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
                                         hover:border-blue-400 hover:shadow-lg
                                         peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-lg peer-checked:shadow-blue-500/20
                                         dark:peer-checked:bg-blue-950/40">
@@ -53,28 +53,28 @@
                                         <span class="icon-[tabler--check] size-4"></span>
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50">
+                                <div class="flex items-center gap-3 mb-3 flex-row-reverse justify-between">
+                                    <div class="flex items-center justify-center rounded-xl dark:bg-blue-900/50">
                                         <span class="icon-[tabler--briefcase] size-7 text-blue-600 dark:text-blue-400"></span>
                                     </div>
-                                    <div>
-                                        <span class="font-bold text-base text-base-content block">Classic</span>
-                                        <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">Recommended</span>
+                                    <div class="pl-5 card-title-type">
+                                        <span class="font-semibold text-base text-primary-color block">Classic</span>
+                                        <span class="text-xs text-secondary-color font-medium">Recommended</span>
                                     </div>
                                 </div>
-                                <p class="text-sm text-base-content/60 mb-3">For small teams with message boards, to-dos, docs & files.</p>
-                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
-                                    <span class="badge badge-ghost badge-xs">To-dos</span>
-                                    <span class="badge badge-ghost badge-xs">Docs</span>
-                                    <span class="badge badge-ghost badge-xs">Chat</span>
+                                <p class="text-sm text-base-content/60 mb-3 text-secondary-color">For small teams with message boards, to-dos, docs & files.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-base-200">
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">To-dos</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Docs</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Chat</span>
                                 </div>
                             </div>
                         </label>
 
                         <!-- Product Workspace -->
-                        <label class="cursor-pointer block">
-                            <input type="radio" name="type" value="product" class="peer sr-only workspace-type-radio" {{ old('type') === 'product' ? 'checked' : '' }}>
-                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="type" value="product" class="peer sr-only-update workspace-type-radio" {{ old('type') === 'product' ? 'checked' : '' }}>
+                            <div class="bg-none shadow-none relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
                                         hover:border-purple-400 hover:shadow-lg
                                         peer-checked:border-purple-500 peer-checked:bg-purple-50 peer-checked:shadow-lg peer-checked:shadow-purple-500/20
                                         dark:peer-checked:bg-purple-950/40">
@@ -83,28 +83,28 @@
                                         <span class="icon-[tabler--check] size-4"></span>
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/50">
+                                <div class="flex items-center gap-3 mb-3 flex-row-reverse justify-between">
+                                    <div class="flex items-center justify-center rounded-xl dark:bg-purple-900/50">
                                         <span class="icon-[tabler--rocket] size-7 text-purple-600 dark:text-purple-400"></span>
                                     </div>
-                                    <div>
-                                        <span class="font-bold text-base text-base-content block">Product</span>
-                                        <span class="text-xs text-purple-600 dark:text-purple-400 font-medium">For Agile Teams</span>
+                                    <div class="pl-5 card-title-type">
+                                        <span class="font-semibold text-base text-primary-color block">Product</span>
+                                        <span class="text-xs text-secondary-color font-medium">For Agile Teams</span>
                                     </div>
                                 </div>
-                                <p class="text-sm text-base-content/60 mb-3">For product teams with backlog, sprints, and roadmap.</p>
-                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
-                                    <span class="badge badge-ghost badge-xs">Backlog</span>
-                                    <span class="badge badge-ghost badge-xs">Sprints</span>
-                                    <span class="badge badge-ghost badge-xs">Roadmap</span>
+                                <p class="text-sm text-base-content/60 mb-3 text-secondary-color">For product teams with backlog, sprints, and roadmap.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-base-200">
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Backlog</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Sprints</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Roadmap</span>
                                 </div>
                             </div>
                         </label>
 
                         <!-- Inbox Workspace -->
-                        <label class="cursor-pointer block">
-                            <input type="radio" name="type" value="inbox" class="peer sr-only workspace-type-radio" {{ old('type') === 'inbox' ? 'checked' : '' }}>
-                            <div class="relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="type" value="inbox" class="peer sr-only-update workspace-type-radio" {{ old('type') === 'inbox' ? 'checked' : '' }}>
+                            <div class="bg-none shadow-none relative h-full rounded-xl border-2 border-base-300 bg-base-100 p-4 transition-all duration-200
                                         hover:border-orange-400 hover:shadow-lg
                                         peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:shadow-lg peer-checked:shadow-orange-500/20
                                         dark:peer-checked:bg-orange-950/40">
@@ -113,20 +113,20 @@
                                         <span class="icon-[tabler--check] size-4"></span>
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/50">
+                                <div class="flex items-center gap-3 mb-3 flex-row-reverse justify-between">
+                                    <div class="flex items-center justify-center rounded-xl dark:bg-orange-900/50">
                                         <span class="icon-[tabler--inbox] size-7 text-orange-600 dark:text-orange-400"></span>
                                     </div>
-                                    <div>
-                                        <span class="font-bold text-base text-base-content block">Inbox</span>
-                                        <span class="text-xs text-orange-600 dark:text-orange-400 font-medium">For Support Teams</span>
+                                    <div class="pl-5 card-title-type">
+                                        <span class="font-semibold text-base text-primary-color block">Inbox</span>
+                                        <span class="text-xs text-secondary-color font-medium">For Support Teams</span>
                                     </div>
                                 </div>
-                                <p class="text-sm text-base-content/60 mb-3">For help desks with triage, assignments, and SLA tracking.</p>
-                                <div class="flex flex-wrap gap-1 pt-3 border-t border-base-200">
-                                    <span class="badge badge-ghost badge-xs">Triage</span>
-                                    <span class="badge badge-ghost badge-xs">Assign</span>
-                                    <span class="badge badge-ghost badge-xs">SLA</span>
+                                <p class="text-sm text-base-content/60 mb-3 text-secondary-color">For help desks with triage, assignments, and SLA tracking.</p>
+                                <div class="flex flex-wrap gap-1 pt-3 border-base-200">
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Triage</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">Assign</span>
+                                    <span class="badge badge-ghost badge-xs badge-list-tag">SLA</span>
                                 </div>
                             </div>
                         </label>
@@ -300,15 +300,15 @@
             <!-- Card 2: Workspace Details (Hidden for inbox type) -->
             <div id="workspace-details-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--settings] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--settings] size-5 mr-2"></span>
                         Workspace Details
                     </h2>
 
                     <!-- Workspace Name -->
                     <div class="form-control mb-4">
                         <label class="label" for="workspace-name">
-                            <span class="label-text font-medium">Workspace Name <span class="text-error">*</span></span>
+                            <span class="label-text label-text-alt font-medium">Workspace Name <span class="text-error">*</span></span>
                         </label>
                         <input type="text" name="name" id="workspace-name" class="input input-bordered @error('name') input-error @enderror" placeholder="e.g. Marketing Team, Product Launch 2024" value="{{ old('name') }}" required maxlength="100" @error('name') aria-describedby="workspace-name-error" @enderror>
                         @error('name')
@@ -321,7 +321,7 @@
                     <!-- Workflow Selection -->
                     <div class="form-control mb-4">
                         <label class="label" for="workflow-select">
-                            <span class="label-text font-medium">Workflow <span class="text-error">*</span></span>
+                            <span class="label-text label-text-alt font-medium">Workflow <span class="text-error">*</span></span>
                         </label>
                         <select name="workflow_id" id="workflow-select" class="select select-bordered @error('workflow_id') select-error @enderror" required aria-describedby="workflow-select-hint @error('workflow_id') workflow-select-error @enderror">
                             <option value="">Select a workflow...</option>
@@ -352,7 +352,7 @@
                     <!-- Description -->
                     <div class="form-control mb-4">
                         <label class="label" for="workspace-description">
-                            <span class="label-text font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
+                            <span class="label-text label-text-alt font-medium">Short Description <span class="text-base-content/50 font-normal">(Optional)</span></span>
                         </label>
                         <textarea name="description" id="workspace-description" class="textarea textarea-bordered" placeholder="Briefly describe what this workspace is for..." rows="3" maxlength="500">{{ old('description') }}</textarea>
                     </div>
@@ -362,7 +362,7 @@
                         <!-- Start Date -->
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text font-medium">Start Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
+                                <span class="label-text label-text-alt font-medium">Start Date <span class="text-base-content/50 font-normal">(Optional)</span></span>
                             </label>
                             <div class="relative" id="start-date-wrapper">
                                 <input type="hidden" name="start_date" id="start-date-input" value="{{ old('start_date') }}">
@@ -453,8 +453,8 @@
             <!-- Card 3: Invite Team Members (Hidden for inbox type) -->
             <div id="team-members-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--users] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--users] size-5 mr-2"></span>
                         Invite Team Members
                         <span class="text-base-content/50 font-normal text-sm">(Optional)</span>
                     </h2>
@@ -535,8 +535,8 @@
             <!-- Card 4: Invite Guests (Hidden for inbox type) -->
             <div id="guests-card" class="card bg-base-100 shadow mb-6">
                 <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--user-plus] size-5"></span>
+                    <h2 class="card-title text-lg mb-4 flex items-center">
+                        <span class="icon-[tabler--user-plus] size-5 mr-2"></span>
                         Invite Guests
                         <span class="text-base-content/50 font-normal text-sm">(Optional)</span>
                     </h2>

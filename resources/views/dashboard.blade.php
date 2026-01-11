@@ -257,7 +257,7 @@
                     <!-- Header -->
                     <h2 class="card-title text-lg flex items-center">
                         <!-- <span class="icon-[tabler--calendar] size-5 text-info"></span>&nbsp; -->
-                     <i class="fa-solid fa-chart-line text-link-color"></i> &nbsp; Upcoming Events / Activity
+                     <i class="fa-solid fa-chart-line text-link-color mr-2"></i> Upcoming Events / Activity
                     </h2>
 
                     <!-- Tabs -->
