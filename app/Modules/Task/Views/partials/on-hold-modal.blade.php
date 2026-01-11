@@ -1,5 +1,5 @@
 <!-- On Hold Modal -->
-<div id="on-hold-modal" class="custom-modal">
+<div id="on-hold-modal" class="custom-modal" style="display: none;">
     <div class="custom-modal-box max-w-lg bg-base-100">
         <!-- Header -->
         <div class="flex items-center justify-between mb-5">
@@ -17,8 +17,7 @@
             </button>
         </div>
 
-        <form action="{{ route('tasks.hold', $task) }}" method="POST" id="on-hold-form">
-            @csrf
+        <form id="on-hold-form" onsubmit="submitOnHoldForm(event)">
 
             <!-- Reason for Hold -->
             <div class="form-control mb-4">
@@ -129,7 +128,7 @@
 </div>
 
 <!-- Resume Task Modal -->
-<div id="resume-task-modal" class="custom-modal">
+<div id="resume-task-modal" class="custom-modal" style="display: none;">
     <div class="custom-modal-box max-w-md bg-base-100">
         <!-- Header -->
         <div class="text-center mb-6">
@@ -147,9 +146,7 @@
         </div>
         @endif
 
-        <form action="{{ route('tasks.resume', $task) }}" method="POST">
-            @csrf
-
+        <form id="resume-task-form" onsubmit="submitResumeForm(event)">
             <!-- Notify People -->
             <div class="form-control mb-6">
                 <label class="label">
@@ -185,7 +182,7 @@
             <!-- Actions -->
             <div class="flex justify-end gap-3">
                 <button type="button" class="btn btn-ghost" onclick="closeResumeTaskModal()">Cancel</button>
-                <button type="submit" class="btn btn-success gap-2">
+                <button type="submit" class="btn btn-success gap-2" id="resume-submit-btn">
                     <span class="icon-[tabler--player-play] size-5"></span>
                     Resume Task
                 </button>
@@ -243,7 +240,12 @@
 <script>
 // On Hold Modal Functions
 function openOnHoldModal() {
-    document.getElementById('on-hold-modal').classList.add('modal-open');
+    const modal = document.getElementById('on-hold-modal');
+    modal.style.display = 'flex';
+    // Small delay to ensure display:flex is applied before adding modal-open
+    requestAnimationFrame(() => {
+        modal.classList.add('modal-open');
+    });
     document.body.style.overflow = 'hidden';
     // Focus on reason textarea
     setTimeout(() => {
@@ -252,7 +254,12 @@ function openOnHoldModal() {
 }
 
 function closeOnHoldModal() {
-    document.getElementById('on-hold-modal').classList.remove('modal-open');
+    const modal = document.getElementById('on-hold-modal');
+    modal.classList.remove('modal-open');
+    // Wait for transition to complete before hiding
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 200);
     document.body.style.overflow = '';
     // Reset form
     document.getElementById('on-hold-form')?.reset();
@@ -260,13 +267,121 @@ function closeOnHoldModal() {
 
 // Resume Task Modal Functions
 function openResumeTaskModal() {
-    document.getElementById('resume-task-modal').classList.add('modal-open');
+    const modal = document.getElementById('resume-task-modal');
+    modal.style.display = 'flex';
+    // Small delay to ensure display:flex is applied before adding modal-open
+    requestAnimationFrame(() => {
+        modal.classList.add('modal-open');
+    });
     document.body.style.overflow = 'hidden';
 }
 
 function closeResumeTaskModal() {
-    document.getElementById('resume-task-modal').classList.remove('modal-open');
+    const modal = document.getElementById('resume-task-modal');
+    modal.classList.remove('modal-open');
+    // Wait for transition to complete before hiding
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 200);
     document.body.style.overflow = '';
+}
+
+// AJAX Form Submission for On Hold
+async function submitOnHoldForm(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('on-hold-form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Submitting...';
+
+    const holdReason = document.getElementById('hold-reason').value;
+    const notifyUsers = Array.from(form.querySelectorAll('input[name="notify_users[]"]:checked')).map(cb => cb.value);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    try {
+        const response = await fetch('{{ route("tasks.hold", $task) }}', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                hold_reason: holdReason,
+                notify_users: notifyUsers
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            closeOnHoldModal();
+            showToast(data.message, 'success');
+            // Reload to show the hold banner and updated state
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Failed to put task on hold', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+// AJAX Form Submission for Resume
+async function submitResumeForm(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('resume-task-form');
+    const submitBtn = document.getElementById('resume-submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Resuming...';
+
+    const notifyUsers = Array.from(form.querySelectorAll('input[name="notify_users[]"]:checked')).map(cb => cb.value);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    try {
+        const response = await fetch('{{ route("tasks.resume", $task) }}', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                notify_users: notifyUsers
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            closeResumeTaskModal();
+            showToast(data.message, 'success');
+            // Reload to remove the hold banner and update state
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Failed to resume task', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
 
 // Close modals on Escape key

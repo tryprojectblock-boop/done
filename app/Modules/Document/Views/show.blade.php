@@ -1,24 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-base-200/50">
+<div class="min-h-screen document-workspace">
     <!-- Document Header -->
-    <div class="bg-base-100 border-b border-base-300 sticky top-0 z-20">
-        <div class="max-w-full mx-auto px-4 py-3">
+    <div class="document-header sticky top-0 z-20">
+        <div class="max-w-full mx-auto px-4 py-2.5">
             <div class="flex items-center justify-between gap-4">
                 <!-- Left: Back, Sections Toggle & Save Status -->
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('documents.index') }}" class="btn btn-ghost btn-sm btn-circle" title="Back to Documents">
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('documents.index') }}" class="btn btn-ghost btn-sm btn-circle hover:bg-base-content/10" title="Back to Documents">
                         <span class="icon-[tabler--arrow-left] size-5"></span>
                     </a>
-                    <button type="button" id="toggle-sections-btn" class="btn btn-ghost btn-sm gap-1" title="Toggle Pages">
-                        <span class="icon-[tabler--files] size-4"></span>
-                        <span class="hidden sm:inline text-xs">Pages</span>
+                    <div class="h-5 w-px bg-base-content/10"></div>
+                    <button type="button" id="toggle-sections-btn" class="btn btn-ghost btn-sm gap-1.5 hover:bg-base-content/10" title="Toggle Pages">
+                        <span class="icon-[tabler--file-text] size-4"></span>
+                        <span class="hidden sm:inline text-sm">Pages</span>
                     </button>
-                    <span id="save-status" class="text-sm text-base-content/50 flex items-center gap-1">
-                        <span class="icon-[tabler--check] size-4"></span>
-                        Saved
-                    </span>
+                    <div class="flex items-center gap-1.5 text-sm text-base-content/50" id="save-status">
+                        <span class="icon-[tabler--cloud-check] size-4 text-success"></span>
+                        <span>Saved</span>
+                    </div>
                 </div>
 
                 <!-- Right: Actions -->
@@ -107,41 +108,64 @@
     <!-- Main Content Area -->
     <div class="flex h-[calc(100vh-57px)]">
         <!-- Left Sidebar: Document Pages/Tabs -->
-        <div id="pages-sidebar" class="w-56 bg-base-100 border-r border-base-300 h-full overflow-hidden flex flex-col transition-all duration-300">
+        <div id="pages-sidebar" class="w-64 sidebar-panel h-full overflow-hidden flex flex-col transition-all duration-300">
             <!-- Sidebar Header -->
-            <div class="p-3 border-b border-base-300">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-semibold text-sm flex items-center gap-2">
-                        <span class="icon-[tabler--files] size-4"></span>
-                        Pages
-                    </h3>
-                    <div class="flex items-center gap-1">
-                        @if($canEdit)
-                        <button type="button" id="add-page-btn" class="btn btn-ghost btn-xs btn-circle" title="Add Page">
-                            <span class="icon-[tabler--plus] size-4"></span>
-                        </button>
-                        @endif
-                        <button type="button" id="toggle-pages-sidebar" class="btn btn-ghost btn-xs btn-circle" title="Hide Sidebar">
-                            <span class="icon-[tabler--layout-sidebar-left-collapse] size-4"></span>
-                        </button>
+            <div class="sidebar-header">
+                <div class="flex items-center gap-3">
+                    <div class="sidebar-icon-wrapper">
+                        <span class="icon-[tabler--stack-2] size-5"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-sm">Pages</h3>
+                        <p class="text-xs text-base-content/50">{{ $document->pages->count() }} {{ Str::plural('page', $document->pages->count()) }}</p>
                     </div>
                 </div>
+                <div class="flex items-center gap-1">
+                    @if($canEdit)
+                    <button type="button" id="add-page-btn" class="sidebar-action-btn" title="Add Page">
+                        <span class="icon-[tabler--plus] size-4"></span>
+                    </button>
+                    @endif
+                    <button type="button" id="toggle-pages-sidebar" class="sidebar-action-btn" title="Hide Sidebar">
+                        <span class="icon-[tabler--panel-left-close] size-4"></span>
+                    </button>
+                </div>
             </div>
+
+            <!-- Quick Actions -->
+            @if($canEdit)
+            <div class="px-4 py-3 border-b border-base-200/50">
+                <button type="button" onclick="openAddPageModal()" class="w-full btn btn-ghost btn-sm justify-start gap-2 text-base-content/60 hover:text-primary hover:bg-primary/5">
+                    <span class="icon-[tabler--file-plus] size-4"></span>
+                    <span>New Page</span>
+                </button>
+            </div>
+            @endif
+
             <!-- Pages List -->
-            <div id="pages-list" class="flex-1 overflow-y-auto py-2">
+            <div id="pages-list" class="flex-1 overflow-y-auto py-2 custom-scrollbar">
                 <!-- Pages will be dynamically generated -->
-                <div class="px-3 py-4 text-center text-base-content/50 text-sm" id="no-pages">
-                    <span class="icon-[tabler--file-text] size-8 block mx-auto mb-2 opacity-50"></span>
-                    <p>Loading pages...</p>
+                <div class="px-4 py-8 text-center" id="no-pages">
+                    <div class="empty-state-icon">
+                        <span class="icon-[tabler--file-text] size-8"></span>
+                    </div>
+                    <p class="text-sm font-medium text-base-content/60 mb-1">Loading pages...</p>
+                    <p class="text-xs text-base-content/40">Please wait</p>
                 </div>
             </div>
+
             <!-- Current Page Info -->
-            <div id="current-page-info" class="p-3 border-t border-base-300 bg-base-200/50">
-                <div class="flex items-center justify-between text-xs mb-1">
-                    <span class="text-base-content/60">Current Page</span>
-                    <span class="font-bold text-primary" id="current-page-number">1 / 1</span>
+            <div id="current-page-info" class="sidebar-footer">
+                <div class="flex items-center gap-3">
+                    <div class="current-page-indicator">
+                        <span class="icon-[tabler--file-check] size-4"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-base-content/50 mb-0.5">Currently editing</p>
+                        <p class="text-sm font-medium truncate" id="current-page-title">-</p>
+                    </div>
+                    <span class="page-badge" id="current-page-number">1/1</span>
                 </div>
-                <div class="text-xs text-base-content/60 truncate" id="current-page-title">-</div>
             </div>
         </div>
 
@@ -151,225 +175,794 @@
         </button>
 
         <!-- Editor Area -->
-        <div id="editor-container" class="flex-1 overflow-y-auto transition-all duration-300 bg-base-200">
+        <div id="editor-container" class="flex-1 overflow-y-auto transition-all duration-300 editor-canvas">
             <!-- Add Comment Tooltip (appears on text selection) -->
             <div id="add-comment-tooltip" class="fixed z-50 hidden">
-                <button type="button" id="add-comment-btn" class="btn btn-primary btn-sm shadow-lg">
+                <button type="button" id="add-comment-btn" class="btn btn-primary btn-sm shadow-lg gap-1.5">
                     <span class="icon-[tabler--message-plus] size-4"></span>
-                    Comment
+                    Add Comment
                 </button>
             </div>
 
-            <!-- Document Title Bar -->
-            <div class="bg-base-100 border-b border-base-300 px-6 py-3 sticky top-0 z-10">
-                <input type="text"
-                       id="document-title"
-                       value="{{ $document->title }}"
-                       placeholder="Untitled Document"
-                       class="w-full text-xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder:text-base-content/30 {{ !$canEdit ? 'pointer-events-none' : '' }}"
-                       {{ !$canEdit ? 'readonly' : '' }}>
-                @if($document->description)
-                    <p class="text-sm text-base-content/60 mt-1 italic">{{ $document->description }}</p>
-                @endif
-            </div>
+            <!-- Document Paper Container -->
+            <div class="document-paper-container">
+                <!-- Document Paper -->
+                <div class="document-paper">
+                    <!-- Document Title Area -->
+                    <div class="document-title-area">
+                        <div class="document-icon">
+                            <span class="icon-[tabler--file-text] size-5"></span>
+                        </div>
+                        <input type="text"
+                               id="document-title"
+                               value="{{ $document->title }}"
+                               placeholder="Untitled Document"
+                               class="document-title-input {{ !$canEdit ? 'pointer-events-none' : '' }}"
+                               {{ !$canEdit ? 'readonly' : '' }}>
+                        <div class="document-meta">
+                            <span class="document-meta-item">
+                                <span class="icon-[tabler--calendar] size-3"></span>
+                                {{ $document->created_at->format('M d, Y') }}
+                            </span>
+                            <span class="document-meta-item">
+                                <span class="icon-[tabler--user] size-3"></span>
+                                {{ $document->creator->name }}
+                            </span>
+                            @if($document->pages->count() > 1)
+                            <span class="document-meta-item">
+                                <span class="icon-[tabler--files] size-3"></span>
+                                {{ $document->pages->count() }} pages
+                            </span>
+                            @endif
+                        </div>
+                    </div>
 
-            <!-- Document Editor - Page Style -->
-            <div id="document-editor-wrapper" class="p-6">
-                <div id="document-editor"
-                     class="document-editor bg-base-100 shadow-xl rounded-lg overflow-hidden"
-                     data-document-uuid="{{ $document->uuid }}"
-                     data-can-edit="{{ $canEdit ? 'true' : 'false' }}"
-                     data-content-url="{{ route('api.documents.content.get', $document->uuid) }}"
-                     data-save-url="{{ route('api.documents.content.save', $document->uuid) }}"
-                     data-autosave-url="{{ route('api.documents.content.autosave', $document->uuid) }}"
-                     data-pages-url="{{ route('api.documents.pages.index', $document->uuid) }}"
-                     data-upload-url="{{ route('upload.image') }}"
-                     data-csrf="{{ csrf_token() }}"
-                     data-initial-content="{{ json_encode($document->content ?? '') }}"
-                     data-has-pages="{{ $document->pages->count() > 0 ? 'true' : 'false' }}">
+                    <!-- Document Editor -->
+                    <div id="document-editor-wrapper">
+                        <div id="document-editor"
+                             class="document-editor"
+                             data-document-uuid="{{ $document->uuid }}"
+                             data-can-edit="{{ $canEdit ? 'true' : 'false' }}"
+                             data-content-url="{{ route('api.documents.content.get', $document->uuid) }}"
+                             data-save-url="{{ route('api.documents.content.save', $document->uuid) }}"
+                             data-autosave-url="{{ route('api.documents.content.autosave', $document->uuid) }}"
+                             data-pages-url="{{ route('api.documents.pages.index', $document->uuid) }}"
+                             data-upload-url="{{ route('upload.image') }}"
+                             data-csrf="{{ csrf_token() }}"
+                             data-initial-content="{{ json_encode($document->content ?? '') }}"
+                             data-has-pages="{{ $document->pages->count() > 0 ? 'true' : 'false' }}">
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Last Edited Info -->
-            <div class="text-xs text-base-content/50 text-center pb-6">
-                @if($document->last_edited_at)
-                    Last edited by {{ $document->lastEditor?->name ?? 'Unknown' }}
-                    <span title="{{ $document->last_edited_at->format('M d, Y g:i A') }}">
-                        {{ $document->last_edited_at->diffForHumans() }}
-                    </span>
-                @else
-                    Created {{ $document->created_at->diffForHumans() }}
-                @endif
+                <!-- Last Edited Info -->
+                <div class="document-footer">
+                    <span class="icon-[tabler--clock] size-3.5"></span>
+                    @if($document->last_edited_at)
+                        Last edited by <strong>{{ $document->lastEditor?->name ?? 'Unknown' }}</strong>
+                        <span title="{{ $document->last_edited_at->format('M d, Y g:i A') }}">
+                            {{ $document->last_edited_at->diffForHumans() }}
+                        </span>
+                    @else
+                        Created {{ $document->created_at->diffForHumans() }}
+                    @endif
+                </div>
             </div>
         </div>
 
         <!-- Comments Sidebar -->
-        <div id="comments-sidebar" class="w-72 bg-base-100 border-l border-base-300 h-full overflow-hidden flex flex-col transition-all duration-300">
+        <div id="comments-sidebar" class="w-80 sidebar-panel h-full overflow-hidden flex flex-col transition-all duration-300">
             <!-- Comments Header -->
-            <div class="p-3 border-b border-base-300">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-semibold text-sm">Comments</h3>
-                    <button type="button" id="close-comments" class="btn btn-ghost btn-xs btn-circle md:hidden">
-                        <span class="icon-[tabler--x] size-4"></span>
-                    </button>
+            <div class="sidebar-header">
+                <div class="flex items-center gap-3">
+                    <div class="sidebar-icon-wrapper comments-icon">
+                        <span class="icon-[tabler--messages] size-5"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-sm">Comments</h3>
+                        <p class="text-xs text-base-content/50">{{ $document->comments->count() }} {{ Str::plural('comment', $document->comments->count()) }}</p>
+                    </div>
                 </div>
-                <!-- Filter -->
-                <div class="flex gap-1">
-                    <button type="button" class="comment-filter-btn btn btn-xs btn-ghost active" data-filter="all">All</button>
-                    <button type="button" class="comment-filter-btn btn btn-xs btn-ghost" data-filter="open">Open</button>
-                    <button type="button" class="comment-filter-btn btn btn-xs btn-ghost" data-filter="resolved">Resolved</button>
+                <button type="button" id="close-comments" class="sidebar-action-btn md:hidden">
+                    <span class="icon-[tabler--x] size-4"></span>
+                </button>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="px-4 py-3 border-b border-base-200/50">
+                <div class="comment-filter-tabs">
+                    <button type="button" class="comment-filter-btn active" data-filter="all">
+                        <span class="icon-[tabler--list] size-4"></span>
+                        All
+                    </button>
+                    <button type="button" class="comment-filter-btn" data-filter="open">
+                        <span class="icon-[tabler--message-circle] size-4"></span>
+                        Open
+                        @if($document->comments->where('is_resolved', false)->count() > 0)
+                        <span class="filter-badge">{{ $document->comments->where('is_resolved', false)->count() }}</span>
+                        @endif
+                    </button>
+                    <button type="button" class="comment-filter-btn" data-filter="resolved">
+                        <span class="icon-[tabler--circle-check] size-4"></span>
+                        Resolved
+                    </button>
                 </div>
             </div>
 
-            <!-- New Comment Form (shown when text is selected) - Positioned at top -->
-            <div id="new-comment-form" class="p-3 border-b border-base-300 bg-primary/5 hidden">
-                <form id="comment-form" class="space-y-2">
-                    <div class="text-xs text-base-content/50">
-                        <span class="icon-[tabler--quote] size-3"></span>
-                        "<span id="selected-text-preview" class="italic"></span>"
+            <!-- New Comment Form (shown when text is selected) -->
+            <div id="new-comment-form" class="new-comment-card hidden">
+                <form id="comment-form">
+                    <div class="quoted-text">
+                        <span class="icon-[tabler--quote] size-4"></span>
+                        <span id="selected-text-preview" class="italic"></span>
                     </div>
-                    <textarea id="comment-content" class="textarea textarea-bordered textarea-sm w-full" rows="2" placeholder="Add a comment..." required></textarea>
+                    <textarea id="comment-content" class="comment-textarea" rows="3" placeholder="Write your comment..." required></textarea>
                     <input type="hidden" id="selection-start" value="">
                     <input type="hidden" id="selection-end" value="">
                     <input type="hidden" id="selection-text" value="">
                     <input type="hidden" id="selection-id" value="">
-                    <div class="flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-xs flex-1">
-                            <span class="icon-[tabler--send] size-3"></span>
-                            Post
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" id="cancel-comment" class="btn btn-ghost btn-sm">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm gap-1.5">
+                            <span class="icon-[tabler--send] size-4"></span>
+                            Post Comment
                         </button>
-                        <button type="button" id="cancel-comment" class="btn btn-ghost btn-xs">Cancel</button>
                     </div>
                 </form>
             </div>
 
             <!-- Comments List -->
-            <div id="comments-list" class="flex-1 overflow-y-auto p-3 space-y-3">
+            <div id="comments-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 @forelse($document->comments->sortByDesc('created_at') as $comment)
                     @include('document::partials.comment', ['comment' => $comment])
                 @empty
-                    <div id="no-comments" class="text-center py-6 text-base-content/50">
-                        <span class="icon-[tabler--message-off] size-10 block mx-auto mb-2 opacity-50"></span>
-                        <p class="font-medium text-sm">No comments yet</p>
-                        <p class="text-xs">Select text to add a comment</p>
+                    <div id="no-comments" class="empty-comments-state">
+                        <div class="empty-state-icon large">
+                            <span class="icon-[tabler--message-circle-off] size-10"></span>
+                        </div>
+                        <p class="text-sm font-medium text-base-content/60 mb-1">No comments yet</p>
+                        <p class="text-xs text-base-content/40">Select text in the document to add a comment</p>
                     </div>
                 @endforelse
+            </div>
+
+            <!-- Comments Footer -->
+            <div class="sidebar-footer-tip">
+                <span class="icon-[tabler--bulb] size-4 text-warning"></span>
+                <span>Tip: Select text to add inline comments</span>
             </div>
         </div>
     </div>
 </div>
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+@vite('resources/js/lexical/index.js')
 <style>
-/* Document Editor Styles - Page-based layout */
-#document-editor-wrapper {
-    min-height: calc(100vh - 200px);
-}
-
-.document-editor {
-    min-height: 250px;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.document-editor .ql-toolbar {
-    border: none !important;
-    border-bottom: 1px solid oklch(var(--bc) / 0.1) !important;
-    background: oklch(var(--b1));
-    padding: 10px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.document-editor .ql-container {
-    border: none !important;
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-size: 1rem;
-    line-height: 1.8;
-    background: oklch(var(--b1));
-}
-
-/* Page-style editor */
-.document-editor .ql-editor {
-    padding: 72px 90px;
-    min-height: 1123px; /* A4 height */
-    background: oklch(var(--b1));
-}
-
-.document-editor .ql-editor.ql-blank::before {
-    color: oklch(var(--bc) / 0.3);
-    font-style: normal;
-    left: 90px;
-}
-
-/* Page break visual indicator */
-.document-editor .ql-editor hr {
-    border: none;
-    border-top: 1px dashed oklch(var(--bc) / 0.3);
-    margin: 60px -90px;
+/* ==================== DOCUMENT WORKSPACE ==================== */
+.document-workspace {
+    background: linear-gradient(135deg, oklch(var(--b2)) 0%, oklch(var(--b3)) 100%);
     position: relative;
 }
 
-.document-editor .ql-editor hr::after {
-    content: 'Page Break';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: oklch(var(--b1));
-    padding: 0 12px;
-    font-size: 0.7rem;
-    color: oklch(var(--bc) / 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+/* Subtle grid pattern overlay */
+.document-workspace::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(oklch(var(--bc) / 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(var(--bc) / 0.02) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
 }
 
-/* Headings styling */
-.document-editor .ql-editor h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
+/* ==================== DOCUMENT HEADER ==================== */
+.document-header {
+    background: oklch(var(--b1) / 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid oklch(var(--bc) / 0.08);
+    box-shadow: 0 1px 3px oklch(var(--bc) / 0.05);
+}
+
+/* ==================== EDITOR CANVAS ==================== */
+.editor-canvas {
+    position: relative;
+    z-index: 1;
+}
+
+/* ==================== DOCUMENT PAPER CONTAINER ==================== */
+.document-paper-container {
+    padding: 32px 24px 48px;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* ==================== DOCUMENT PAPER ==================== */
+.document-paper {
+    background: oklch(var(--b1));
+    border-radius: 12px;
+    box-shadow:
+        0 0 0 1px oklch(var(--bc) / 0.05),
+        0 4px 6px -1px oklch(var(--bc) / 0.08),
+        0 10px 20px -2px oklch(var(--bc) / 0.06),
+        0 20px 40px -4px oklch(var(--bc) / 0.04);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Paper fold effect */
+.document-paper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, transparent 50%, oklch(var(--b2)) 50%);
+    border-bottom-left-radius: 8px;
+    z-index: 10;
+}
+
+/* ==================== DOCUMENT TITLE AREA ==================== */
+.document-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    background: transparent;
+    margin-bottom: 16px;
+}
+
+.document-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, oklch(var(--p)) 0%, oklch(var(--p) / 0.8) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: oklch(var(--pc));
+    box-shadow: 0 2px 8px oklch(var(--p) / 0.2);
+    flex-shrink: 0;
+}
+
+.document-title-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: oklch(var(--bc));
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    letter-spacing: -0.01em;
+}
+
+.document-title-input::placeholder {
+    color: oklch(var(--bc) / 0.3);
+}
+
+.document-title-input:focus {
+    outline: none;
+}
+
+.document-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.document-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.75rem;
+    color: oklch(var(--bc) / 0.5);
+    padding: 3px 8px;
+    background: oklch(var(--bc) / 0.04);
+    border-radius: 4px;
+}
+
+/* ==================== DOCUMENT EDITOR WRAPPER ==================== */
+#document-editor-wrapper {
+    background: #ffffff;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+}
+
+[data-theme="dark"] #document-editor-wrapper {
+    background: oklch(var(--b1));
+    border-color: oklch(var(--bc) / 0.2) !important;
+}
+
+/* ==================== DOCUMENT EDITOR ==================== */
+.document-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ==================== LEXICAL EDITOR OVERRIDES ==================== */
+.document-editor .lexical-editor-container {
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: none;
+    overflow: hidden;
+}
+
+.document-editor .lexical-toolbar {
+    border-bottom: 1px solid oklch(var(--bc) / 0.1);
+    background: #f9fafb;
+    padding: 10px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .document-editor .lexical-toolbar {
+    background: oklch(var(--b2));
+}
+
+.document-editor .lexical-editor-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+.document-editor .lexical-content {
+    padding: 40px 56px 80px;
+    min-height: 1056px;
+    background: #ffffff;
+    caret-color: oklch(var(--p));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #1f2937;
+}
+
+/* Dark mode */
+[data-theme="dark"] .document-editor .lexical-content {
+    background: oklch(var(--b1));
     color: oklch(var(--bc));
 }
 
-.document-editor .ql-editor h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-top: 1.25em;
-    margin-bottom: 0.5em;
-    color: oklch(var(--bc) / 0.9);
+.document-editor .lexical-placeholder {
+    top: 40px;
+    left: 56px;
+    color: oklch(var(--bc) / 0.3);
+    font-size: 1rem;
 }
 
-.document-editor .ql-editor h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-    color: oklch(var(--bc) / 0.85);
-}
-
-.document-editor .ql-editor p {
-    margin-bottom: 1em;
-}
-
-.document-editor .ql-editor blockquote {
-    border-left: 4px solid oklch(var(--p));
-    padding-left: 1em;
-    margin: 1.5em 0;
-    color: oklch(var(--bc) / 0.8);
-    font-style: italic;
-}
-
-/* Read-only mode */
-.document-editor.read-only .ql-toolbar {
+.document-editor.read-only .lexical-toolbar {
     display: none;
 }
 
-.document-editor.read-only .ql-editor {
+.document-editor.read-only .lexical-content {
     cursor: default;
+}
+
+/* Selection styling */
+.document-editor .lexical-content ::selection {
+    background: oklch(var(--p) / 0.2);
+}
+
+/* ==================== TYPOGRAPHY OVERRIDES ==================== */
+.document-editor .lexical-h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc));
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.document-editor .lexical-h1:first-child {
+    margin-top: 0;
+}
+
+.document-editor .lexical-h2 {
+    font-size: 1.625rem;
+    font-weight: 600;
+    margin-top: 1.75em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc) / 0.95);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+}
+
+.document-editor .lexical-h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: oklch(var(--bc) / 0.9);
+    letter-spacing: -0.01em;
+}
+
+.document-editor .lexical-paragraph {
+    margin-bottom: 1em;
+    color: oklch(var(--bc) / 0.85);
+    line-height: 1.8;
+}
+
+.document-editor .lexical-bold {
+    font-weight: 600;
+    color: oklch(var(--bc));
+}
+
+.document-editor .lexical-italic {
+    font-style: italic;
+}
+
+.document-editor .lexical-underline {
+    text-decoration-color: oklch(var(--bc) / 0.4);
+    text-underline-offset: 3px;
+}
+
+.document-editor .lexical-strikethrough {
+    text-decoration-color: oklch(var(--er) / 0.5);
+}
+
+/* Links */
+.document-editor .lexical-link {
+    color: oklch(var(--p));
+    text-decoration: underline;
+    text-decoration-color: oklch(var(--p) / 0.3);
+    text-underline-offset: 2px;
+    transition: all 0.15s ease;
+    border-bottom: none;
+}
+
+.document-editor .lexical-link:hover {
+    text-decoration-color: oklch(var(--p));
+}
+
+/* Blockquote */
+.document-editor .lexical-quote {
+    border-left: 4px solid oklch(var(--p));
+    padding: 16px 24px;
+    margin: 1.5em 0;
+    background: linear-gradient(90deg, oklch(var(--p) / 0.05), transparent);
+    border-radius: 0 12px 12px 0;
+    color: oklch(var(--bc) / 0.8);
+    font-style: italic;
+    position: relative;
+}
+
+.document-editor .lexical-quote::before {
+    content: '"';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    font-size: 4rem;
+    color: oklch(var(--p) / 0.15);
+    font-family: Georgia, serif;
+    line-height: 1;
+}
+
+/* Lists */
+.document-editor .lexical-ul,
+.document-editor .lexical-ol {
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.document-editor .lexical-listitem {
+    margin-bottom: 0.5em;
+    padding-left: 0.5em;
+}
+
+.document-editor .lexical-ul > .lexical-listitem::marker {
+    color: oklch(var(--p));
+}
+
+.document-editor .lexical-ol > .lexical-listitem::marker {
+    color: oklch(var(--p));
+    font-weight: 600;
+}
+
+/* Code */
+.document-editor .lexical-code {
+    background: oklch(var(--bc) / 0.06);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.875em;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: oklch(var(--er));
+}
+
+.document-editor .lexical-code-block {
+    background: oklch(var(--n));
+    color: oklch(var(--nc));
+    padding: 20px 24px;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin: 1.5em 0;
+}
+
+/* Images */
+.document-editor .lexical-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1em 0;
+    box-shadow: 0 4px 12px oklch(var(--bc) / 0.1);
+}
+
+/* Read-only mode */
+.document-editor.read-only .lexical-content {
+    padding-top: 32px;
+}
+
+/* ==================== DOCUMENT FOOTER ==================== */
+.document-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px;
+    font-size: 0.8125rem;
+    color: oklch(var(--bc) / 0.45);
+}
+
+.document-footer strong {
+    color: oklch(var(--bc) / 0.6);
+    font-weight: 500;
+}
+
+/* ==================== SIDEBAR PANELS ==================== */
+.sidebar-panel {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+}
+
+[data-theme="dark"] .sidebar-panel {
+    background: oklch(var(--b1));
+    border-color: oklch(var(--bc) / 0.1);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+[data-theme="dark"] .sidebar-header {
+    border-color: oklch(var(--bc) / 0.1);
+    background: oklch(var(--b2));
+}
+
+.sidebar-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, oklch(var(--p) / 0.15) 0%, oklch(var(--p) / 0.05) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: oklch(var(--p));
+}
+
+.sidebar-icon-wrapper.comments-icon {
+    background: linear-gradient(135deg, oklch(var(--in) / 0.15) 0%, oklch(var(--in) / 0.05) 100%);
+    color: oklch(var(--in));
+}
+
+.sidebar-action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: oklch(var(--bc) / 0.5);
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.sidebar-action-btn:hover {
+    background: oklch(var(--bc) / 0.08);
+    color: oklch(var(--bc) / 0.8);
+}
+
+.sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+[data-theme="dark"] .sidebar-footer {
+    border-color: oklch(var(--bc) / 0.1);
+    background: oklch(var(--b2));
+}
+
+.sidebar-footer-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid oklch(var(--bc) / 0.06);
+    background: oklch(var(--wa) / 0.05);
+    font-size: 0.75rem;
+    color: oklch(var(--bc) / 0.5);
+}
+
+.current-page-indicator {
+    width: 36px;
+    height: 36px;
+    background: oklch(var(--su) / 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: oklch(var(--su));
+}
+
+.page-badge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    background: oklch(var(--p) / 0.1);
+    color: oklch(var(--p));
+    border-radius: 20px;
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: oklch(var(--bc) / 0.05);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: oklch(var(--bc) / 0.25);
+}
+
+.empty-state-icon.large {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+}
+
+.empty-comments-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(var(--bc) / 0.1);
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--bc) / 0.2);
+}
+
+/* ==================== COMMENT FILTER TABS ==================== */
+.comment-filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: oklch(var(--bc) / 0.04);
+    padding: 4px;
+    border-radius: 10px;
+}
+
+.comment-filter-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: oklch(var(--bc) / 0.5);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.comment-filter-btn:hover {
+    color: oklch(var(--bc) / 0.7);
+    background: oklch(var(--bc) / 0.05);
+}
+
+.comment-filter-btn.active {
+    background: oklch(var(--b1));
+    color: oklch(var(--p));
+    box-shadow: 0 1px 3px oklch(var(--bc) / 0.1);
+}
+
+.filter-badge {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: oklch(var(--p));
+    color: oklch(var(--pc));
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* ==================== NEW COMMENT FORM ==================== */
+.new-comment-card {
+    padding: 16px 20px;
+    background: linear-gradient(180deg, oklch(var(--p) / 0.05) 0%, oklch(var(--p) / 0.02) 100%);
+    border-bottom: 1px solid oklch(var(--p) / 0.1);
+}
+
+.quoted-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: oklch(var(--b1));
+    border-radius: 8px;
+    border-left: 3px solid oklch(var(--p));
+    margin-bottom: 12px;
+    font-size: 0.8125rem;
+    color: oklch(var(--bc) / 0.7);
+    line-height: 1.5;
+}
+
+.quoted-text .icon-\[tabler--quote\] {
+    flex-shrink: 0;
+    color: oklch(var(--p) / 0.5);
+    margin-top: 2px;
+}
+
+.comment-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: oklch(var(--b1));
+    border: 1px solid oklch(var(--bc) / 0.1);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    resize: none;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+}
+
+.comment-textarea:focus {
+    outline: none;
+    border-color: oklch(var(--p) / 0.5);
+    box-shadow: 0 0 0 3px oklch(var(--p) / 0.1);
 }
 
 /* Comment highlight in document */
@@ -543,8 +1136,8 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-<script>
+<script type="module">
+// Wait for Lexical to be available (loaded via Vite)
 document.addEventListener('DOMContentLoaded', function() {
     const editorEl = document.getElementById('document-editor');
     if (!editorEl) {
@@ -628,65 +1221,58 @@ document.addEventListener('DOMContentLoaded', function() {
     let autoSaveTimer = null;
     let currentSelection = null;
 
-    // Build toolbar
-    const toolbarOptions = canEdit ? [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['link', 'image'],
-        ['blockquote', 'code-block'],
-        [{ 'color': [] }, { 'background': [] }],
-        ['clean']
-    ] : false;
-
-    // Build modules config
-    let modules = {};
-    if (canEdit) {
-        modules.toolbar = {
-            container: toolbarOptions,
-            handlers: {
-                image: function() {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.click();
-
-                    input.onchange = async () => {
-                        const file = input.files[0];
-                        if (file) {
-                            await uploadImage(file);
-                        }
-                    };
-                }
+    // Wait for LexicalEditor to be available
+    const waitForLexical = () => {
+        return new Promise((resolve) => {
+            if (window.LexicalEditor) {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (window.LexicalEditor) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 50);
             }
-        };
-    } else {
-        modules.toolbar = false;
+        });
+    };
+
+    // Initialize Lexical Editor
+    let editor = null;
+
+    async function initEditor() {
+        await waitForLexical();
+
+        editor = new window.LexicalEditor(editorEl, {
+            readOnly: !canEdit,
+            placeholder: canEdit ? 'Start writing your document...' : '',
+            initialContent: initialContent,
+            onContentChange: (html) => {
+                pendingPageSave = true;
+                updateSaveStatus('saving');
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => savePageContent(false), 2000);
+            },
+            onSave: (html) => {
+                savePageContent(true);
+            }
+        });
+
+        // Make editor available globally for debugging
+        window.lexicalEditor = editor;
+
+        // Add read-only class if needed
+        if (!canEdit) {
+            editorEl.classList.add('read-only');
+        }
+
+        // Initialize pages after editor is ready
+        loadPages();
     }
 
-    // Initialize Quill
-    const quill = new Quill(editorEl, {
-        theme: 'snow',
-        placeholder: canEdit ? 'Start writing your document...' : '',
-        readOnly: !canEdit,
-        modules: modules
-    });
+    initEditor();
 
-    // Make quill available globally for debugging
-    window.quill = quill;
-
-    // Add read-only class if needed
-    if (!canEdit) {
-        editorEl.classList.add('read-only');
-    }
-
-    // Set initial content
-    if (initialContent) {
-        quill.root.innerHTML = initialContent;
-    }
-
-    // ==================== PAGES FUNCTIONALITY (after Quill init) ====================
+    // ==================== PAGES FUNCTIONALITY ====================
 
     // Load pages from server
     async function loadPages() {
@@ -747,7 +1333,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             item.innerHTML = `
-                <span class="page-icon icon-[tabler--file-text] size-4"></span>
+                <div class="page-icon">
+                    <span class="icon-[tabler--file-text] size-4"></span>
+                </div>
                 <span class="page-title" title="${page.title}">${page.title}</span>
                 <span class="page-number">${index + 1}</span>
                 ${canEdit ? `<button type="button" class="page-edit-btn btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100" title="Rename page">
@@ -813,7 +1401,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.success) {
                 currentPage = result.page;
-                quill.root.innerHTML = currentPage.content || '';
+                if (editor) {
+                    editor.setContent(currentPage.content || '');
+                }
                 lastSavedContent = currentPage.content || '';
 
                 // Update UI
@@ -867,7 +1457,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function savePageContent(createVersion = false) {
         if (!currentPage || !canEdit) return;
 
-        const content = quill.root.innerHTML;
+        const content = editor ? editor.getHtml() : '';
 
         if (content === lastSavedContent && !createVersion) {
             pendingPageSave = false;
@@ -1078,31 +1668,22 @@ document.addEventListener('DOMContentLoaded', function() {
         closeRenamePageModal();
     });
 
-    // Track content changes for auto-save
-    quill.on('text-change', function() {
-        pendingPageSave = true;
-        updateSaveStatus('saving');
-        clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(() => savePageContent(false), 2000);
-    });
-
-    // Initialize pages
-    loadPages();
+    // Content change tracking is now handled via the onContentChange callback in LexicalEditor init
 
     // ==================== SAVE FUNCTIONALITY ====================
 
     function updateSaveStatus(status) {
         const icons = {
             saving: '<span class="loading loading-spinner loading-xs"></span>',
-            saved: '<span class="icon-[tabler--check] size-4"></span>',
-            error: '<span class="icon-[tabler--alert-circle] size-4 text-error"></span>'
+            saved: '<span class="icon-[tabler--cloud-check] size-4 text-success"></span>',
+            error: '<span class="icon-[tabler--cloud-off] size-4 text-error"></span>'
         };
         const texts = {
             saving: 'Saving...',
             saved: 'Saved',
             error: 'Save failed'
         };
-        saveStatus.innerHTML = icons[status] + ' <span class="ml-1">' + texts[status] + '</span>';
+        saveStatus.innerHTML = icons[status] + '<span>' + texts[status] + '</span>';
     }
 
     // Manual save button - saves current page
@@ -1121,6 +1702,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==================== IMAGE UPLOAD ====================
+    // Note: Image upload is simplified for Lexical - full image node support would require a custom node
 
     async function uploadImage(file) {
         if (!file.type.startsWith('image/')) {
@@ -1136,8 +1718,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('image', file);
 
-        const range = quill.getSelection(true);
-        quill.insertText(range.index, 'Uploading image...', { color: '#999' });
+        updateSaveStatus('saving');
 
         try {
             const response = await fetch(uploadUrl, {
@@ -1147,18 +1728,25 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const result = await response.json();
-            quill.deleteText(range.index, 'Uploading image...'.length);
 
             if (result.success) {
-                quill.insertEmbed(range.index, 'image', result.url);
-                quill.setSelection(range.index + 1);
+                // For now, copy image URL to clipboard and show notification
+                // Full image insertion would require a custom Lexical ImageNode
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(result.url);
+                    alert('Image uploaded! URL copied to clipboard. Paste it in your document.');
+                } else {
+                    prompt('Image uploaded! Copy this URL:', result.url);
+                }
+                updateSaveStatus('saved');
             } else {
                 alert('Failed to upload image');
+                updateSaveStatus('error');
             }
         } catch (error) {
-            quill.deleteText(range.index, 'Uploading image...'.length);
             console.error('Upload error:', error);
             alert('Failed to upload image');
+            updateSaveStatus('error');
         }
     }
 
@@ -1172,6 +1760,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (file.type.startsWith('image/')) {
                     await uploadImage(file);
                 }
+            }
+        });
+
+        // Listen for image upload from toolbar Insert menu
+        document.addEventListener('lexical-image-upload', async function(e) {
+            if (e.detail && e.detail.file) {
+                await uploadImage(e.detail.file);
             }
         });
     }
@@ -1211,7 +1806,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectionTimeout = null;
 
     document.addEventListener('mouseup', function(e) {
-        if (!e.target.closest('.ql-editor')) {
+        // Check for Lexical content area
+        const lexicalContent = e.target.closest('.lexical-content');
+        if (!lexicalContent) {
             hideCommentTooltip();
             return;
         }
@@ -1233,8 +1830,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Store selection data
                 currentSelection = {
                     text: text,
-                    start: getTextOffset(quill.root, range.startContainer, range.startOffset),
-                    end: getTextOffset(quill.root, range.endContainer, range.endOffset),
+                    start: getTextOffset(lexicalContent, range.startContainer, range.startOffset),
+                    end: getTextOffset(lexicalContent, range.endContainer, range.endOffset),
                     id: 'comment-' + Date.now()
                 };
             } else {
@@ -1907,21 +2504,24 @@ document.addEventListener('DOMContentLoaded', function() {
 .page-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin: 2px 8px;
-    border-radius: 6px;
+    gap: 10px;
+    padding: 10px 14px;
+    margin: 2px 10px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     font-size: 0.875rem;
+    border: 1px solid transparent;
 }
 
 .page-item:hover {
     background: oklch(var(--b2));
+    border-color: oklch(var(--bc) / 0.05);
 }
 
 .page-item.active {
-    background: oklch(var(--p) / 0.15);
+    background: linear-gradient(135deg, oklch(var(--p) / 0.1) 0%, oklch(var(--p) / 0.05) 100%);
+    border-color: oklch(var(--p) / 0.2);
     color: oklch(var(--p));
     font-weight: 500;
 }
@@ -1932,7 +2532,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .page-icon {
     flex-shrink: 0;
-    color: oklch(var(--bc) / 0.5);
+    color: oklch(var(--bc) / 0.4);
+    width: 32px;
+    height: 32px;
+    background: oklch(var(--bc) / 0.05);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-item.active .page-icon {
+    background: oklch(var(--p) / 0.15);
+    color: oklch(var(--p));
 }
 
 .page-title {
@@ -1944,10 +2556,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .page-number {
     flex-shrink: 0;
-    font-size: 0.75rem;
-    color: oklch(var(--bc) / 0.4);
-    font-weight: 500;
-    margin-right: 4px;
+    font-size: 0.6875rem;
+    color: oklch(var(--bc) / 0.35);
+    font-weight: 600;
+    padding: 2px 8px;
+    background: oklch(var(--bc) / 0.05);
+    border-radius: 10px;
+}
+
+.page-item.active .page-number {
+    background: oklch(var(--p) / 0.15);
+    color: oklch(var(--p));
 }
 
 /* Page edit button - visible on hover */
@@ -1966,20 +2585,21 @@ document.addEventListener('DOMContentLoaded', function() {
 .page-context-menu {
     background: oklch(var(--b1));
     border: 1px solid oklch(var(--bc) / 0.1);
-    border-radius: 8px;
-    padding: 4px;
-    min-width: 140px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    padding: 6px;
+    min-width: 150px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
 }
 
 .page-context-menu .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 4px;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 0.875rem;
+    transition: all 0.15s ease;
 }
 
 .page-context-menu .dropdown-item:hover {

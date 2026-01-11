@@ -17,10 +17,22 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@lexical/clipboard": "^0.39.0",
+        "@lexical/code": "^0.39.0",
+        "@lexical/history": "^0.39.0",
+        "@lexical/html": "^0.39.0",
+        "@lexical/link": "^0.39.0",
+        "@lexical/list": "^0.39.0",
+        "@lexical/markdown": "^0.39.0",
+        "@lexical/rich-text": "^0.39.0",
+        "@lexical/selection": "^0.39.0",
+        "@lexical/table": "^0.39.0",
+        "@lexical/utils": "^0.39.0",
         "@vitejs/plugin-vue": "^6.0.2",
         "@yaireo/tagify": "^4.35.6",
         "flatpickr": "^4.6.13",
         "flyonui": "^2.4.1",
+        "lexical": "^0.39.0",
         "vue": "^3.5.25"
     }
 }

@@ -487,15 +487,21 @@ class TaskController extends Controller
         return back()->with('success', "Task {$task->task_number} reopened successfully.");
     }
 
-    public function hold(Request $request, Task $task): RedirectResponse
+    public function hold(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canManageHold($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to put this task on hold.'], 403);
+            }
             return back()->with('error', 'You do not have permission to put this task on hold.');
         }
 
         if ($task->isOnHold()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'This task is already on hold.'], 400);
+            }
             return back()->with('error', 'This task is already on hold.');
         }
 
@@ -512,18 +518,32 @@ class TaskController extends Controller
             $request->input('notify_users', [])
         );
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Task {$task->task_number} has been put on hold.",
+                'hold_reason' => $request->input('hold_reason'),
+            ]);
+        }
+
         return back()->with('success', "Task {$task->task_number} has been put on hold.");
     }
 
-    public function resume(Request $request, Task $task): RedirectResponse
+    public function resume(Request $request, Task $task): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = auth()->user();
 
         if (!$task->canManageHold($user)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to resume this task.'], 403);
+            }
             return back()->with('error', 'You do not have permission to resume this task.');
         }
 
         if (!$task->isOnHold()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'This task is not on hold.'], 400);
+            }
             return back()->with('error', 'This task is not on hold.');
         }
 
@@ -537,6 +557,13 @@ class TaskController extends Controller
             $user,
             $request->input('notify_users', [])
         );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Task {$task->task_number} has been resumed.",
+            ]);
+        }
 
         return back()->with('success', "Task {$task->task_number} has been resumed.");
     }
@@ -575,12 +602,14 @@ class TaskController extends Controller
         $this->taskService->changeStatus($task, $newStatusId, $user, $note);
 
         if ($request->expectsJson()) {
+            $freshTask = $task->fresh();
             return response()->json([
                 'success' => true,
                 'message' => 'Status updated successfully.',
                 'status' => [
-                    'id' => $task->fresh()->status->id,
-                    'name' => $task->fresh()->status->name,
+                    'id' => $freshTask->status->id,
+                    'name' => $freshTask->status->name,
+                    'background_color' => $freshTask->status->background_color,
                 ],
             ]);
         }
@@ -605,7 +634,16 @@ class TaskController extends Controller
         $this->taskService->changeAssignee($task, $assigneeId ? (int) $assigneeId : null, $user);
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Assignee updated successfully.']);
+            $freshTask = $task->fresh()->load('assignee');
+            return response()->json([
+                'success' => true,
+                'message' => 'Assignee updated successfully.',
+                'assignee' => $freshTask->assignee ? [
+                    'id' => $freshTask->assignee->id,
+                    'name' => $freshTask->assignee->name,
+                    'avatar_url' => $freshTask->assignee->avatar_url,
+                ] : null,
+            ]);
         }
 
         return back()->with('success', 'Assignee updated successfully.');
@@ -640,7 +678,15 @@ class TaskController extends Controller
         );
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Creator updated successfully.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Creator updated successfully.',
+                'creator' => [
+                    'id' => $newCreator->id,
+                    'name' => $newCreator->name,
+                    'avatar_url' => $newCreator->avatar_url,
+                ],
+            ]);
         }
 
         return back()->with('success', 'Creator updated successfully.');
@@ -674,7 +720,17 @@ class TaskController extends Controller
         );
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Priority updated successfully.']);
+            $priorityEnum = $newPriority ? \App\Modules\Task\Enums\TaskPriority::from($newPriority) : null;
+            return response()->json([
+                'success' => true,
+                'message' => 'Priority updated successfully.',
+                'priority' => $priorityEnum ? [
+                    'value' => $priorityEnum->value,
+                    'label' => $priorityEnum->label(),
+                    'color' => $priorityEnum->color(),
+                    'icon' => $priorityEnum->icon(),
+                ] : null,
+            ]);
         }
 
         return back()->with('success', 'Priority updated successfully.');
@@ -708,7 +764,16 @@ class TaskController extends Controller
         );
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Due date updated successfully.']);
+            $freshTask = $task->fresh();
+            return response()->json([
+                'success' => true,
+                'message' => 'Due date updated successfully.',
+                'due_date' => $freshTask->due_date ? [
+                    'formatted' => $freshTask->due_date->format('M d, Y'),
+                    'iso' => $freshTask->due_date->format('Y-m-d'),
+                    'is_overdue' => $freshTask->isOverdue(),
+                ] : null,
+            ]);
         }
 
         return back()->with('success', 'Due date updated successfully.');
@@ -742,7 +807,15 @@ class TaskController extends Controller
         );
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Created date updated successfully.']);
+            $freshTask = $task->fresh();
+            return response()->json([
+                'success' => true,
+                'message' => 'Created date updated successfully.',
+                'created_at' => [
+                    'formatted' => $freshTask->created_at->format('M d, Y'),
+                    'iso' => $freshTask->created_at->format('Y-m-d'),
+                ],
+            ]);
         }
 
         return back()->with('success', 'Created date updated successfully.');
@@ -976,7 +1049,15 @@ class TaskController extends Controller
         }
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Priority updated successfully.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Priority updated successfully.',
+                'priority' => $newPriority ? [
+                    'id' => $newPriority->id,
+                    'name' => $newPriority->name,
+                    'color' => $newPriority->color,
+                ] : null,
+            ]);
         }
 
         return back()->with('success', 'Priority updated successfully.');

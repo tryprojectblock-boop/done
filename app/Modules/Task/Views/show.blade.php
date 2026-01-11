@@ -393,8 +393,8 @@
                     <div class="card-body">
                         <h2 class="card-title text-lg">Details</h2>
 
-                        @if(!$isClient)
-                        <!-- Action Buttons -->
+                        @if(!$isClient && !$task->isClosed())
+                        <!-- Action Buttons (hidden for closed tasks) -->
                         <div class="flex flex-wrap gap-2 pb-3 border-b border-base-200">
                             <!-- Watch Button -->
                             <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
@@ -411,7 +411,7 @@
                             </form>
 
                             <!-- On Hold Button (only for creator, assignee, and admins) -->
-                            @if(!$task->isClosed() && $task->canManageHold($user))
+                            @if($task->canManageHold($user))
                                 @if($task->isOnHold())
                                     <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
                                         <span class="icon-[tabler--player-play] size-4"></span>
@@ -1190,6 +1190,40 @@
     }
 </style>
 <script>
+// Toast notification function
+function showToast(message, type = 'success') {
+    // Remove any existing toasts
+    const existingToasts = document.querySelectorAll('.toast-notification');
+    existingToasts.forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-y-2 opacity-0`;
+
+    if (type === 'success') {
+        toast.classList.add('bg-success', 'text-success-content');
+        toast.innerHTML = `<span class="icon-[tabler--check] size-5"></span><span>${message}</span>`;
+    } else if (type === 'error') {
+        toast.classList.add('bg-error', 'text-error-content');
+        toast.innerHTML = `<span class="icon-[tabler--x] size-5"></span><span>${message}</span>`;
+    } else {
+        toast.classList.add('bg-base-300', 'text-base-content');
+        toast.innerHTML = `<span class="icon-[tabler--info-circle] size-5"></span><span>${message}</span>`;
+    }
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+    });
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 // Comment/Private Note Tab Switching
 let currentCommentTab = 'comment';
 
@@ -1758,6 +1792,8 @@ async function saveQuickStats() {
 
     try {
         const errors = [];
+        let statusData = null;
+        let priorityData = null;
 
         // Status - only update if a status is selected (required field)
         if (statusId && statusId !== '') {
@@ -1775,6 +1811,9 @@ async function saveQuickStats() {
                 if (!statusResponse.ok) {
                     const errorData = await statusResponse.json().catch(() => ({ message: 'Unknown error' }));
                     errors.push('Status: ' + (errorData.message || 'Update failed'));
+                } else {
+                    const data = await statusResponse.json();
+                    statusData = data.status;
                 }
             } catch (e) {
                 errors.push('Status: Network error');
@@ -1797,6 +1836,9 @@ async function saveQuickStats() {
                 if (!priorityResponse.ok) {
                     const errorData = await priorityResponse.json().catch(() => ({ message: 'Unknown error' }));
                     errors.push('Priority: ' + (errorData.message || 'Update failed'));
+                } else {
+                    const data = await priorityResponse.json();
+                    priorityData = data.priority;
                 }
             } else {
                 const priorityResponse = await fetch('{{ route("tasks.update-priority", $task) }}', {
@@ -1812,6 +1854,9 @@ async function saveQuickStats() {
                 if (!priorityResponse.ok) {
                     const errorData = await priorityResponse.json().catch(() => ({ message: 'Unknown error' }));
                     errors.push('Priority: ' + (errorData.message || 'Update failed'));
+                } else {
+                    const data = await priorityResponse.json();
+                    priorityData = data.priority;
                 }
             }
         } catch (e) {
@@ -1840,10 +1885,19 @@ async function saveQuickStats() {
 
         if (errors.length > 0) {
             console.error('Save errors:', errors);
+            alert('Some changes failed to save: ' + errors.join(', '));
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+            return;
         }
 
-        // Reload page to show updated values
-        window.location.reload();
+        // Update the display without page reload
+        updateQuickStatsDisplay(statusData, priorityData, priorityType, progress);
+        toggleEdit('quick-stats');
+        showToast('Changes saved successfully');
+
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
 
     } catch (error) {
         console.error('Error saving quick stats:', error);
@@ -1851,6 +1905,51 @@ async function saveQuickStats() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnText;
     }
+}
+
+function updateQuickStatsDisplay(statusData, priorityData, priorityType, progress) {
+    const displayEl = document.getElementById('quick-stats-display');
+    if (!displayEl) return;
+
+    // Build status badge HTML
+    let statusHtml = '';
+    if (statusData) {
+        statusHtml = `<span class="badge badge-sm" style="background-color: ${statusData.background_color}20; color: ${statusData.background_color}">${statusData.name}</span>`;
+    } else {
+        statusHtml = '<span class="badge badge-sm badge-ghost">No Status</span>';
+    }
+
+    // Build priority badge HTML
+    let priorityHtml = '';
+    if (priorityData) {
+        if (priorityType === 'workspace') {
+            priorityHtml = `<span class="badge badge-sm" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
+                <span class="icon-[tabler--flag] size-3 mr-0.5"></span>
+                ${priorityData.name}
+            </span>`;
+        } else {
+            priorityHtml = `<span class="badge badge-sm" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
+                <span class="icon-[${priorityData.icon}] size-3 mr-0.5"></span>
+                ${priorityData.label}
+            </span>`;
+        }
+    } else {
+        priorityHtml = '<span class="badge badge-sm badge-ghost">No Priority</span>';
+    }
+
+    // Build progress badge HTML
+    const progressClass = progress === 100 ? 'badge-success' : 'badge-primary';
+    const progressHtml = `<span class="badge badge-sm ${progressClass} badge-outline">${progress}%</span>`;
+
+    displayEl.innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap">
+            ${statusHtml}
+            <span class="text-base-content/30">•</span>
+            ${priorityHtml}
+            <span class="text-base-content/30">•</span>
+            ${progressHtml}
+        </div>
+    `;
 }
 
 // People (Assignee / Creator combined section)
@@ -1898,6 +1997,8 @@ async function savePeople() {
 
     try {
         const errors = [];
+        let assigneeData = null;
+        let creatorData = null;
 
         // Update assignee
         try {
@@ -1913,6 +2014,9 @@ async function savePeople() {
             });
             if (!assigneeResponse.ok) {
                 errors.push('Assignee update failed');
+            } else {
+                const data = await assigneeResponse.json();
+                assigneeData = data.assignee;
             }
         } catch (e) {
             errors.push('Assignee: Network error');
@@ -1932,6 +2036,9 @@ async function savePeople() {
             });
             if (!creatorResponse.ok) {
                 errors.push('Creator update failed');
+            } else {
+                const data = await creatorResponse.json();
+                creatorData = data.creator;
             }
         } catch (e) {
             errors.push('Creator: Network error');
@@ -1939,9 +2046,19 @@ async function savePeople() {
 
         if (errors.length > 0) {
             console.error('Save errors:', errors);
+            alert('Some changes failed to save: ' + errors.join(', '));
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+            return;
         }
 
-        window.location.reload();
+        // Update the display without page reload
+        updatePeopleDisplay(assigneeData, creatorData);
+        toggleEdit('people');
+        showToast('Changes saved successfully');
+
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
 
     } catch (error) {
         console.error('Error saving people:', error);
@@ -1949,6 +2066,50 @@ async function savePeople() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnText;
     }
+}
+
+function updatePeopleDisplay(assigneeData, creatorData) {
+    const displayEl = document.getElementById('people-display');
+    if (!displayEl) return;
+
+    // Build assignee badge HTML
+    let assigneeHtml = '';
+    if (assigneeData) {
+        assigneeHtml = `<div class="badge badge-sm gap-1.5 py-2.5">
+            <div class="avatar">
+                <div class="w-4 rounded-full">
+                    <img src="${assigneeData.avatar_url}" alt="${assigneeData.name}" />
+                </div>
+            </div>
+            ${assigneeData.name}
+        </div>`;
+    } else {
+        assigneeHtml = `<span class="badge badge-sm badge-ghost gap-1">
+            <span class="icon-[tabler--user-off] size-3"></span>
+            Unassigned
+        </span>`;
+    }
+
+    // Build creator badge HTML
+    let creatorHtml = '';
+    if (creatorData) {
+        creatorHtml = `<div class="badge badge-sm badge-outline gap-1.5 py-2.5">
+            <div class="avatar">
+                <div class="w-4 rounded-full">
+                    <img src="${creatorData.avatar_url}" alt="${creatorData.name}" />
+                </div>
+            </div>
+            ${creatorData.name}
+        </div>`;
+    }
+
+    displayEl.innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap">
+            ${assigneeHtml}
+            <span class="text-base-content/30">•</span>
+            ${creatorHtml}
+        </div>
+    `;
 }
 
 // Dates Calendar (Due Date / Created Date combined section)
@@ -2135,6 +2296,8 @@ async function saveDates() {
 
     try {
         const errors = [];
+        let dueDateData = null;
+        let createdDateData = null;
 
         // Update due date
         try {
@@ -2150,6 +2313,9 @@ async function saveDates() {
             });
             if (!dueDateResponse.ok) {
                 errors.push('Due date update failed');
+            } else {
+                const data = await dueDateResponse.json();
+                dueDateData = data.due_date;
             }
         } catch (e) {
             errors.push('Due date: Network error');
@@ -2169,6 +2335,9 @@ async function saveDates() {
             });
             if (!createdDateResponse.ok) {
                 errors.push('Created date update failed');
+            } else {
+                const data = await createdDateResponse.json();
+                createdDateData = data.created_at;
             }
         } catch (e) {
             errors.push('Created date: Network error');
@@ -2176,9 +2345,19 @@ async function saveDates() {
 
         if (errors.length > 0) {
             console.error('Save errors:', errors);
+            alert('Some changes failed to save: ' + errors.join(', '));
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+            return;
         }
 
-        window.location.reload();
+        // Update the display without page reload
+        updateDatesDisplay(createdDateData, dueDateData);
+        toggleEdit('dates');
+        showToast('Changes saved successfully');
+
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
 
     } catch (error) {
         console.error('Error saving dates:', error);
@@ -2186,6 +2365,44 @@ async function saveDates() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnText;
     }
+}
+
+function updateDatesDisplay(createdDateData, dueDateData) {
+    const displayEl = document.getElementById('dates-display');
+    if (!displayEl) return;
+
+    // Build created date badge HTML
+    let createdHtml = '';
+    if (createdDateData) {
+        createdHtml = `<span class="badge badge-sm badge-outline gap-1">
+            <span class="icon-[tabler--calendar-plus] size-3"></span>
+            ${createdDateData.formatted}
+        </span>`;
+    }
+
+    // Build due date badge HTML
+    let dueHtml = '';
+    if (dueDateData) {
+        const badgeClass = dueDateData.is_overdue ? 'badge-error' : 'badge-warning';
+        const overdueText = dueDateData.is_overdue ? ' (Overdue)' : '';
+        dueHtml = `<span class="badge badge-sm ${badgeClass} gap-1">
+            <span class="icon-[tabler--calendar-due] size-3"></span>
+            ${dueDateData.formatted}${overdueText}
+        </span>`;
+    } else {
+        dueHtml = `<span class="badge badge-sm badge-ghost gap-1">
+            <span class="icon-[tabler--calendar-due] size-3"></span>
+            No Due Date
+        </span>`;
+    }
+
+    displayEl.innerHTML = `
+        <div class="flex items-center gap-2 flex-wrap">
+            ${createdHtml}
+            <span class="text-base-content/30">•</span>
+            ${dueHtml}
+        </div>
+    `;
 }
 
 </script>

@@ -15,7 +15,11 @@
       "Bash(composer require:*)",
       "Bash(curl:*)",
       "Bash(xargs find:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:playground.lexical.dev)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
