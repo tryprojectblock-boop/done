@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="p-4 md:p-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w mx-auto">
         @if($isFirstLogin)
         <!-- First Time User - Onboarding -->
         <div class="mb-8">
