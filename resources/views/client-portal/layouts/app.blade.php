@@ -106,7 +106,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 pt-16">
-        <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="max-w mx-auto px-4 py-6">
             <!-- Flash Messages -->
             @if(session('success'))
             <div class="alert alert-success mb-6">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-7xl">
+<div class="container mx-auto px-4 py-8 max-w">
     {{-- Page Header --}}
     <div class="mb-12">
         <h1 class="text-4xl font-bold text-base-content mb-2">NewDone Theme Demo</h1>

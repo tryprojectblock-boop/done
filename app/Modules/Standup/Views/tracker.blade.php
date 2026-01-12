@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="min-h-screen p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Workspace Header -->
         <div class="flex items-center gap-4 mb-6">
             <a href="{{ route('workspace.show', $workspace) }}" class="btn btn-ghost btn-sm">

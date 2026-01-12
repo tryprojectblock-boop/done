@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="min-h-screen p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Page Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
