@@ -1,5 +1,5 @@
 <footer class="footer footer-center p-6 bg-base-100 text-base-content border-t border-base-200">
-    <div class="flex flex-col md:flex-row items-center justify-between w-full max-w-7xl gap-4">
+    <div class="flex flex-col md:flex-row items-center justify-between w-full max-w gap-4">
         <div class="flex items-center gap-2">
             <span class="icon-[tabler--checkbox] size-5 text-primary"></span>
             <span class="font-semibold">{{ config('app.name', 'NewDone') }}</span>

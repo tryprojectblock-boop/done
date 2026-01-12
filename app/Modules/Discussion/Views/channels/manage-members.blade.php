@@ -37,7 +37,7 @@
 
         <!-- Form Content -->
         <div class="flex-1 p-4 md:p-6 pt-3">
-            <div class="max-w-6xl mx-auto">
+            <div class="max-w mx-auto">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Invite Team Members Section -->
                 <div class="card bg-base-100 shadow">

@@ -4,7 +4,7 @@
 @section('page-title', 'Scheduled Tasks')
 
 @section('content')
-<div class="max-w-6xl mx-auto space-y-6">
+<div class="max-w mx-auto space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>

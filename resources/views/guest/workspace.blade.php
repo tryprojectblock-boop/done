@@ -71,7 +71,7 @@
 
     <!-- Main Content -->
     <main class="pt-20 p-4 md:p-6">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w mx-auto">
             <!-- Breadcrumb -->
             <div class="breadcrumbs text-sm mb-4">
                 <ul>
