@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin "flyonui";
 @plugin "@iconify/tailwind4";
 @import "flyonui/variants.css";
@@ -12,9 +12,9 @@
 @source "../../node_modules/flyonui/dist/index.js";
 
 /* Import theme configuration - all customizable styles in one place */
-@import './theme.css';
-@import './custom.css';
-:root:has(input.theme-controller[value=light]:checked),
+@import "./theme.css";
+@import "./custom.css";
+:root:has(input.theme-controller[value="light"]:checked),
 [data-theme="light"] {
     --color-primary: oklch(0.7 0.16 248.41);
     --color-primary-content: oklch(1 0 0);
@@ -38,3 +38,17 @@ main {
     min-height: calc(100vh - 5rem - 4rem); /* viewport - top padding - footer */
 }
 
+/* Custom CSS Changes */
+
+.noShadow-btn {
+    box-shadow: none;
+}
+
+.grid-active-status .btn-active {
+    background-color: white !important;
+    border: none;
+}
+
+.grid-active-status .btn-active span {
+    background-color: #525158;
+}
