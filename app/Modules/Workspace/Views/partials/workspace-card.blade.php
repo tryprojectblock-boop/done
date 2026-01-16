@@ -22,7 +22,7 @@
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                     <h3 class="font-medium text-base-content group-hover:text-{{ $hoverColor }} transition-colors truncate">{{ $workspace->name }}</h3>
-                    <span class="badge badge-{{ $workspace->type->badgeColor() }} badge-xs">{{ $workspace->type->label() }}</span>
+                    <span class="badge badge-xs border-none"  style="background-color: {{ $workspace->type->badgeColor() === 'primary' ? '#E5F2FF' : '#F3E8FF' }}; color: {{ $workspace->type->badgeColor() === 'primary' ? '#3BA5FF' : '#A855F7' }};">{{ $workspace->type->label() }}</span>
                     @if($isGuest)
                         <span class="badge badge-warning badge-xs">Guest</span>
                     @endif
@@ -41,21 +41,37 @@
                         @endif
                     @endif
                     @if($workspace->description)
+                    <div class="flex items-center gap-1.5 pt-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <g clip-path="url(#clip0_162_293)">
+                <path d="M16 0H0V16H16V0Z" fill="white"/>
+                <path d="M11.4369 1.33659C12.4936 1.39012 13.334 2.26391 13.334 3.33398V13.3373H14.0007C14.3688 13.3373 14.6673 13.6358 14.6673 14.0039C14.6673 14.3721 14.3689 14.6706 14.0007 14.6706H2.00065C1.63246 14.6706 1.33398 14.3721 1.33398 14.0039C1.33403 13.6358 1.63249 13.3373 2.00065 13.3373H2.66732V3.33398C2.66732 2.22942 3.56275 1.33398 4.66732 1.33398H11.334L11.4369 1.33659ZM4.66732 2.66732C4.29913 2.66732 4.00065 2.9658 4.00065 3.33398V13.334H12.0007V3.33398C12.0007 2.98886 11.7385 2.70479 11.4023 2.67057L11.334 2.66732H4.66732ZM6.33398 7.33398C6.88625 7.33398 7.33398 7.78172 7.33398 8.33398C7.33398 8.88625 6.88625 9.33398 6.33398 9.33398C5.7817 9.33398 5.33398 8.88625 5.33398 8.33398C5.33398 7.78172 5.7817 7.33398 6.33398 7.33398ZM9.66732 7.33398C10.2196 7.33398 10.6673 7.78172 10.6673 8.33398C10.6673 8.88625 10.2196 9.33398 9.66732 9.33398C9.11505 9.33398 8.66732 8.88625 8.66732 8.33398C8.66732 7.78172 9.11505 7.33398 9.66732 7.33398ZM6.33398 4.00065C6.88625 4.00065 7.33398 4.44836 7.33398 5.00065C7.33398 5.55294 6.88625 6.00065 6.33398 6.00065C5.7817 6.00065 5.33398 5.55294 5.33398 5.00065C5.33398 4.44836 5.7817 4.00065 6.33398 4.00065ZM9.66732 4.00065C10.2196 4.00065 10.6673 4.44836 10.6673 5.00065C10.6673 5.55294 10.2196 6.00065 9.66732 6.00065C9.11505 6.00065 8.66732 5.55294 8.66732 5.00065C8.66732 4.44836 9.11505 4.00065 9.66732 4.00065Z" fill="#525158"/>
+                <path d="M7.33398 11.334C7.33398 10.7817 6.88625 10.334 6.33398 10.334C5.7817 10.334 5.33398 10.7817 5.33398 11.334C5.33398 11.8863 5.7817 12.334 6.33398 12.334C6.88625 12.334 7.33398 11.8863 7.33398 11.334Z" fill="#525158"/>
+                <path d="M10.6673 11.334C10.6673 10.7817 10.2196 10.334 9.66732 10.334C9.11505 10.334 8.66732 10.7817 8.66732 11.334C8.66732 11.8863 9.11505 12.334 9.66732 12.334C10.2196 12.334 10.6673 11.8863 10.6673 11.334Z" fill="#525158"/>
+            </g>
+            <defs>
+                <clipPath id="clip0_162_293">
+                <rect width="16" height="16" fill="white"/>
+                </clipPath>
+            </defs>
+        </svg>
                         <p class="text-sm text-base-content/50 truncate">{{ Str::limit($workspace->description, 60) }}</p>
+</div>
                     @endif
                 </div>
             </div>
-
+        <div class="flex items-center">
             <!-- Owner -->
-            <div class="flex items-center gap-2 flex-shrink-0 pr-3 border-r border-base-200">
+            <div class="flex items-center gap-2 flex-shrink-0">
                 <div class="avatar" title="{{ $workspace->owner->name }} (Owner)">
-                    <div class="w-7 h-7 rounded-full ring-2 ring-{{ $hoverColor }}/50">
+                    <div class="w-7 h-7 rounded-full  ring-{{ $hoverColor }}/50">
                         <img src="{{ $workspace->owner->avatar_url }}" alt="{{ $workspace->owner->name }}" />
                     </div>
                 </div>
                 <span class="text-sm text-base-content/70 hidden md:inline">{{ $workspace->owner->first_name ?? explode(' ', $workspace->owner->name)[0] }}</span>
             </div>
-
+            <!-- Divider -->
+            <div class="h-4 border-l border-[#EDECF0] mx-2"></div>
             <!-- Members -->
             @if($membersExcludingOwner->count() > 0)
                 <div class="flex items-center gap-1 flex-shrink-0">
@@ -77,16 +93,16 @@
                     </div>
                 </div>
             @endif
-
+            </div>
             <!-- Stats Badges -->
-            <div class="hidden lg:flex items-center gap-2 flex-shrink-0">
-                <div class="flex items-center gap-1 px-2 py-1 rounded-md bg-base-200/50 text-xs text-base-content/60" title="{{ $workspace->members->count() }} members">
+            <div class="hidden lg:flex items-center flex-shrink-0">
+                <div class="flex items-center gap-1 px-2 py-1 rounded-md  text-xs text-base-content/60" title="{{ $workspace->members->count() }} members">
                     <span class="icon-[tabler--users] size-3.5"></span>
                     <span>{{ $workspace->members->count() }}</span>
                 </div>
-
+                <div class="h-4 border-l border-[#EDECF0]"></div>
                 @if($taskCount > 0)
-                    <div class="flex items-center gap-1 px-2 py-1 rounded-md bg-base-200/50 text-xs text-base-content/60" title="{{ $taskCount }} tasks">
+                    <div class="flex items-center gap-1 px-2 py-1 rounded-md  text-xs text-base-content/60" title="{{ $taskCount }} tasks">
                         <span class="icon-[tabler--list-check] size-3.5"></span>
                         <span>{{ $taskCount }}</span>
                     </div>
@@ -107,8 +123,8 @@
             </div>
 
             <!-- Arrow -->
-            <div class="flex-shrink-0 pl-2">
-                <span class="icon-[tabler--chevron-right] size-5 text-base-content/20 group-hover:text-{{ $hoverColor }} group-hover:translate-x-0.5 transition-all"></span>
+            <div class="flex-shrink-0 flex justify-center bg-[#EDECF0] p-2 rounded-md">
+                <span class="icon-[tabler--chevron-right] size-5 text-[#17151C] group-hover:text-{{ $hoverColor }} group-hover:translate-x-0.5 transition-all"></span>
             </div>
         </div>
     </div>

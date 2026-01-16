@@ -61,7 +61,7 @@
 
     <!-- Features Section -->
     <section class="py-16 px-4 bg-base-200">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w mx-auto">
             <h2 class="text-3xl font-bold text-center mb-12">Features</h2>
             <div class="grid md:grid-cols-3 gap-6">
                 <!-- Feature Card 1 -->
@@ -108,7 +108,7 @@
 
     <!-- Sample Components Section -->
     <section class="py-16 px-4">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w mx-auto">
             <h2 class="text-3xl font-bold text-center mb-12">Sample Components</h2>
 
             <div class="grid md:grid-cols-2 gap-8">

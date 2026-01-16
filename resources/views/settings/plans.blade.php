@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="min-h-screen p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Breadcrumb -->
         <div class="text-sm breadcrumbs mb-4">
             <ul>

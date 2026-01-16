@@ -24,7 +24,7 @@
         <!-- Logo -->
         <a href="{{ $isGuestOnly ? '/dashboard' : '/dashboard' }}" class="flex items-center gap-2 mr-4 flex-shrink-0">
             <span class="icon-[tabler--checkbox] size-7 text-primary"></span>
-            <span class="text-xl font-bold text-base-content hidden sm:inline">NewDone</span>
+            <span class="text-xl font-bold text-base-content hidden sm:inline">{{ $title ?? config('app.name', 'NewDone') }}</span>
         </a>
 
         @if($isGuestOnly)

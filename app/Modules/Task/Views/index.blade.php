@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="p-4 md:p-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Page Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>

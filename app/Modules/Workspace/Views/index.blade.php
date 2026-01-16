@@ -11,7 +11,7 @@
 
 @section('content')
 <div class="p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
@@ -32,18 +32,26 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <!-- Search -->
+                    <!-- Search -->
                     <div class="relative">
-                        <span class="icon-[tabler--search] size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" class="absolute w-5 h-5 top-2.5 left-2.5 text-slate-600">
+                            <path d="M12.5 8.33333C12.5 6.03215 10.6345 4.16667 8.33333 4.16667C6.03215 4.16667 4.16667 6.03215 4.16667 8.33333C4.16667 10.6345 6.03215 12.5 8.33333 12.5C10.6345 12.5 12.5 10.6345 12.5 8.33333ZM14.1667 8.33333C14.1667 11.555 11.555 14.1667 8.33333 14.1667C5.11167 14.1667 2.5 11.555 2.5 8.33333C2.5 5.11167 5.11167 2.5 8.33333 2.5C11.555 2.5 14.1667 5.11167 14.1667 8.33333Z" fill="#B8B7BB"/>
+                            <path d="M11.4939 11.4939C11.799 11.1888 12.2815 11.17 12.6089 11.437L12.6723 11.4939L17.2557 16.0773L17.3126 16.1408C17.5796 16.4681 17.5608 16.9506 17.2557 17.2557C16.9506 17.5608 16.4681 17.5796 16.1408 17.3126L16.0773 17.2557L11.4939 12.6723L11.437 12.6089C11.17 12.2815 11.1888 11.799 11.4939 11.4939Z" fill="#B8B7BB"/>
+                        </svg>
                         <input type="text"
-                               id="workspace-search"
-                               placeholder="Search workspaces..."
-                               class="input input-bordered input-sm w-48 pl-9"
-                               autocomplete="off" />
+                            id="workspace-search"
+                            placeholder="Search Workspaces..."
+                            class="pl-8 pr-3 py-2 w-3xs items-center gap-1 rounded-md border border-solid border-[#CBCBC9] bg-white outline-none leading-5"
+                            autocomplete="off" />
                     </div>
                     @if(!$isGuestOnly)
-                        <a href="{{ route('workspace.create') }}" class="btn btn-primary">
-                            <span class="icon-[tabler--plus] size-5"></span>
-                            Add Workspace
+                        <a href="{{ route('workspace.create') }}"
+                        class="btn btn-primary flex pl-2 py-2 pr-3 items-center gap-1 rounded-md noShadow-btn">
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 2.5C10.4601 2.5 10.8328 2.87292 10.833 3.33301V9.16699H16.667C17.1271 9.16717 17.5 9.53987 17.5 10C17.5 10.4601 17.1271 10.8328 16.667 10.833H10.833V16.667C10.8328 17.1271 10.4601 17.5 10 17.5C9.53987 17.5 9.16717 17.1271 9.16699 16.667V10.833H3.33301C2.87292 10.8328 2.5 10.4601 2.5 10C2.5 9.53987 2.87292 9.16717 3.33301 9.16699H9.16699V3.33301C9.16717 2.87292 9.53987 2.5 10 2.5Z" fill="white"/>
+                            </svg>
+                            <span class="text-white font-semibold text-base leading-5 whitespace-nowrap">Add Workspace</span>
                         </a>
                     @endif
                 </div>
@@ -87,12 +95,12 @@
             <div id="workspace-count" class="text-sm text-base-content/60">
                 {{ $totalCount }} {{ Str::plural('workspace', $totalCount) }}
             </div>
-            <div class="flex items-center gap-1 bg-base-200 rounded-lg p-1">
-                <button type="button" id="view-grid" class="btn btn-sm btn-ghost" title="Grid view">
-                    <span class="icon-[tabler--layout-grid] size-4"></span>
+            <div class="flex items-center bg-[#EDECF0] rounded-lg p-0.5 grid-active-status">
+                <button type="button" id="view-grid" class="btn btn-sm bg-transparent btn-ghost border-none noShadow-btn" title="Grid view">
+                <span class="icon-[tabler--layout-grid] size-5 bg-[#B8B7BB]"></span>
                 </button>
-                <button type="button" id="view-list" class="btn btn-sm btn-ghost" title="List view">
-                    <span class="icon-[tabler--list] size-4"></span>
+                <button type="button" id="view-list" class="btn btn-sm bg-transparent btn-ghost border-none noShadow-btn" title="List view">
+                <span class="icon-[tabler--list] size-5 bg-[#B8B7BB]"></span>
                 </button>
             </div>
         </div>

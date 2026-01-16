@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="min-h-screen p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Page Header -->
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-base-content">Settings</h1>

@@ -62,7 +62,7 @@
 
     <!-- Stats Section -->
     <section class="py-12 bg-base-200">
-        <div class="max-w-6xl mx-auto px-4">
+        <div class="max-w mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div class="stat bg-base-100 rounded-box shadow-sm text-center">
                     <div class="stat-value text-primary">50+</div>
@@ -86,7 +86,7 @@
 
     <!-- Features Section -->
     <section class="py-20 px-4">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w mx-auto">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-bold mb-4">Powerful Features</h2>
                 <p class="text-base-content/70 text-lg max-w-2xl mx-auto">
@@ -138,7 +138,7 @@
 
     <!-- Components Showcase -->
     <section class="py-20 px-4 bg-base-200">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w mx-auto">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-bold mb-4">Component Showcase</h2>
                 <p class="text-base-content/70 text-lg">See FlyonUI components in action</p>

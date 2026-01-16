@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="p-4 md:p-6">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w mx-auto">
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
