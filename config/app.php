@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Security Code Protection
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, visitors must enter a security code before accessing
+    | the site. This is useful for staging/preview environments.
+    |
+    */
+
+    'security_code_enabled' => env('SECURITY_CODE_ENABLED', true),
+
 ];

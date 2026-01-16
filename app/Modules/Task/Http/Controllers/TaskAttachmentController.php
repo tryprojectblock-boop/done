@@ -10,6 +10,7 @@ use App\Modules\Task\Enums\ActivityType;
 use App\Modules\Task\Models\Task;
 use App\Modules\Task\Models\TaskActivity;
 use App\Modules\Task\Models\TaskAttachment;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,7 @@ class TaskAttachmentController extends Controller
         private readonly FileUploadInterface $fileUploadService
     ) {}
 
-    public function store(Request $request, Task $task): RedirectResponse
+    public function store(Request $request, Task $task): RedirectResponse|JsonResponse
     {
         $request->validate([
             'files' => 'required|array|max:' . self::MAX_FILES_COUNT,
@@ -38,6 +39,7 @@ class TaskAttachmentController extends Controller
         $user = auth()->user();
         $uploadedCount = 0;
         $errors = [];
+        $uploadedAttachments = [];
 
         foreach ($request->file('files') as $file) {
             $result = $this->fileUploadService->upload(
@@ -71,9 +73,46 @@ class TaskAttachmentController extends Controller
                     ['name' => $attachment->original_name]
                 );
 
+                $uploadedAttachments[] = [
+                    'id' => $attachment->id,
+                    'original_name' => $attachment->original_name,
+                    'formatted_size' => $attachment->getFormattedSize(),
+                    'icon_class' => $attachment->getIconClass(),
+                    'download_url' => route('tasks.attachments.download', $attachment),
+                    'delete_url' => route('tasks.attachments.destroy', $attachment),
+                    'can_delete' => $attachment->uploaded_by === $user->id || $user->isAdminOrHigher(),
+                ];
+
                 $uploadedCount++;
             } else {
                 $errors[] = $file->getClientOriginalName() . ': ' . $result->error;
+            }
+        }
+
+        // Return JSON for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            $totalAttachments = $task->attachments()->count();
+
+            if ($uploadedCount > 0 && empty($errors)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $uploadedCount . ' file(s) uploaded successfully.',
+                    'attachments' => $uploadedAttachments,
+                    'total_count' => $totalAttachments,
+                ]);
+            } elseif ($uploadedCount > 0 && !empty($errors)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $uploadedCount . ' file(s) uploaded successfully.',
+                    'warning' => 'Some files failed to upload: ' . implode(', ', $errors),
+                    'attachments' => $uploadedAttachments,
+                    'total_count' => $totalAttachments,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload files: ' . implode(', ', $errors),
+                ], 422);
             }
         }
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\GuestUpgradeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SecurityCodeController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamSignupController;
 use App\Http\Controllers\TeamInvitationController;
@@ -26,6 +27,14 @@ use App\Http\Controllers\Api\MilestoneApiController;
 use App\Http\Controllers\PublicTicketFormController;
 use App\Http\Controllers\Settings;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Security Code Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/security-code', [SecurityCodeController::class, 'show'])->name('security-code');
+Route::post('/security-code', [SecurityCodeController::class, 'verify'])->name('security-code.verify');
 
 Route::get('/', function () {
     return view('welcome');

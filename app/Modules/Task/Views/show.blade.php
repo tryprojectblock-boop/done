@@ -187,50 +187,46 @@
                         <h2 class="card-title text-lg">
                             <span class="icon-[tabler--paperclip] size-5"></span>
                             Attachments
-                            <span class="badge badge-sm">{{ $task->attachments->count() }}</span>
+                            <span class="badge badge-sm" id="attachment-count">{{ $task->attachments->count() }}</span>
                         </h2>
 
-                        @if($task->attachments->isNotEmpty())
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                @foreach($task->attachments as $attachment)
-                                    <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg group">
-                                        <span class="icon-[{{ $attachment->getIconClass() }}] size-8 text-base-content/60"></span>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="font-medium truncate">{{ $attachment->original_name }}</p>
-                                            <p class="text-xs text-base-content/60">{{ $attachment->getFormattedSize() }}</p>
-                                        </div>
-                                        <div class="flex gap-1">
-                                            <a href="{{ route('tasks.attachments.download', $attachment) }}"
-                                               class="btn btn-ghost btn-xs">
-                                                <span class="icon-[tabler--download] size-4"></span>
-                                            </a>
-                                            @if($attachment->uploaded_by === $user->id || $user->isAdminOrHigher())
-                                                <form action="{{ route('tasks.attachments.destroy', $attachment) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-ghost btn-xs text-error"
-                                                            onclick="return confirm('Delete this attachment?')">
-                                                        <span class="icon-[tabler--trash] size-4"></span>
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
+                        <div id="attachments-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 {{ $task->attachments->isEmpty() ? 'hidden' : '' }}">
+                            @foreach($task->attachments as $attachment)
+                                <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg group" data-attachment-id="{{ $attachment->id }}">
+                                    <span class="icon-[{{ $attachment->getIconClass() }}] size-8 text-base-content/60"></span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium truncate">{{ $attachment->original_name }}</p>
+                                        <p class="text-xs text-base-content/60">{{ $attachment->getFormattedSize() }}</p>
                                     </div>
-                                @endforeach
-                            </div>
-                        @endif
+                                    <div class="flex gap-1">
+                                        <a href="{{ route('tasks.attachments.download', $attachment) }}"
+                                           class="btn btn-ghost btn-xs">
+                                            <span class="icon-[tabler--download] size-4"></span>
+                                        </a>
+                                        @if($attachment->uploaded_by === $user->id || $user->isAdminOrHigher())
+                                            <form action="{{ route('tasks.attachments.destroy', $attachment) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-ghost btn-xs text-error"
+                                                        onclick="return confirm('Delete this attachment?')">
+                                                    <span class="icon-[tabler--trash] size-4"></span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
 
-                        <!-- Upload Form -->
-                        <form action="{{ route('tasks.attachments.store', $task) }}" method="POST" enctype="multipart/form-data" class="mt-4">
-                            @csrf
-                            <div class="flex items-center gap-2">
-                                <input type="file" name="files[]" multiple class="file-input file-input-bordered file-input-sm flex-1">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <span class="icon-[tabler--upload] size-4"></span>
-                                    Upload
-                                </button>
-                            </div>
-                        </form>
+                        <!-- Upload Button -->
+                        <div class="mt-4">
+                            <input type="file" name="files[]" id="attachment-files" multiple class="hidden" data-upload-url="{{ route('tasks.attachments.store', $task) }}">
+                            <button type="button" id="attachment-upload-btn" class="btn btn-primary btn-sm" onclick="document.getElementById('attachment-files').click()">
+                                <span class="icon-[tabler--upload] size-4" id="upload-icon"></span>
+                                <span class="loading loading-spinner loading-sm hidden" id="upload-spinner"></span>
+                                <span id="upload-btn-text">Upload</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2403,6 +2399,143 @@ function updateDatesDisplay(createdDateData, dueDateData) {
             ${dueHtml}
         </div>
     `;
+}
+
+// ==================== ATTACHMENT AJAX UPLOAD ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('attachment-files');
+    const uploadBtn = document.getElementById('attachment-upload-btn');
+    const uploadIcon = document.getElementById('upload-icon');
+    const uploadSpinner = document.getElementById('upload-spinner');
+    const uploadBtnText = document.getElementById('upload-btn-text');
+
+    if (!fileInput) return;
+
+    // Auto-upload when files are selected
+    fileInput.addEventListener('change', async function() {
+        const files = this.files;
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        const uploadUrl = fileInput.dataset.uploadUrl;
+        if (!uploadUrl) {
+            showToast('Upload URL not configured', 'error');
+            return;
+        }
+
+        // Show loading state
+        uploadBtn.disabled = true;
+        uploadIcon.classList.add('hidden');
+        uploadSpinner.classList.remove('hidden');
+        uploadBtnText.textContent = 'Uploading...';
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files[]', files[i]);
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        formData.append('_token', csrfToken);
+
+        try {
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Add new attachments to the list
+                addAttachmentsToList(data.attachments);
+
+                // Update attachment count
+                updateAttachmentCount(data.total_count);
+
+                // Show success message
+                showToast(data.message, 'success');
+
+                // Show warning if any files failed
+                if (data.warning) {
+                    setTimeout(() => showToast(data.warning, 'warning'), 1500);
+                }
+
+                // Clear file input
+                fileInput.value = '';
+            } else {
+                showToast(data.message || 'Upload failed', 'error');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showToast('An error occurred while uploading', 'error');
+        } finally {
+            // Reset button state
+            uploadBtn.disabled = false;
+            uploadIcon.classList.remove('hidden');
+            uploadSpinner.classList.add('hidden');
+            uploadBtnText.textContent = 'Upload';
+        }
+    });
+});
+
+function addAttachmentsToList(attachments) {
+    const attachmentsList = document.getElementById('attachments-list');
+    if (!attachmentsList) return;
+
+    // Show the list if it was hidden
+    attachmentsList.classList.remove('hidden');
+
+    attachments.forEach(attachment => {
+        const attachmentHtml = createAttachmentElement(attachment);
+        attachmentsList.insertAdjacentHTML('beforeend', attachmentHtml);
+    });
+}
+
+function createAttachmentElement(attachment) {
+    const deleteButton = attachment.can_delete ? `
+        <form action="${attachment.delete_url}" method="POST" class="inline">
+            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.content || ''}">
+            <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" class="btn btn-ghost btn-xs text-error"
+                    onclick="return confirm('Delete this attachment?')">
+                <span class="icon-[tabler--trash] size-4"></span>
+            </button>
+        </form>
+    ` : '';
+
+    return `
+        <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg group" data-attachment-id="${attachment.id}">
+            <span class="icon-[${attachment.icon_class}] size-8 text-base-content/60"></span>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium truncate">${escapeHtml(attachment.original_name)}</p>
+                <p class="text-xs text-base-content/60">${attachment.formatted_size}</p>
+            </div>
+            <div class="flex gap-1">
+                <a href="${attachment.download_url}" class="btn btn-ghost btn-xs">
+                    <span class="icon-[tabler--download] size-4"></span>
+                </a>
+                ${deleteButton}
+            </div>
+        </div>
+    `;
+}
+
+function updateAttachmentCount(count) {
+    const countBadge = document.getElementById('attachment-count');
+    if (countBadge) {
+        countBadge.textContent = count;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 </script>

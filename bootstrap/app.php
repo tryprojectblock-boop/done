@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckRegistrationEnabled;
+use App\Http\Middleware\CheckSecurityCode;
 use App\Http\Middleware\EnsureClientPortalAuthenticated;
 use App\Http\Middleware\EnsureTwoFactorAuthenticated;
 use App\Http\Middleware\EnsureUserCanManageUsers;
@@ -20,8 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Check maintenance mode first (before other middleware)
+        // Check maintenance mode first
         $middleware->prependToGroup('web', CheckMaintenanceMode::class);
+
+        // Check security code (after maintenance, before other middleware)
+        $middleware->appendToGroup('web', CheckSecurityCode::class);
 
         // Append suspended check middleware to the web middleware group
         $middleware->appendToGroup('web', EnsureUserIsNotSuspended::class);
