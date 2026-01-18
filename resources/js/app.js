@@ -1,43 +1,43 @@
-import './bootstrap';
-import 'flyonui/flyonui';
-import { createApp } from 'vue';
-import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css';
+import "./bootstrap";
+import "flyonui/flyonui";
+import { createApp } from "vue";
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
 
 // Make flatpickr available globally
 window.flatpickr = flatpickr;
 
 // Import components
-import SignUpWizard from './components/auth/SignUpWizard.vue';
-import LoginForm from './components/auth/LoginForm.vue';
+import SignUpWizard from "./components/auth/SignUpWizard.vue";
+import LoginForm from "./components/auth/LoginForm.vue";
 
 // Mount signup app if element exists
-const signupApp = document.getElementById('signup-app');
+const signupApp = document.getElementById("signup-app");
 if (signupApp) {
     const app = createApp(SignUpWizard, {
-        options: JSON.parse(signupApp.dataset.options || '{}'),
+        options: JSON.parse(signupApp.dataset.options || "{}"),
     });
-    app.mount('#signup-app');
+    app.mount("#signup-app");
 }
 
 // Mount login app if element exists
-const loginApp = document.getElementById('login-app');
+const loginApp = document.getElementById("login-app");
 if (loginApp) {
     const app = createApp(LoginForm);
-    app.mount('#login-app');
+    app.mount("#login-app");
 }
 
 // Auto-dismiss alerts after timeout
-document.addEventListener('DOMContentLoaded', function() {
-    const alerts = document.querySelectorAll('.alert[data-auto-dismiss]');
+document.addEventListener("DOMContentLoaded", function () {
+    const alerts = document.querySelectorAll(".alert[data-auto-dismiss]");
 
-    alerts.forEach(alert => {
+    alerts.forEach((alert) => {
         const timeout = parseInt(alert.dataset.autoDismiss) || 5000;
 
         setTimeout(() => {
             // Add fade-out animation
-            alert.style.transition = 'opacity 0.3s ease-out';
-            alert.style.opacity = '0';
+            alert.style.transition = "opacity 0.3s ease-out";
+            alert.style.opacity = "0";
 
             // Remove element after animation
             setTimeout(() => {
@@ -52,11 +52,13 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 (function initNotificationPolling() {
     // Check if user is authenticated by looking for CSRF token and auth indicator
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfToken = document.querySelector(
+        'meta[name="csrf-token"]'
+    )?.content;
 
     // Only poll if there's a way to determine authentication
     // We'll make the first request and if it fails with 401/403, we stop
-    let lastTs = '';
+    let lastTs = "";
     const POLL_INTERVAL = 5000;
     let isPolling = false;
 
@@ -65,14 +67,16 @@ document.addEventListener('DOMContentLoaded', function() {
         isPolling = true;
 
         try {
-            const url = `/notifications/poll?last_ts=${encodeURIComponent(lastTs)}`;
+            const url = `/notifications/poll?last_ts=${encodeURIComponent(
+                lastTs
+            )}`;
             const response = await fetch(url, {
-                credentials: 'same-origin',
+                credentials: "same-origin",
                 headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken || ''
-                }
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": csrfToken || "",
+                },
             });
 
             // If unauthorized, stop polling
@@ -91,15 +95,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.last_ts) lastTs = data.last_ts;
 
             // Update badge
-            const badge = document.querySelector('.notification-badge');
+            const badge = document.querySelector(".notification-badge");
             if (badge && data.unread_count !== undefined) {
-                badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
-                badge.style.display = data.unread_count > 0 ? '' : 'none';
+                badge.textContent =
+                    data.unread_count > 9 ? "9+" : data.unread_count;
+                badge.style.display = data.unread_count > 0 ? "" : "none";
             }
 
             // Show toasts for new notifications
             if (data.notifications && data.notifications.length > 0) {
-                data.notifications.forEach(notification => {
+                data.notifications.forEach((notification) => {
                     showLiveToast(notification);
                 });
             }
@@ -115,22 +120,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLiveToast(notification) {
-        const container = document.getElementById('toast-container');
+        const container = document.getElementById("toast-container");
         if (!container) return;
 
         const colors = {
-            task_comment: 'info',
-            task_assigned: 'success',
-            task_created: 'success',
-            mention: 'info',
-            task_on_hold: 'warning',
-            task_resumed: 'success',
-            discussion_comment: 'info',
-            discussion_added: 'success'
+            task_comment: "info",
+            task_assigned: "success",
+            task_created: "success",
+            mention: "info",
+            task_on_hold: "warning",
+            task_resumed: "success",
+            discussion_comment: "info",
+            discussion_added: "success",
         };
-        const type = colors[notification.type] || 'info';
+        const type = colors[notification.type] || "info";
 
-        const toast = document.createElement('div');
+        const toast = document.createElement("div");
         toast.className = `alert alert-${type} shadow-lg max-w-sm cursor-pointer`;
         toast.innerHTML = `
             <div class="flex items-start gap-3 w-full">
@@ -146,22 +151,24 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         if (notification.url) {
-            toast.onclick = () => window.location.href = notification.url;
+            toast.onclick = () => (window.location.href = notification.url);
         }
 
         container.appendChild(toast);
 
         // Auto remove after 15 seconds
         setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.3s';
+            toast.style.opacity = "0";
+            toast.style.transition = "opacity 0.3s";
             setTimeout(() => toast.remove(), 300);
         }, 15000);
     }
 
     // Start polling when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => pollNotifications());
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () =>
+            pollNotifications()
+        );
     } else {
         pollNotifications();
     }
