@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <!-- Description -->
-                <div class="card bg-base-100">
+                <div class="rounded-md bg-base-100">
                     <div class="card-body">
                         <div class="flex items-center gap-2">
                             <h1 class="font-semibold text-[32px] text-[#17151C]  {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
@@ -172,9 +172,72 @@
                     </div>
                 </div>
 
+                <!-- Attachments -->
+                <div class="rounded-md bg-base-100 shadow">
+                    <div class="pt-0">
+                        <h2 class="card-title text-base flex items-center gap-1.5 text-[#525158] py-2.5 px-4 border-b border-[#EDECF0]">
+                            <span class="icon-[tabler--paperclip] size-5"></span>
+                            <span>Attachments</span>
+                            <span id="attachment-count">({{ $task->attachments->count() }})</span>
+                        </h2>
+                    </div>
+                    <!-- Upload Button -->
+                    <div class="mt-4 px-6">
+                        <input type="file" name="files[]" id="attachment-files" multiple class="hidden" data-upload-url="{{ route('tasks.attachments.store', $task) }}">
+                        <button type="button" id="attachment-upload-btn" class="py-2 pl-3 px-4 flex items-center gap-1.5 border border-[#B8B7BB] rounded-md" onclick="document.getElementById('attachment-files').click()">
+                            <span class="icon-[tabler--upload] size-4" id="upload-icon"></span>
+                            <span class="loading loading-spinner loading-sm hidden" id="upload-spinner"></span>
+                            <span id="upload-btn-text" class="text-base">Upload File</span>
+                        </button>
+                    </div>
+                    <div class="card-body">   
+                        @if($task->attachments->isNotEmpty())
+                            <!-- Header -->
+                            <div class="flex items-center justify-between bg-[#F8F8FB] rounded-md px-3 py-[7px]">
+                                <h2 class="text-sm leading-4.5 font-medium text-[#525158]">File Name</h2>
+                                <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Actions</h2>
+                            </div>
+                        @endif
+                        <div class="space-y-2" id="attachments-list">
+                        @forelse($task->attachments as $attachment)
+                            <div class="flex items-center border-b border-[#EDECF0] justify-between px-4 py-4 hover:bg-gray-50 transition-colors" data-attachment-id="{{ $attachment->id }}">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-900">{{ $attachment->original_name }}</p>
+                                        <p class="text-xs text-base-content/60">{{ $attachment->getFormattedSize() }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="{{ route('tasks.attachments.download', $attachment) }}"
+                                    class="w-7 h-7 flex items-center justify-center rounded-md border border-[#B8B7BB] hover:bg-gray-50 transition-colors"
+                                    title="Download">
+                                        <span class="icon-[tabler--download] size-4 text-[#525158]"></span>
+                                    </a>
+                                    @if($attachment->uploaded_by === $user->id || $user->isAdminOrHigher())
+                                        <form action="{{ route('tasks.attachments.destroy', $attachment) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    class="w-7 h-7 flex items-center justify-center rounded-md border border-[#B8B7BB] hover:bg-red-50 transition-colors"
+                                                    onclick="return confirm('Delete this attachment?')"
+                                                    title="Delete">
+                                                <span class="icon-[tabler--trash] size-4 text-[#525158]"></span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <p id="attachments-empty-message" class="text-base-content/60 text-sm px-6 py-4">No attachments yet</p>
+                        @endforelse
+                    </div>
+                        
+                    </div>
+                </div>
+
                 <!-- Comments -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
+                <div class="rounded-md bg-base-100 shadow">
+                    
                         @php
                             $publicCommentsCount = $task->comments->where('is_private', false)->count();
                             $privateCommentsCount = $task->comments->where('is_private', true)->count();
@@ -184,26 +247,28 @@
                         <!-- Filter Tabs Header (only show for team members) -->
                         @if(!$isClient)
                         <div class="mb-4">
-                            <div class="tabs tabs-boxed bg-base-200 p-1 rounded-lg inline-flex mb-3">
-                                <button type="button" class="tab tab-active" data-filter-tab="all" onclick="switchFilterTab('all')">
-                                    <span class="icon-[tabler--list] size-4 mr-1"></span>
-                                    All
-                                    <span class="badge badge-sm ml-1" id="all-count-badge">{{ $task->comments->count() }}</span>
-                                </button>
-                                <button type="button" class="tab" data-filter-tab="public" onclick="switchFilterTab('public')">
+                            <div class="tabs tabs-boxed rounded-lg inline-flex mb-3 task-comments-section">
+                                <button type="button" class="tab tab-active flex items-center gap-1.5 rounded-tl-md border-b-2 border-transparent" data-filter-tab="all" onclick="switchFilterTab('all')">
                                     <span class="icon-[tabler--message] size-4 mr-1"></span>
-                                    Comments
-                                    <span class="badge badge-sm ml-1" id="public-count-badge">{{ $publicCommentsCount }}</span>
+                                    <span>All</span>
+                                    <!-- <span class="badge badge-sm ml-1" id="all-count-badge">{{ $task->comments->count() }}</span> -->
                                 </button>
-                                <button type="button" class="tab" data-filter-tab="private" onclick="switchFilterTab('private')">
+                                <button type="button" class="tab flex items-center gap-1.5 border-b-2 border-transparent" data-filter-tab="public" onclick="switchFilterTab('public')">
+                                    <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8.33366 0C3.8 0 0.000326157 3.26842 0.000326157 7.5V7.50732C0.0154209 9.19971 0.637712 10.8235 1.74186 12.0923L0.858073 15.6315C0.779286 15.9473 0.892132 16.2801 1.14616 16.4836C1.40018 16.687 1.74953 16.7246 2.04053 16.5788L5.86947 14.6598C6.67088 14.8856 7.49994 14.9999 8.33366 14.9992V15C12.8673 15 16.667 11.7316 16.667 7.5C16.667 3.26842 12.8673 0 8.33366 0ZM15.0003 7.5C15.0003 10.6351 12.1333 13.3333 8.33366 13.3333H8.33285C7.55732 13.3341 6.78631 13.2125 6.0485 12.9736L5.96956 12.9525C5.78425 12.9121 5.58966 12.936 5.41862 13.0216L2.91537 14.2757L3.46712 12.0597C3.53773 11.7763 3.45528 11.4763 3.24902 11.2695C2.2496 10.2677 1.68155 8.91484 1.66699 7.5C1.66699 4.36491 4.53399 1.66667 8.33366 1.66667C12.1333 1.66667 15.0003 4.36491 15.0003 7.5Z" fill="#3ba5ff"/>
+                                    </svg>
+                                    <span>Comments</span>
+                                </button>
+                                <button type="button" class="tab border-b-2 border-transparent" data-filter-tab="private" onclick="switchFilterTab('private')">
                                     <span class="icon-[tabler--lock] size-4 mr-1"></span>
                                     Private
-                                    <span class="badge badge-sm ml-1" id="private-count-badge">{{ $privateCommentsCount }}</span>
+                                    <!-- <span class="badge badge-sm ml-1" id="private-count-badge">{{ $privateCommentsCount }}</span> -->
                                 </button>
                             </div>
-                            <h2 class="card-title text-lg" id="comments-section-title">
+                            <h2 class="rounded-md-title text-lg pt-6 pl-6 flex items-center gap-2" id="comments-section-title">
                                 <span class="icon-[tabler--message-circle] size-5"></span>
                                 <span id="comments-title-text">All Comments</span>
+                                <span class="w-5 h-5 rounded-full bg-[#EDECF0] flex items-center justify-center text-xs text-[#17151C]" id="public-count-badge">{{ $publicCommentsCount }}</span>
                             </h2>
                         </div>
                         @else
@@ -213,7 +278,7 @@
                             <span class="badge badge-sm">{{ $visibleCommentsCount }}</span>
                         </h2>
                         @endif
-
+                        <div class="card-body">
                         <!-- Add Comment Form -->
                         @if(!$isClient)
                         <div class="mb-4">
@@ -255,8 +320,8 @@
                                                 />
                                             </div>
                                         </div>
-                                        <div class="flex justify-end mt-2">
-                                            <button type="submit" class="btn btn-primary btn-sm" id="comment-submit-btn">
+                                        <div class="flex justify-start mt-4">
+                                            <button type="submit" class="bg-[#3da4fd] text-white rounded-md py-2.5 pl-3 pr-4 btn-sm flex items-center gap-1" id="comment-submit-btn">
                                                 <span class="icon-[tabler--send] size-4"></span>
                                                 <span id="submit-btn-text">Comment</span>
                                             </button>
@@ -310,56 +375,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Attachments -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--paperclip] size-5"></span>
-                            Attachments
-                            <span class="badge badge-sm" id="attachment-count">{{ $task->attachments->count() }}</span>
-                        </h2>
-
-                        <div id="attachments-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 {{ $task->attachments->isEmpty() ? 'hidden' : '' }}">
-                            @foreach($task->attachments as $attachment)
-                                <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg group" data-attachment-id="{{ $attachment->id }}">
-                                    <span class="icon-[{{ $attachment->getIconClass() }}] size-8 text-base-content/60"></span>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-medium truncate">{{ $attachment->original_name }}</p>
-                                        <p class="text-xs text-base-content/60">{{ $attachment->getFormattedSize() }}</p>
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <a href="{{ route('tasks.attachments.download', $attachment) }}"
-                                           class="btn btn-ghost btn-xs">
-                                            <span class="icon-[tabler--download] size-4"></span>
-                                        </a>
-                                        @if($attachment->uploaded_by === $user->id || $user->isAdminOrHigher())
-                                            <form action="{{ route('tasks.attachments.destroy', $attachment) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-ghost btn-xs text-error"
-                                                        onclick="return confirm('Delete this attachment?')">
-                                                    <span class="icon-[tabler--trash] size-4"></span>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <!-- Upload Button -->
-                        <div class="mt-4">
-                            <input type="file" name="files[]" id="attachment-files" multiple class="hidden" data-upload-url="{{ route('tasks.attachments.store', $task) }}">
-                            <button type="button" id="attachment-upload-btn" class="btn btn-primary btn-sm" onclick="document.getElementById('attachment-files').click()">
-                                <span class="icon-[tabler--upload] size-4" id="upload-icon"></span>
-                                <span class="loading loading-spinner loading-sm hidden" id="upload-spinner"></span>
-                                <span id="upload-btn-text">Upload</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
+                
                 <!-- Activity Log -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
@@ -372,19 +388,31 @@
                         </h2>
 
                         <div class="relative">
-                            <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-base-300"></div>
                             <div class="space-y-4">
                                 @forelse($task->activities as $activity)
                                     <div class="flex gap-4 relative">
-                                        <!-- <div class="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center z-10">
-                                            <span class="icon-[{{ $activity->type->icon() }}] size-4 text-base-content/60"></span>
-                                        </div> -->
-                                        <div class="w-8 h-8 avatar rounded-full flex items-center justify-center z-10">
-                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover rounded-full" />
+                                        <div class="relative flex flex-col items-center">
+                                            <!-- Avatar -->
+                                            <div class="w-8 h-8 avatar rounded-full flex items-center justify-center z-10 bg-white">
+                                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover rounded-full" />
+                                            </div>
+                                            <!-- Connecting line - starts after avatar with gap -->
+                                            @if(!$loop->last)
+                                                <div class="w-0.5 bg-gray-300 flex-1 mt-3"></div>
+                                            @endif
                                         </div>
-                                        <div class="flex-1 pb-4">
-                                            <p class="text-sm">{{ $activity->getFormattedDescription() }}</p>
-                                            <p class="text-xs text-base-content/60">{{ $activity->created_at->diffForHumans() }}</p>
+                                        @php
+                                            $fullDescription = $activity->getFormattedDescription();
+                                            $userName = $activity->user?->name ?? 'Someone';
+                                            $action = trim(str_replace($userName, '', $fullDescription));
+                                        @endphp
+                                        <div class="flex-1 pb-8">
+                                            <p class="text-base text-[#17151C] pb-1">
+                                                <span>{{ $userName }}</span>
+                                                <span class="text-[#525158] ">{{ $action }}</span>
+                                            </p>
+                                            <!-- <p class="text-base text-[#17151C] pb-1">{{ $activity->getFormattedDescription() }}</p> -->
+                                            <p class="text-sm text-[#B8B7BB]">{{ $activity->created_at->diffForHumans() }}</p>
                                         </div>
                                     </div>
                                 @empty
@@ -1321,16 +1349,59 @@ function switchFilterTab(type) {
     });
 
     // Update section title based on filter
+    // Update section title based on filter
     if (titleText) {
-        if (type === 'all') {
-            titleText.textContent = 'All Comments';
-        } else if (type === 'public') {
-            titleText.textContent = 'Comments';
-        } else if (type === 'private') {
-            titleText.textContent = 'Private Comments';
+    const iconElement = titleText.closest('.card-title').querySelector('span[class*="icon-"]');
+    const textElement = document.getElementById('comments-title-text');
+    const badgeElement = titleText.closest('.card-title').querySelector('.badge');
+
+    if (type === 'all') {
+        // Update icon
+        if (iconElement) {
+            iconElement.className = 'icon-[tabler--message] size-5';
+        }
+        // Update text
+        if (textElement) {
+            textElement.textContent = 'All Comments';
+        }
+        // Update badge
+        if (badgeElement) {
+            badgeElement.id = '';
+            badgeElement.textContent = {{ $visibleCommentsCount }};
+        }
+        
+        
+    } else if (type === 'public') {
+        // Update icon
+        if (iconElement) {
+            iconElement.className = 'icon-[tabler--message-circle] size-5'; // Change to your public icon
+        }
+        // Update text
+        if (textElement) {
+            textElement.textContent = 'Comments';
+        }
+        // Update badge
+        if (badgeElement) {
+            badgeElement.id = 'public-count-badge';
+            badgeElement.textContent = {{ $publicCommentsCount }};
+        }
+        
+    } else if (type === 'private') {
+        // Update icon
+        if (iconElement) {
+            iconElement.className = 'icon-[tabler--lock] size-5'; // Change to your private icon
+        }
+        // Update text
+        if (textElement) {
+            textElement.textContent = 'Private Comments';
+        }
+        // Update badge
+        if (badgeElement) {
+            badgeElement.id = 'private-count-badge';
+            badgeElement.textContent = {{ $privateCommentsCount }};
         }
     }
-
+}
     // Filter comments
     let visibleCount = 0;
     commentItems.forEach(item => {

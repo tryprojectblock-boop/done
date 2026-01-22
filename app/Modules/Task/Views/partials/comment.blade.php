@@ -13,12 +13,12 @@
 
 <div class="flex gap-3" id="comment-{{ $comment->id }}">
     <div class="avatar">
-        <div class="w-10 h-10 rounded-full overflow-hidden">
+        <div class="w-8 h-8 rounded-full overflow-hidden">
             <img src="{{ $comment->user->avatar_url }}" alt="{{ $comment->user->name }}" class="w-full h-full object-cover" />
         </div>
     </div>
     <div class="flex-1">
-        <div class="{{ $comment->is_private ? 'bg-warning/10 border-2 border-warning/50' : 'bg-base-200' }} rounded-lg p-3">
+        <div class="{{ $comment->is_private ? 'bg-warning/10 border-2 border-warning/50' : 'bg-transparent' }} rounded-lg p-3 pt-0">
             @if($comment->is_private)
             <div class="flex items-center gap-1.5 text-warning mb-2 pb-2 border-b border-warning/30">
                 <span class="icon-[tabler--lock] size-4"></span>
@@ -27,15 +27,21 @@
             @endif
             <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ $comment->user->name }}</span>
-                    <span class="text-xs text-base-content/60">{{ $comment->created_at->diffForHumans() }}</span>
+                    <div class="flex flex-col">
+                        <div>
+                            <span class="text-xs text-base-content/60">{{ $comment->created_at->diffForHumans() }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-[#17151C]">{{ $comment->user->name }}</span> <span>added a comment</span>
+                        </div>
+                    </div>
                     @if($comment->is_edited)
-                        <span class="text-xs text-base-content/40">(edited)</span>
+                        <span class="text-[#525158]">(edited)</span>
                     @endif
                 </div>
             </div>
 
-            <div class="prose prose-sm max-w-none comment-content" id="comment-content-{{ $comment->id }}">
+            <div class="prose prose-sm max-w-none comment-content users-comments-des" id="comment-content-{{ $comment->id }}">
                 {!! $comment->content !!}
             </div>
 

@@ -66,3 +66,12 @@ main {
     line-height: 24px;
     font-weight: 400;
 }
+
+.task-comments-section .tab-active{
+    background-color: #ebf6ff;
+}
+
+.users-comments-des p{
+    font-size: 16px;
+    line-height: 24px;
+}
