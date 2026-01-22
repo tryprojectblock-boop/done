@@ -176,31 +176,47 @@
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
                         @php
-                            $visibleCommentsCount = $isClient
-                                ? $task->comments->where('is_private', false)->count()
-                                : $task->comments->count();
+                            $publicCommentsCount = $task->comments->where('is_private', false)->count();
+                            $privateCommentsCount = $task->comments->where('is_private', true)->count();
+                            $visibleCommentsCount = $isClient ? $publicCommentsCount : $task->comments->count();
                         @endphp
-                        <h2 class="card-title text-lg">
+
+                        <!-- Filter Tabs Header (only show for team members) -->
+                        @if(!$isClient)
+                        <div class="mb-4">
+                            <div class="tabs tabs-boxed bg-base-200 p-1 rounded-lg inline-flex mb-3">
+                                <button type="button" class="tab tab-active" data-filter-tab="all" onclick="switchFilterTab('all')">
+                                    <span class="icon-[tabler--list] size-4 mr-1"></span>
+                                    All
+                                    <span class="badge badge-sm ml-1" id="all-count-badge">{{ $task->comments->count() }}</span>
+                                </button>
+                                <button type="button" class="tab" data-filter-tab="public" onclick="switchFilterTab('public')">
+                                    <span class="icon-[tabler--message] size-4 mr-1"></span>
+                                    Comments
+                                    <span class="badge badge-sm ml-1" id="public-count-badge">{{ $publicCommentsCount }}</span>
+                                </button>
+                                <button type="button" class="tab" data-filter-tab="private" onclick="switchFilterTab('private')">
+                                    <span class="icon-[tabler--lock] size-4 mr-1"></span>
+                                    Private
+                                    <span class="badge badge-sm ml-1" id="private-count-badge">{{ $privateCommentsCount }}</span>
+                                </button>
+                            </div>
+                            <h2 class="card-title text-lg" id="comments-section-title">
+                                <span class="icon-[tabler--message-circle] size-5"></span>
+                                <span id="comments-title-text">All Comments</span>
+                            </h2>
+                        </div>
+                        @else
+                        <h2 class="card-title text-lg mb-4">
                             <span class="icon-[tabler--message-circle] size-5"></span>
                             Comments
                             <span class="badge badge-sm">{{ $visibleCommentsCount }}</span>
                         </h2>
+                        @endif
 
-                        <!-- Add Comment Form with Tabs (only show tabs for team members) -->
+                        <!-- Add Comment Form -->
                         @if(!$isClient)
                         <div class="mb-4">
-                            <!-- Comment Type Tabs -->
-                            <div class="tabs tabs-boxed mb-3 bg-base-200 p-1 rounded-lg inline-flex">
-                                <button type="button" class="tab tab-active" data-comment-tab="comment" onclick="switchCommentTab('comment')">
-                                    <span class="icon-[tabler--message] size-4 mr-1"></span>
-                                    Comment
-                                </button>
-                                <button type="button" class="tab" data-comment-tab="private" onclick="switchCommentTab('private')">
-                                    <span class="icon-[tabler--lock] size-4 mr-1"></span>
-                                    Private Note
-                                </button>
-                            </div>
-
                             <!-- Comment Form -->
                             <form action="{{ route('tasks.comments.store', $task) }}" method="POST" id="comment-form" onsubmit="return prepareCommentSubmit()">
                                 @csrf
@@ -278,29 +294,19 @@
                         </form>
                         @endif
 
-                        <!-- Comments List (filter out private notes for clients) -->
-                        <div class="space-y-4">
-                            <div>
-                                @php
-                                $visibleCommentsCount = $isClient
-                                    ? $task->comments->where('is_private', false)->count()
-                                    : $task->comments->count();
-                                @endphp
-                                <h2 class="card-title text-sm text-[#525158]">
-                                    <span>{{ $visibleCommentsCount }}</span>
-                                    <span>Comments</span>
-                                </h2>
-                            </div>
+                        <!-- Comments List -->
+                        <div class="space-y-4" id="comments-list">
                             @php
                                 $visibleComments = $isClient
-                                    ? $task->comments->where('is_private', false)
-                                    : $task->comments;
+                                    ? $task->comments->where('is_private', false)->sortByDesc('created_at')
+                                    : $task->comments->sortByDesc('created_at');
                             @endphp
-                            @forelse($visibleComments as $comment)
-                                @include('task::partials.comment', ['comment' => $comment])
-                            @empty
-                                <p class="text-base-content/60 text-center py-4">No comments yet. Be the first to comment!</p>
-                            @endforelse
+                            @foreach($visibleComments as $comment)
+                                <div class="comment-item" data-is-private="{{ $comment->is_private ? '1' : '0' }}">
+                                    @include('task::partials.comment', ['comment' => $comment])
+                                </div>
+                            @endforeach
+                            <p class="text-base-content/60 text-center py-4 empty-comments-message {{ $visibleComments->count() > 0 ? 'hidden' : '' }}">No comments yet. Be the first to comment!</p>
                         </div>
                     </div>
                 </div>
@@ -1289,46 +1295,121 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Comment/Private Note Tab Switching
-let currentCommentTab = 'comment';
+// Comment/Private Note Filter Tab Switching
+let currentFilterTab = 'all';
 
-function switchCommentTab(type) {
+function switchFilterTab(type) {
+    const filterTabs = document.querySelectorAll('[data-filter-tab]');
+    const commentItems = document.querySelectorAll('.comment-item');
+    const emptyMessage = document.querySelector('.empty-comments-message');
     const commentWrapper = document.getElementById('comment-editor-wrapper');
     const privateWrapper = document.getElementById('private-editor-wrapper');
     const isPrivateInput = document.getElementById('is_private_input');
     const submitBtnText = document.getElementById('submit-btn-text');
     const submitBtn = document.getElementById('comment-submit-btn');
-    const tabs = document.querySelectorAll('[data-comment-tab]');
+    const titleText = document.getElementById('comments-title-text');
 
-    currentCommentTab = type;
+    currentFilterTab = type;
 
     // Update active tab
-    tabs.forEach(tab => {
-        if (tab.dataset.commentTab === type) {
+    filterTabs.forEach(tab => {
+        if (tab.dataset.filterTab === type) {
             tab.classList.add('tab-active');
         } else {
             tab.classList.remove('tab-active');
         }
     });
 
-    if (type === 'private') {
-        // Show private note editor
-        commentWrapper.classList.add('hidden');
-        privateWrapper.classList.remove('hidden');
-        isPrivateInput.value = '1';
-        submitBtnText.textContent = 'Add Private Note';
-        submitBtn.classList.remove('btn-primary');
-        submitBtn.classList.add('btn-warning');
-    } else {
-        // Show comment editor
-        commentWrapper.classList.remove('hidden');
-        privateWrapper.classList.add('hidden');
-        isPrivateInput.value = '0';
-        submitBtnText.textContent = 'Comment';
-        submitBtn.classList.remove('btn-warning');
-        submitBtn.classList.add('btn-primary');
+    // Update section title based on filter
+    if (titleText) {
+        if (type === 'all') {
+            titleText.textContent = 'All Comments';
+        } else if (type === 'public') {
+            titleText.textContent = 'Comments';
+        } else if (type === 'private') {
+            titleText.textContent = 'Private Comments';
+        }
+    }
+
+    // Filter comments
+    let visibleCount = 0;
+    commentItems.forEach(item => {
+        const isPrivate = item.dataset.isPrivate === '1';
+
+        if (type === 'all') {
+            // Show all comments
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else if (type === 'public') {
+            // Show only public comments
+            if (isPrivate) {
+                item.classList.add('hidden');
+            } else {
+                item.classList.remove('hidden');
+                visibleCount++;
+            }
+        } else if (type === 'private') {
+            // Show only private comments
+            if (isPrivate) {
+                item.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                item.classList.add('hidden');
+            }
+        }
+    });
+
+    // Show/hide empty message
+    if (emptyMessage) {
+        if (visibleCount === 0) {
+            emptyMessage.classList.remove('hidden');
+            if (type === 'private') {
+                emptyMessage.textContent = 'No private notes yet.';
+            } else if (type === 'public') {
+                emptyMessage.textContent = 'No comments yet. Be the first to comment!';
+            } else {
+                emptyMessage.textContent = 'No comments yet. Be the first to comment!';
+            }
+        } else {
+            emptyMessage.classList.add('hidden');
+        }
+    }
+
+    // Switch input editor based on filter tab
+    if (commentWrapper && privateWrapper && isPrivateInput && submitBtnText && submitBtn) {
+        if (type === 'private') {
+            // Show private note editor
+            commentWrapper.classList.add('hidden');
+            privateWrapper.classList.remove('hidden');
+            isPrivateInput.value = '1';
+            submitBtnText.textContent = 'Add Private Note';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-warning');
+        } else {
+            // Show comment editor
+            commentWrapper.classList.remove('hidden');
+            privateWrapper.classList.add('hidden');
+            isPrivateInput.value = '0';
+            submitBtnText.textContent = 'Comment';
+            submitBtn.classList.remove('btn-warning');
+            submitBtn.classList.add('btn-primary');
+        }
     }
 }
+
+// Legacy function for backward compatibility
+function switchCommentTab(type) {
+    switchFilterTab(type === 'comment' ? 'public' : type);
+}
+
+// Initialize comment filter on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply initial filter (show public comments by default)
+    const filterTabs = document.querySelectorAll('[data-filter-tab]');
+    if (filterTabs.length > 0) {
+        switchFilterTab('all');
+    }
+});
 
 // Prepare comment form submission - copy content from active editor to final input
 function prepareCommentSubmit() {
