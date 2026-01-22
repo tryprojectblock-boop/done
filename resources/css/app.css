@@ -52,3 +52,17 @@ main {
 .grid-active-status .btn-active span {
     background-color: #525158;
 }
+
+.btn-no-shadow, .box-no-shadow{
+    box-shadow: none;
+}
+
+.task-sidebar .card:hover{
+ box-shadow: none;
+}
+
+.task-description p{
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+}

@@ -11,73 +11,9 @@
 @endphp
 
 @section('content')
-<div class="p-4 md:p-6">
+<div class="p-4 md:p-6 pt-0!">
     <div class="max-w mx-auto">
-        <!-- Header -->
-        <div class="mb-6">
-            <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
-                <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
-                <span class="icon-[tabler--chevron-right] size-4"></span>
-                <a href="{{ route('tasks.index') }}" class="hover:text-primary">Tasks</a>
-                <span class="icon-[tabler--chevron-right] size-4"></span>
-                <span>{{ $task->task_number }}</span>
-            </div>
-
-            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-2xl font-bold text-base-content {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
-                            {{ $task->title }}
-                        </h1>
-                        @if($task->is_private)
-                            <span class="badge badge-warning gap-1" title="Only creator, assignee, and watchers can see this task">
-                                <span class="icon-[tabler--lock] size-3.5"></span>
-                                Private
-                            </span>
-                        @endif
-                    </div>
-                    <p class="text-base-content/60 mt-1">
-                        Created by {{ $task->creator->name }} on {{ $task->created_at->format('M d, Y') }}
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                    @if($isClient)
-                        <!-- Client: Simple back button -->
-                        <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm">
-                            <span class="icon-[tabler--arrow-left] size-4"></span>
-                            Back to My Tickets
-                        </a>
-                    @else
-                        <!-- Back to Workspace Tasks -->
-                        <a href="{{ route('workspace.show', ['workspace' => $task->workspace, 'tab' => 'tasks']) }}" class="btn btn-ghost btn-sm">
-                            <span class="icon-[tabler--arrow-left] size-4"></span>
-                            Back to Workspace Tasks
-                        </a>
-
-                        @if($task->isOwner($user) && !$task->isOnHold())
-                            @if($task->isClosed())
-                                <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <span class="icon-[tabler--refresh] size-4"></span>
-                                        Reopen
-                                    </button>
-                                </form>
-                            @else
-                                <form action="{{ route('tasks.close', $task) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-warning btn-sm">
-                                        <span class="icon-[tabler--check] size-4"></span>
-                                        Close Task
-                                    </button>
-                                </form>
-                            @endif
-                        @endif
-                    @endif
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Success/Error Messages -->
         @if(session('success'))
@@ -122,64 +58,252 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Content -->
             <div class="lg:col-span-2 space-y-6">
+                <!-- Header -->
+                <div class="py-7.5 m-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-sm text-base-content/60">
+                            <a href="{{ route('dashboard') }}" class="hover:text-primary text-[#525158]">Dashboard</a>
+                            <span class="icon-[tabler--chevron-right] size-4 text-[#525158]"></span>
+                            <a href="{{ route('tasks.index') }}" class="hover:text-primary text-[#525158]">Tasks</a>
+                            <span class="icon-[tabler--chevron-right] size-4 text-[#525158]"></span>
+                            <span class="text-[#B8B7BB]">{{ $task->task_number }}</span>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            @if($isClient)
+                                <!-- Client: Simple back button -->
+                                <a href="{{ route('dashboard') }}" class="p-2 rounded-md bg-white border border-[#B8B7BB]">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M17.5 10C17.5 10.4601 17.1271 10.8338 16.667 10.834L5.3457 10.834L8.92285 14.4111C9.24816 14.7365 9.24816 15.2644 8.92285 15.5898C8.59746 15.9152 8.06956 15.9152 7.74414 15.5898L2.74414 10.5898C2.41871 10.2644 2.41871 9.73655 2.74414 9.41113L7.74414 4.41113C8.06956 4.08578 8.59746 4.08573 8.92285 4.41113C9.24815 4.73655 9.24816 5.26442 8.92285 5.58984L5.3457 9.16699L16.667 9.16699C17.1269 9.16717 17.4997 9.54009 17.5 10Z" fill="#17151C"/>
+                                    </svg>
+                                    <!-- Back to My Tickets -->
+                                </a>
+                            @else
+                                <!-- Back to Workspace Tasks -->
+                                <a href="{{ route('workspace.show', ['workspace' => $task->workspace, 'tab' => 'tasks']) }}" class="p-2 rounded-md bg-white border border-[#B8B7BB]">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M17.5 10C17.5 10.4601 17.1271 10.8338 16.667 10.834L5.3457 10.834L8.92285 14.4111C9.24816 14.7365 9.24816 15.2644 8.92285 15.5898C8.59746 15.9152 8.06956 15.9152 7.74414 15.5898L2.74414 10.5898C2.41871 10.2644 2.41871 9.73655 2.74414 9.41113L7.74414 4.41113C8.06956 4.08578 8.59746 4.08573 8.92285 4.41113C9.24815 4.73655 9.24816 5.26442 8.92285 5.58984L5.3457 9.16699L16.667 9.16699C17.1269 9.16717 17.4997 9.54009 17.5 10Z" fill="#17151C"/>
+                                    </svg>
+                                    <!-- Back to Workspace Tasks -->
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <!-- <p class="text-base-content/60 mt-1">
+                                Created by {{ $task->creator->name }} on {{ $task->created_at->format('M d, Y') }}
+                            </p> -->
+                        </div>                    
+                    </div>
+                </div>
                 <!-- Description -->
-                <div class="card bg-base-100 shadow">
+                <div class="card bg-base-100">
                     <div class="card-body">
-                        <h2 class="card-title text-lg">
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-semibold text-[32px] text-[#17151C]  {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
+                                {{ $task->title }}
+                            </h1>
+                            @if($task->is_private)
+                                <span class="badge badge-warning gap-1" title="Only creator, assignee, and watchers can see this task">
+                                    <span class="icon-[tabler--lock] size-3.5"></span>
+                                    Private
+                                </span>
+                            @endif
+                        </div>
+                        <!-- <h2 class="card-title text-lg">
                             <span class="icon-[tabler--file-description] size-5"></span>
                             Description
-                        </h2>
+                        </h2> -->
                         @if($task->description)
-                            <div class="prose prose-sm max-w-none">
+                            <div class="prose prose-sm max-w-none text task-description">
                                 {!! $task->description !!}
                             </div>
                         @else
-                            <p class="text-base-content/60 italic">No description provided.</p>
+                            <p class="text-[base-content/60] italic">No description provided.</p>
                         @endif
                     </div>
-                </div>
-
-                <!-- Subtasks (only show for parent tasks, not for subtasks) -->
-                @if(!$task->parentTask)
-                <div id="subtasks-section">
-                    <div class="card bg-base-100 shadow" id="subtasks-card">
-                        <div class="card-body">
-                            <h2 class="card-title text-lg">
-                                <span class="icon-[tabler--subtask] size-5"></span>
-                                Subtasks
-                                <span class="badge badge-sm" id="subtasks-count">{{ $task->subtasks->count() }}</span>
-                            </h2>
-                            <div class="space-y-2" id="subtasks-list">
-                                @forelse($task->subtasks as $subtask)
-                                    <a href="{{ route('tasks.show', $subtask) }}"
-                                       class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors {{ $subtask->isClosed() ? 'opacity-60' : '' }}">
-                                        @if($subtask->types && count($subtask->types) > 0)
-                                            <span class="icon-[{{ $subtask->types[0]->icon() }}] size-4 text-base-content/70"></span>
-                                        @else
-                                            <span class="icon-[tabler--checkbox] size-4 text-base-content/70"></span>
-                                        @endif
-                                        <span class="font-mono text-sm text-base-content/60">{{ $subtask->task_number }}</span>
-                                        <span class="{{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
-                                        @if($subtask->status)
-                                            <span class="badge badge-sm ml-auto" style="background-color: {{ $subtask->status->background_color }}20; color: {{ $subtask->status->background_color }}">
-                                                {{ $subtask->status->name }}
-                                            </span>
-                                        @endif
-                                    </a>
-                                @empty
-                                    <p id="subtasks-empty-message" class="text-base-content/60 text-sm">No subtasks yet</p>
-                                @endforelse
-                            </div>
-                            <div class="mt-3">
-                                <button type="button" onclick="openSubtaskDrawer()" class="btn btn-sm btn-ghost">
-                                    <span class="icon-[tabler--plus] size-4"></span>
-                                    Add Subtask
-                                </button>
+                    <!-- Subtasks (only show for parent tasks, not for subtasks) -->
+                    <div class="card-body">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between bg-[#F8F8FB] rounded-md px-3 py-[7px]">
+                            <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Sub-task</h2>
+                            <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Actions</h2>
+                        </div>
+                    @if(!$task->parentTask)
+                    <div id="subtasks-section">
+                        <div class=" bg-base-100" id="subtasks-card">
+                            <div class="">
+                                <!-- <h2 class="card-title text-lg">
+                                    <span class="icon-[tabler--subtask] size-5"></span>
+                                    Subtasks
+                                    <span class="badge badge-sm" id="subtasks-count">{{ $task->subtasks->count() }}</span>
+                                </h2> -->
+                                <div class="space-y-2" id="subtasks-list">
+                                    @forelse($task->subtasks as $subtask)
+                                    <div class="flex items-center border-b border-[#EDECF0] justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                                        <div class="flex items-center gap-4">
+                                            @if($subtask->status)
+                                                <span class="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded" style="background-color: {{ $subtask->status->background_color }}20; color: {{ $subtask->status->background_color }}">{{ $subtask->status->name }}</span>
+                                            @endif
+                                            <span class="text-gray-900 {{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
+                                        </div>
+                                        <a  href="{{ route('tasks.show', $subtask) }}" class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                    @empty
+                                        <p id="subtasks-empty-message" class="text-base-content/60 text-sm">No subtasks yet</p>
+                                    @endforelse
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" onclick="openSubtaskDrawer()" class="btn btn-sm btn-ghost">
+                                        <span class="icon-[tabler--plus] size-4"></span>
+                                        Add Subtask
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    @endif
+                    </div>
                 </div>
-                @endif
+
+                <!-- Comments -->
+                <div class="card bg-base-100 shadow">
+                    <div class="card-body">
+                        @php
+                            $visibleCommentsCount = $isClient
+                                ? $task->comments->where('is_private', false)->count()
+                                : $task->comments->count();
+                        @endphp
+                        <h2 class="card-title text-lg">
+                            <span class="icon-[tabler--message-circle] size-5"></span>
+                            Comments
+                            <span class="badge badge-sm">{{ $visibleCommentsCount }}</span>
+                        </h2>
+
+                        <!-- Add Comment Form with Tabs (only show tabs for team members) -->
+                        @if(!$isClient)
+                        <div class="mb-4">
+                            <!-- Comment Type Tabs -->
+                            <div class="tabs tabs-boxed mb-3 bg-base-200 p-1 rounded-lg inline-flex">
+                                <button type="button" class="tab tab-active" data-comment-tab="comment" onclick="switchCommentTab('comment')">
+                                    <span class="icon-[tabler--message] size-4 mr-1"></span>
+                                    Comment
+                                </button>
+                                <button type="button" class="tab" data-comment-tab="private" onclick="switchCommentTab('private')">
+                                    <span class="icon-[tabler--lock] size-4 mr-1"></span>
+                                    Private Note
+                                </button>
+                            </div>
+
+                            <!-- Comment Form -->
+                            <form action="{{ route('tasks.comments.store', $task) }}" method="POST" id="comment-form" onsubmit="return prepareCommentSubmit()">
+                                @csrf
+                                <input type="hidden" name="is_private" id="is_private_input" value="0">
+                                <input type="hidden" name="content" id="final_content_input" value="">
+                                <div class="flex gap-3">
+                                    <div class="avatar">
+                                        <div class="w-8 h-8 rounded-full overflow-hidden">
+                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <!-- Comment Editor -->
+                                        <div id="comment-editor-wrapper">
+                                            <x-quill-editor
+                                                name="comment_content"
+                                                id="comment-editor"
+                                                placeholder="Add a comment..."
+                                                height="100px"
+                                                :mentions="true"
+                                            />
+                                        </div>
+                                        <!-- Private Note Editor (with yellow border) -->
+                                        <div id="private-editor-wrapper" class="hidden">
+                                            <div class="border-2 border-warning rounded-lg overflow-hidden">
+                                                <div class="bg-warning/10 px-3 py-1.5 border-b border-warning/30 flex items-center gap-2">
+                                                    <span class="icon-[tabler--lock] size-4 text-warning"></span>
+                                                    <span class="text-sm font-medium text-warning">Private Note - Only visible to team members</span>
+                                                </div>
+                                                <x-quill-editor
+                                                    name="private_content"
+                                                    id="private-editor"
+                                                    placeholder="Add a private note (only visible to team members)..."
+                                                    height="100px"
+                                                    :mentions="true"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end mt-2">
+                                            <button type="submit" class="btn btn-primary btn-sm" id="comment-submit-btn">
+                                                <span class="icon-[tabler--send] size-4"></span>
+                                                <span id="submit-btn-text">Comment</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        @else
+                        <!-- Client view - simple comment form without tabs -->
+                        <form action="{{ route('tasks.comments.store', $task) }}" method="POST" class="mb-4" id="comment-form">
+                            @csrf
+                            <div class="flex gap-3">
+                                <div class="avatar">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden">
+                                        <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <x-quill-editor
+                                        name="content"
+                                        id="comment-editor"
+                                        placeholder="Add a comment..."
+                                        height="100px"
+                                        :mentions="false"
+                                    />
+                                    <div class="flex justify-end mt-2">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <span class="icon-[tabler--send] size-4"></span>
+                                            Comment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        @endif
+
+                        <!-- Comments List (filter out private notes for clients) -->
+                        <div class="space-y-4">
+                            <div>
+                                @php
+                                $visibleCommentsCount = $isClient
+                                    ? $task->comments->where('is_private', false)->count()
+                                    : $task->comments->count();
+                                @endphp
+                                <h2 class="card-title text-sm text-[#525158]">
+                                    <span>{{ $visibleCommentsCount }}</span>
+                                    <span>Comments</span>
+                                </h2>
+                            </div>
+                            @php
+                                $visibleComments = $isClient
+                                    ? $task->comments->where('is_private', false)
+                                    : $task->comments;
+                            @endphp
+                            @forelse($visibleComments as $comment)
+                                @include('task::partials.comment', ['comment' => $comment])
+                            @empty
+                                <p class="text-base-content/60 text-center py-4">No comments yet. Be the first to comment!</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Attachments -->
                 <div class="card bg-base-100 shadow">
@@ -230,134 +354,15 @@
                     </div>
                 </div>
 
-                <!-- Comments -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        @php
-                            $visibleCommentsCount = $isClient
-                                ? $task->comments->where('is_private', false)->count()
-                                : $task->comments->count();
-                        @endphp
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--message-circle] size-5"></span>
-                            Comments
-                            <span class="badge badge-sm">{{ $visibleCommentsCount }}</span>
-                        </h2>
-
-                        <!-- Add Comment Form with Tabs (only show tabs for team members) -->
-                        @if(!$isClient)
-                        <div class="mb-4">
-                            <!-- Comment Type Tabs -->
-                            <div class="tabs tabs-boxed mb-3 bg-base-200 p-1 rounded-lg inline-flex">
-                                <button type="button" class="tab tab-active" data-comment-tab="comment" onclick="switchCommentTab('comment')">
-                                    <span class="icon-[tabler--message] size-4 mr-1"></span>
-                                    Comment
-                                </button>
-                                <button type="button" class="tab" data-comment-tab="private" onclick="switchCommentTab('private')">
-                                    <span class="icon-[tabler--lock] size-4 mr-1"></span>
-                                    Private Note
-                                </button>
-                            </div>
-
-                            <!-- Comment Form -->
-                            <form action="{{ route('tasks.comments.store', $task) }}" method="POST" id="comment-form" onsubmit="return prepareCommentSubmit()">
-                                @csrf
-                                <input type="hidden" name="is_private" id="is_private_input" value="0">
-                                <input type="hidden" name="content" id="final_content_input" value="">
-                                <div class="flex gap-3">
-                                    <div class="avatar">
-                                        <div class="w-10 h-10 rounded-full overflow-hidden">
-                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
-                                        </div>
-                                    </div>
-                                    <div class="flex-1">
-                                        <!-- Comment Editor -->
-                                        <div id="comment-editor-wrapper">
-                                            <x-quill-editor
-                                                name="comment_content"
-                                                id="comment-editor"
-                                                placeholder="Add a comment..."
-                                                height="100px"
-                                                :mentions="true"
-                                            />
-                                        </div>
-                                        <!-- Private Note Editor (with yellow border) -->
-                                        <div id="private-editor-wrapper" class="hidden">
-                                            <div class="border-2 border-warning rounded-lg overflow-hidden">
-                                                <div class="bg-warning/10 px-3 py-1.5 border-b border-warning/30 flex items-center gap-2">
-                                                    <span class="icon-[tabler--lock] size-4 text-warning"></span>
-                                                    <span class="text-sm font-medium text-warning">Private Note - Only visible to team members</span>
-                                                </div>
-                                                <x-quill-editor
-                                                    name="private_content"
-                                                    id="private-editor"
-                                                    placeholder="Add a private note (only visible to team members)..."
-                                                    height="100px"
-                                                    :mentions="true"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="flex justify-end mt-2">
-                                            <button type="submit" class="btn btn-primary btn-sm" id="comment-submit-btn">
-                                                <span class="icon-[tabler--send] size-4"></span>
-                                                <span id="submit-btn-text">Comment</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        @else
-                        <!-- Client view - simple comment form without tabs -->
-                        <form action="{{ route('tasks.comments.store', $task) }}" method="POST" class="mb-4" id="comment-form">
-                            @csrf
-                            <div class="flex gap-3">
-                                <div class="avatar">
-                                    <div class="w-10 h-10 rounded-full overflow-hidden">
-                                        <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
-                                    </div>
-                                </div>
-                                <div class="flex-1">
-                                    <x-quill-editor
-                                        name="content"
-                                        id="comment-editor"
-                                        placeholder="Add a comment..."
-                                        height="100px"
-                                        :mentions="false"
-                                    />
-                                    <div class="flex justify-end mt-2">
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            <span class="icon-[tabler--send] size-4"></span>
-                                            Comment
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                        @endif
-
-                        <!-- Comments List (filter out private notes for clients) -->
-                        <div class="space-y-4">
-                            @php
-                                $visibleComments = $isClient
-                                    ? $task->comments->where('is_private', false)
-                                    : $task->comments;
-                            @endphp
-                            @forelse($visibleComments as $comment)
-                                @include('task::partials.comment', ['comment' => $comment])
-                            @empty
-                                <p class="text-base-content/60 text-center py-4">No comments yet. Be the first to comment!</p>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Activity Log -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--history] size-5"></span>
-                            Activity
+                        <h2 class="card-title text-lg flex items-center gap-2 mb-6">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 17V7C3 4.79086 4.79086 3 7 3H17C19.2091 3 21 4.79086 21 7V17C21 19.2091 19.2091 21 17 21H7C4.79086 21 3 19.2091 3 17Z" stroke="#5334E4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8 16L9.8793 12.4406C10.2993 11.6452 11.4002 11.5485 11.9525 12.2584C12.5163 12.9832 13.645 12.8641 14.0452 12.0377L16 8" stroke="#5334E4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="text-[#17151C] text-xl leading-6">Activity</span>
                         </h2>
 
                         <div class="relative">
@@ -365,8 +370,11 @@
                             <div class="space-y-4">
                                 @forelse($task->activities as $activity)
                                     <div class="flex gap-4 relative">
-                                        <div class="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center z-10">
+                                        <!-- <div class="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center z-10">
                                             <span class="icon-[{{ $activity->type->icon() }}] size-4 text-base-content/60"></span>
+                                        </div> -->
+                                        <div class="w-8 h-8 avatar rounded-full flex items-center justify-center z-10">
+                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover rounded-full" />
                                         </div>
                                         <div class="flex-1 pb-4">
                                             <p class="text-sm">{{ $activity->getFormattedDescription() }}</p>
@@ -383,658 +391,719 @@
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
-                <!-- Task Info Card -->
-                <div class="card bg-base-100 shadow group">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg">Details</h2>
-
-                        @if(!$isClient && !$task->isClosed())
-                        <!-- Action Buttons (hidden for closed tasks) -->
-                        <div class="flex flex-wrap gap-2 pb-3 border-b border-base-200">
-                            <!-- Watch Button -->
-                            <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="btn btn-ghost btn-sm">
-                                    @if($task->isWatcher($user))
-                                        <span class="icon-[tabler--eye-off] size-4"></span>
-                                        Unwatch
-                                    @else
-                                        <span class="icon-[tabler--eye] size-4"></span>
-                                        Watch
-                                    @endif
-                                </button>
-                            </form>
-
-                            <!-- On Hold Button (only for creator, assignee, and admins) -->
-                            @if($task->canManageHold($user))
-                                @if($task->isOnHold())
-                                    <button type="button" class="btn btn-warning btn-sm" onclick="openResumeTaskModal()">
-                                        <span class="icon-[tabler--player-play] size-4"></span>
-                                        Resume
-                                    </button>
+            <div class="space-y-6 task-sidebar flex flex-col">
+                <div class="bg-[#f6f5fe] mb-0 py-6 flex items-center justify-center gap-2">
+                    @if(!$isClient && !$task->isClosed())
+                    <!-- Action Buttons (hidden for closed tasks) -->
+                    <div class="flex flex-wrap gap-2 border-b border-base-200">
+                        <!-- Watch Button -->
+                        <form action="{{ route('tasks.watch.toggle', $task) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="btn bg-white border border-[#B8B7BB] py-2 pl-2 pr-3 btn-no-shadow">
+                                @if($task->isWatcher($user))
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M2.74414 2.74414C3.06957 2.41872 3.59741 2.41874 3.92285 2.74414L5.67578 4.49707C6.89539 3.78804 8.28975 3.33305 10 3.33301C13.2329 3.33301 15.5408 5.16033 17.4268 7.01855C19.069 8.63698 19.069 11.363 17.4268 12.9814C16.8893 13.511 16.3159 14.0366 15.6982 14.5195L17.2559 16.0771C17.5813 16.4026 17.5813 16.9304 17.2559 17.2559C16.9304 17.5811 16.4035 17.5811 16.0781 17.2559L2.74414 3.92285C2.4188 3.59747 2.4189 3.06958 2.74414 2.74414ZM3.98926 7.96191C3.90923 8.04032 3.82862 8.1196 3.74805 8.2002C2.76797 9.18057 2.76806 10.8321 3.74414 11.7939C5.56683 13.5899 7.46081 14.9999 10 15C10.3297 15 10.6488 14.976 10.958 14.9307L12.3525 16.3252C11.6257 16.5423 10.8441 16.667 10 16.667C6.76728 16.6669 4.4601 14.8396 2.57422 12.9814C0.927793 11.3592 0.946428 8.64594 2.56934 7.02246C2.64944 6.94233 2.72984 6.86239 2.81055 6.7832L3.98926 7.96191ZM10 5C8.81649 5.00004 7.81771 5.26397 6.9043 5.72559L8.30762 7.12891C8.80376 6.83576 9.38201 6.66706 10 6.66699C11.8409 6.66699 13.334 8.15906 13.334 10C13.334 10.618 13.1632 11.1953 12.8701 11.6914L14.5088 13.3301C15.1094 12.8758 15.6877 12.3547 16.2568 11.7939C17.2365 10.8283 17.2365 9.17166 16.2568 8.20605C14.4341 6.41009 12.5393 5 10 5ZM10.001 8.33301C10.001 8.48199 9.97905 8.62625 9.94238 8.76367L11.6094 10.4307C11.6461 10.2932 11.667 10.1491 11.667 10C11.667 9.07966 10.9213 8.33322 10.001 8.33301Z" fill="#17151C"/>
+                                    </svg>
+                                    <span class="text-[#17151C]">Unwatch</span>
                                 @else
-                                    <button type="button" class="btn btn-ghost btn-sm" onclick="openOnHoldModal()">
-                                        <span class="icon-[tabler--player-pause] size-4"></span>
-                                        On Hold
-                                    </button>
+                                    <span class="icon-[tabler--eye] size-4 text-[#17151C]"></span>
+                                    <span class="text-[#17151C]">Watch</span>
                                 @endif
-                            @endif
+                            </button>
+                        </form>
 
-                            <!-- Edit Button -->
-                            @if($task->isOwner($user) && !$task->isOnHold())
-                                <a href="{{ route('tasks.edit', $task) }}" class="btn btn-ghost btn-sm">
-                                    <span class="icon-[tabler--edit] size-4"></span>
-                                    Edit
-                                </a>
+                        <!-- On Hold Button (only for creator, assignee, and admins) -->
+                        @if($task->canManageHold($user))
+                            @if($task->isOnHold())
+                                <button type="button" class="btn btn-warning border border-[#B8B7BB] py-2 pl-2 pr-3 btn-no-shadow" onclick="openResumeTaskModal()">
+                                    <span class="icon-[tabler--player-play] size-4 text-white"></span>
+                                    <span class="text-white">Resume</span>
+                                </button>
+                            @else
+                                <button type="button" class="btn bg-white border border-[#B8B7BB] py-2 pl-2 pr-3 btn-no-shadow" onclick="openOnHoldModal()">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7.5 12.5003C7.5 12.9606 7.8731 13.3337 8.33333 13.3337C8.79357 13.3337 9.16667 12.9606 9.16667 12.5003L9.16667 7.50033C9.16667 7.04009 8.79357 6.66699 8.33333 6.66699C7.8731 6.66699 7.5 7.04009 7.5 7.50033L7.5 12.5003Z" fill="#17151C"/>
+                                        <path d="M10.833 12.5003C10.833 12.9606 11.2061 13.3337 11.6663 13.3337C12.1266 13.3337 12.4997 12.9606 12.4997 12.5003L12.4997 7.50033C12.4997 7.04009 12.1266 6.66699 11.6663 6.66699C11.2061 6.66699 10.833 7.04009 10.833 7.50033L10.833 12.5003Z" fill="#17151C"/>
+                                        <path d="M16.667 10.0003C16.667 6.31843 13.6822 3.33366 10.0003 3.33366C6.31843 3.33366 3.33366 6.31843 3.33366 10.0003C3.33366 13.6822 6.31843 16.667 10.0003 16.667C13.6822 16.667 16.667 13.6822 16.667 10.0003ZM18.3337 10.0003C18.3337 14.6027 14.6027 18.3337 10.0003 18.3337C5.39795 18.3337 1.66699 14.6027 1.66699 10.0003C1.66699 5.39795 5.39795 1.66699 10.0003 1.66699C14.6027 1.66699 18.3337 5.39795 18.3337 10.0003Z" fill="#17151C"/>
+                                    </svg>
+                                    <span class="text-[#17151C]">On Hold</span>
+                                </button>
                             @endif
-                        </div>
                         @endif
 
-                        <div class="divide-y divide-base-200">
-                            <!-- Parent Task (shown first for subtasks) -->
-                            @if($task->parentTask)
-                            <div class="py-3 first:pt-0">
-                                <label class="text-sm font-medium text-base-content/70">Parent Task</label>
-                                <div class="mt-2">
-                                    <a href="{{ route('tasks.show', $task->parentTask) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
-                                        <span class="icon-[tabler--subtask] size-4"></span>
-                                        <span class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded">{{ $task->parentTask->task_number }}</span>
-                                        <span class="text-sm">{{ Str::limit($task->parentTask->title, 20) }}</span>
-                                    </a>
-                                </div>
-                            </div>
-                            @endif
-
-                            <!-- Status, Priority & Progress (Combined Inline) -->
-                            <div class="py-3 first:pt-0">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Status / Priority / Progress</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('quick-stats')" title="Edit">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
+                        <!-- Edit Button -->
+                        @if($task->isOwner($user) && !$task->isOnHold())
+                            <a href="{{ route('tasks.edit', $task) }}" class="btn bg-white border border-[#B8B7BB] py-2 pl-2 pr-3 btn-no-shadow">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M15.0003 3.47624C14.8003 3.47624 14.6021 3.51565 14.4173 3.59222C14.2324 3.66879 14.0644 3.78103 13.9229 3.92252L4.49609 13.3494L3.68803 16.3122L6.65091 15.5042L16.0778 6.07734C16.2192 5.93585 16.3315 5.76788 16.4081 5.58302C16.4846 5.39816 16.524 5.20002 16.524 4.99993C16.524 4.79983 16.4846 4.6017 16.4081 4.41684C16.3315 4.23197 16.2192 4.064 16.0778 3.92252C15.9363 3.78103 15.7683 3.66879 15.5834 3.59222C15.3986 3.51565 15.2004 3.47624 15.0003 3.47624ZM13.7794 2.05242C14.1665 1.89209 14.5814 1.80957 15.0003 1.80957C15.4193 1.80957 15.8342 1.89209 16.2212 2.05242C16.6083 2.21275 16.96 2.44775 17.2563 2.744C17.5525 3.04026 17.7875 3.39196 17.9479 3.77903C18.1082 4.1661 18.1907 4.58097 18.1907 4.99993C18.1907 5.41889 18.1082 5.83375 17.9479 6.22082C17.7875 6.60789 17.5525 6.9596 17.2563 7.25585L7.67293 16.8392C7.57039 16.9417 7.44285 17.0157 7.30294 17.0539L2.71961 18.3039C2.4311 18.3826 2.12255 18.3006 1.91109 18.0892C1.69963 17.8777 1.61769 17.5692 1.69637 17.2807L2.94638 12.6973C2.98453 12.5574 3.05854 12.4299 3.16109 12.3273L12.7444 2.744C13.0407 2.44775 13.3924 2.21275 13.7794 2.05242Z" fill="#17151C"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M11.0771 4.41107C11.4025 4.08563 11.9302 4.08563 12.2556 4.41107L15.5889 7.7444C15.9144 8.06984 15.9144 8.59748 15.5889 8.92291C15.2635 9.24835 14.7359 9.24835 14.4104 8.92291L11.0771 5.58958C10.7516 5.26414 10.7516 4.73651 11.0771 4.41107Z" fill="#17151C"/>
+                                </svg>
+                                <span class="text-[#17151C]">Edit</span>
+                            </a>
+                        @endif
+                    </div>
+                    @endif
+                    <div class="flex flex-wrap gap-2">
+                        @if($isClient == false)
+                            @if($task->isOwner($user) && !$task->isOnHold())
+                                @if($task->isClosed())
+                                    <form action="{{ route('tasks.reopen', $task) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            Reopen
                                         </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="quick-stats-display" class="mt-2">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <!-- Status Badge -->
-                                        @if($task->status)
-                                            <span class="badge badge-sm" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
-                                                {{ $task->status->name }}
-                                            </span>
-                                        @else
-                                            <span class="badge badge-sm badge-ghost">No Status</span>
-                                        @endif
-
-                                        <span class="text-base-content/30">•</span>
-
-                                        <!-- Priority -->
-                                        @if($task->workspace->type->value === 'inbox')
-                                            @if($task->workspacePriority)
-                                                <span class="badge badge-sm" style="background-color: {{ $task->workspacePriority->color }}15; color: {{ $task->workspacePriority->color }}">
-                                                    <span class="icon-[tabler--flag] size-3 mr-0.5"></span>
-                                                    {{ $task->workspacePriority->name }}
-                                                </span>
-                                            @else
-                                                <span class="badge badge-sm badge-ghost">No Priority</span>
-                                            @endif
-                                        @else
-                                            @if($task->priority)
-                                                <span class="badge badge-sm" style="background-color: {{ $task->priority->color() }}15; color: {{ $task->priority->color() }}">
-                                                    <span class="icon-[{{ $task->priority->icon() }}] size-3 mr-0.5"></span>
-                                                    {{ $task->priority->label() }}
-                                                </span>
-                                            @else
-                                                <span class="badge badge-sm badge-ghost">No Priority</span>
-                                            @endif
-                                        @endif
-
-                                        <span class="text-base-content/30">•</span>
-
-                                        <!-- Progress Percentage -->
-                                        <span class="badge badge-sm {{ ($task->progress ?? 0) == 100 ? 'badge-success' : 'badge-primary' }} badge-outline">
-                                            {{ $task->progress ?? 0 }}%
-                                        </span>
+                                    </form>
+                                @else
+                                    <form action="{{ route('tasks.close', $task) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="btn bg-[#00a63e] px-3 py-2 btn-no-shadow border-0">
+                                            Close
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
+                        @endif
+                    </div>
+                </div>
+                <div class="bg-white h-full">
+                    <!-- Task Info Card -->
+                    <div class="card bg-base-100 box-no-shadow group">
+                        <div class="card-body">
+                            <div class="border-b border-[#EDECF0] pb-6 flex items-center gap-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 5C3 3.34315 4.34315 2 6 2H18C19.6569 2 21 3.34315 21 5V19C21 20.6569 19.6569 22 18 22H6C4.34315 22 3 20.6569 3 19V5Z" stroke="#3BA5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 10L16 10" stroke="#3BA5FF" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M10 14L14 14" stroke="#3BA5FF" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <h2 class="card-title text-xl text-[#17151C]">Details</h2>
+                            </div>
+                            <div class="divide-y divide-base-200">
+                                <!-- Parent Task (shown first for subtasks) -->
+                                @if($task->parentTask)
+                                <div class="py-3 first:pt-0">
+                                    <label class="text-sm font-medium text-base-content/70">Parent Task</label>
+                                    <div class="mt-2">
+                                        <a href="{{ route('tasks.show', $task->parentTask) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
+                                            <span class="icon-[tabler--subtask] size-4"></span>
+                                            <span class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded">{{ $task->parentTask->task_number }}</span>
+                                            <span class="text-sm">{{ Str::limit($task->parentTask->title, 20) }}</span>
+                                        </a>
                                     </div>
                                 </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <div id="quick-stats-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
-                                    <!-- Status Select -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Status</label>
-                                        <select id="quick-status-select" class="select select-bordered select-sm w-full">
-                                            <option value="">No Status</option>
-                                            @foreach($statuses as $status)
-                                                <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
-                                                    {{ $status->name }}
+                                @endif
+
+                                <!-- Status, Priority & Progress (Combined Inline) -->
+                                <div class="py-4 first:pt-0">
+                                    <!-- Display Mode -->
+                                    <div id="quick-stats-display" class="mt-2 flex justify-between">
+                                        <div class="flex items-center gap-4 flex-wrap">
+                                            <!-- Priority -->
+                                            <div class="flex flex-col gap-2">
+                                                <span class="text-sm text-[#525158] font-normal">Priority</span>
+                                                <div>
+                                                    @if($task->workspace->type->value === 'inbox')
+                                                        @if($task->workspacePriority)
+                                                            <span class="py-1 px-2 rounded-md text-xs" style="background-color: {{ $task->workspacePriority->color }}15; color: {{ $task->workspacePriority->color }}">
+                                                                {{ $task->workspacePriority->name }}
+                                                            </span>
+                                                        @else
+                                                            <span class="py-1 px-2 rounded-md text-xs">No Priority</span>
+                                                        @endif
+                                                    @else
+                                                        @if($task->priority)
+                                                            <span class="py-1 px-2 rounded-md text-xs" style="background-color: {{ $task->priority->color() }}15; color: {{ $task->priority->color() }}">
+                                                                {{ $task->priority->label() }}
+                                                            </span>
+                                                        @else
+                                                            <span class="py-1 px-2 rounded-md text-xs">No Priority</span>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <!-- Status Badge -->
+                                            <div class="flex flex-col gap-2">
+                                                <span class="text-sm text-[#525158] font-normal">Status</span>
+                                                @if($task->status)
+                                                    <span class="py-1 px-2 rounded-md text-xs" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
+                                                        {{ $task->status->name }}
+                                                    </span>
+                                                @else
+                                                    <span class="py-1 px-2 rounded-md text-xs">No Status</span>
+                                                @endif
+                                            </div>
+                                            <!-- Progress Percentage -->
+                                            <div class="flex flex-col gap-2  items-start">
+                                                <span class="text-sm text-[#525158] font-normal">Progress</span>
+                                                <span class="py-1 px-2 text-xs rounded-md {{ ($task->progress ?? 0) == 100 ? 'bg-success' : 'bg-primary text-white' }}">
+                                                    {{ $task->progress ?? 0 }}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <!-- Edit Mode -->
+                                        <div class="flex">
+                                            @if($task->canInlineEdit($user) && !$task->isClosed())
+                                                <button type="button" class="w-7 h-7 bg-[#F8F8FB] rounded-md flex items-center justify-center" onclick="toggleEdit('quick-stats')" title="Edit">
+                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9997 2.7806C11.8396 2.7806 11.6811 2.81213 11.5332 2.87339C11.3853 2.93464 11.251 3.02443 11.1378 3.13762L3.59628 10.6791L2.94984 13.0494L5.32014 12.403L12.8616 4.86148C12.9748 4.74829 13.0646 4.61391 13.1259 4.46602C13.1871 4.31813 13.2186 4.15963 13.2186 3.99955C13.2186 3.83947 13.1871 3.68097 13.1259 3.53308C13.0646 3.38519 12.9748 3.25081 12.8616 3.13762C12.7484 3.02443 12.6141 2.93464 12.4662 2.87339C12.3183 2.81213 12.1598 2.7806 11.9997 2.7806ZM11.023 1.64155C11.3326 1.51328 11.6645 1.44727 11.9997 1.44727C12.3349 1.44727 12.6668 1.51328 12.9764 1.64155C13.2861 1.76981 13.5674 1.95781 13.8044 2.19481C14.0414 2.43181 14.2294 2.71318 14.3577 3.02283C14.486 3.33249 14.552 3.66438 14.552 3.99955C14.552 4.33472 14.486 4.66661 14.3577 4.97627C14.2294 5.28593 14.0414 5.56729 13.8044 5.80429L6.13776 13.471C6.05572 13.553 5.9537 13.6122 5.84177 13.6427L2.1751 14.6427C1.94429 14.7057 1.69745 14.6401 1.52829 14.471C1.35912 14.3018 1.29357 14.0549 1.35651 13.8241L2.35651 10.1575C2.38704 10.0455 2.44625 9.94352 2.52829 9.86148L10.195 2.19481C10.432 1.95781 10.7133 1.76981 11.023 1.64155Z" fill="#525158"/>
+                                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8.86225 3.52827C9.1226 3.26792 9.54471 3.26792 9.80506 3.52827L12.4717 6.19494C12.7321 6.45529 12.7321 6.8774 12.4717 7.13775C12.2114 7.3981 11.7893 7.3981 11.5289 7.13775L8.86225 4.47108C8.6019 4.21073 8.6019 3.78862 8.86225 3.52827Z" fill="#525158"/>
+                                                    </svg>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <!-- Edit Mode -->
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                    <div id="quick-stats-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                        <!-- Status Select -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Status</label>
+                                            <select id="quick-status-select" class="select select-bordered select-sm w-full">
+                                                <option value="">No Status</option>
+                                                @foreach($statuses as $status)
+                                                    <option value="{{ $status->id }}" {{ $task->status_id == $status->id ? 'selected' : '' }}>
+                                                        {{ $status->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Priority Select -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Priority</label>
+                                            @if($task->workspace->type->value === 'inbox')
+                                                <select id="quick-priority-select" data-type="workspace" class="select select-bordered select-sm w-full">
+                                                    <option value="">No Priority</option>
+                                                    @foreach($workspacePriorities as $wsPriority)
+                                                        <option value="{{ $wsPriority->id }}" {{ $task->workspace_priority_id == $wsPriority->id ? 'selected' : '' }}>
+                                                            {{ $wsPriority->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <select id="quick-priority-select" data-type="task" class="select select-bordered select-sm w-full">
+                                                    <option value="">No Priority</option>
+                                                    @foreach(\App\Modules\Task\Enums\TaskPriority::cases() as $priority)
+                                                        <option value="{{ $priority->value }}" {{ $task->priority == $priority ? 'selected' : '' }}>
+                                                            {{ $priority->label() }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
+                                        </div>
+
+                                        <!-- Progress Slider -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Progress</label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="range"
+                                                    id="quick-progress-slider"
+                                                    min="0"
+                                                    max="100"
+                                                    step="5"
+                                                    value="{{ $task->progress ?? 0 }}"
+                                                    class="range range-primary range-sm flex-1"
+                                                />
+                                                <span class="text-sm font-medium min-w-[3rem] text-right" id="quick-progress-percentage">{{ $task->progress ?? 0 }}%</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-2 pt-2">
+                                            <button type="button" class="btn btn-primary btn-xs" onclick="saveQuickStats()">
+                                                <span class="icon-[tabler--check] size-3.5"></span>
+                                                Save All
+                                            </button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('quick-stats')">Cancel</button>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Due Date & Created Date (Combined Inline) -->
+                                <div class="py-4">
+                                    <div class="flex justify-between">
+                                        <!-- Display Mode -->
+                                        <div id="dates-display" class="mt-2 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <!-- Due Date -->
+                                                <div class="flex flex-col gap-2 w-1/2">
+                                                    <span class="text-sm font-normal text-[#525158]">Due Date</span>
+                                                    @if($task->due_date)
+                                                        <span class="text-base leading-6 font-normal {{ $task->isOverdue() ? 'badge-error' : 'badge-warning' }} gap-1">
+                                                            {{ $task->due_date->format('M d, Y') }}
+                                                            @if($task->isOverdue())
+                                                                (Overdue)
+                                                            @endif
+                                                        </span>
+                                                    @else
+                                                        <span class="text-base leading-6 font-normal">
+                                                            <span class="icon-[tabler--calendar-due] size-3"></span>
+                                                            No Due Date
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <!-- Created Date -->
+                                                <div class="flex flex-col gap-2 w-1/2">
+                                                    <span class="text-sm font-normal text-[#525158]">Created Date</span>
+                                                    <span class="text-base leading-6 font-normal">
+                                                        {{ $task->created_at->format('M d, Y') }}
+                                                    </span>
+                                                </div> 
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            @if($task->canInlineEdit($user) && !$task->isClosed())
+                                                <button type="button" class="w-7 h-7 bg-[#F8F8FB] rounded-md flex items-center justify-center" onclick="toggleEdit('dates')" title="Edit dates">
+                                                    <span class="icon-[tabler--pencil] size-3.5"></span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <!-- Edit Mode -->
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                    <div id="dates-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                        <input type="hidden" id="dates-due-date-input" value="{{ $task->due_date?->format('Y-m-d') }}">
+                                        <input type="hidden" id="dates-created-date-input" value="{{ $task->created_at->format('Y-m-d') }}">
+
+                                        <!-- Created Date - Click to show calendar -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Created Date</label>
+                                            <button type="button" onclick="toggleDatesCalendar('created')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                                <span class="icon-[tabler--calendar-plus] size-4"></span>
+                                                <span id="dates-created-display">{{ $task->created_at->format('M d, Y') }}</span>
+                                                <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-created-chevron"></span>
+                                            </button>
+                                            <!-- Created Date Calendar (hidden by default) -->
+                                            <div id="dates-created-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <button type="button" onclick="changeDatesMonth('created', -1)" class="btn btn-ghost btn-xs btn-circle">
+                                                        <span class="icon-[tabler--chevron-left] size-4"></span>
+                                                    </button>
+                                                    <span id="dates-created-month-year" class="font-semibold text-sm"></span>
+                                                    <button type="button" onclick="changeDatesMonth('created', 1)" class="btn btn-ghost btn-xs btn-circle">
+                                                        <span class="icon-[tabler--chevron-right] size-4"></span>
+                                                    </button>
+                                                </div>
+                                                <div class="grid grid-cols-7 gap-1 mb-2">
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                                </div>
+                                                <div id="dates-created-days" class="grid grid-cols-7 gap-1"></div>
+                                                <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                                    <button type="button" onclick="setDatesQuickDate('created', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                                    <button type="button" onclick="setDatesQuickDate('created', 'yesterday', event)" class="btn btn-soft btn-primary btn-xs">Yesterday</button>
+                                                    <button type="button" onclick="setDatesQuickDate('created', 'last-week', event)" class="btn btn-soft btn-primary btn-xs">Last Week</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Due Date - Click to show calendar -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Due Date</label>
+                                            <button type="button" onclick="toggleDatesCalendar('due')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                                <span class="icon-[tabler--calendar-due] size-4"></span>
+                                                <span id="dates-due-display">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}</span>
+                                                <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-due-chevron"></span>
+                                            </button>
+                                            <!-- Due Date Calendar (hidden by default) -->
+                                            <div id="dates-due-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <button type="button" onclick="changeDatesMonth('due', -1)" class="btn btn-ghost btn-xs btn-circle">
+                                                        <span class="icon-[tabler--chevron-left] size-4"></span>
+                                                    </button>
+                                                    <span id="dates-due-month-year" class="font-semibold text-sm"></span>
+                                                    <button type="button" onclick="changeDatesMonth('due', 1)" class="btn btn-ghost btn-xs btn-circle">
+                                                        <span class="icon-[tabler--chevron-right] size-4"></span>
+                                                    </button>
+                                                </div>
+                                                <div class="grid grid-cols-7 gap-1 mb-2">
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
+                                                    <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
+                                                </div>
+                                                <div id="dates-due-days" class="grid grid-cols-7 gap-1"></div>
+                                                <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
+                                                    <button type="button" onclick="setDatesQuickDate('due', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
+                                                    <button type="button" onclick="setDatesQuickDate('due', 'tomorrow', event)" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
+                                                    <button type="button" onclick="setDatesQuickDate('due', 'next-week', event)" class="btn btn-soft btn-primary btn-xs">Next Week</button>
+                                                    <button type="button" onclick="clearDatesField('due', event)" class="btn btn-soft btn-error btn-xs">Clear</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-2 pt-2">
+                                            <button type="button" class="btn btn-primary btn-xs" onclick="saveDates()">
+                                                <span class="icon-[tabler--check] size-3.5"></span>
+                                                Save
+                                            </button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('dates')">Cancel</button>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Assignee & Created By (Combined Inline) -->
+                                <div class="py-4">
+                                    <!-- Display Mode -->
+                                    <div class="flex justify-between">
+                                        <div id="people-display" class="mt-2 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <!-- Assignee -->
+                                                <div class="flex flex-col gap-2 w-1/2">
+                                                    <span class="text-sm font-normal text-[#525158]">Assignee</span>
+                                                    @if($task->assignee)
+                                                        <div class="flex items-center gap-2 py-2.5">
+                                                            <div class="avatar">
+                                                                <div class="w-8 rounded-full">
+                                                                    <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
+                                                                </div>
+                                                            </div>
+                                                            <span>{{ $task->assignee->name }}</span>
+                                                        </div>
+                                                    @else
+                                                        <span class="badge badge-sm badge-ghost gap-1">
+                                                            <span class="icon-[tabler--user-off] size-3"></span>
+                                                            Unassigned
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <!-- Creator -->
+                                                <div class="flex flex-col gap-2 w-1/2">
+                                                    <span class="text-sm font-normal text-[#525158]">Created By</span>
+                                                    <div class="flex items-center gap-2 py-2.5">
+                                                        <div class="avatar">
+                                                            <div class="w-8 rounded-full">
+                                                                <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
+                                                            </div>
+                                                        </div>
+                                                        <span>{{ $task->creator->name }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            @if($task->canInlineEdit($user) && !$task->isClosed())
+                                                <button type="button" class="w-7 h-7 bg-[#F8F8FB] rounded-md flex items-center justify-center" onclick="toggleEdit('people')" title="Edit">
+                                                    <span class="icon-[tabler--pencil] size-3.5"></span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <!-- Edit Mode -->
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                    <div id="people-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
+                                        <input type="hidden" id="people-assignee-input" value="{{ $task->assignee_id }}">
+                                        <input type="hidden" id="people-creator-input" value="{{ $task->created_by }}">
+
+                                        <!-- Assignee - Click to show dropdown -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Assignee</label>
+                                            <button type="button" onclick="togglePeopleDropdown('assignee')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                                @if($task->assignee)
+                                                    <div class="avatar">
+                                                        <div class="w-5 rounded-full">
+                                                            <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="icon-[tabler--user] size-4"></span>
+                                                @endif
+                                                <span id="people-assignee-display">{{ $task->assignee?->name ?? 'Unassigned' }}</span>
+                                                <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-assignee-chevron"></span>
+                                            </button>
+                                            <!-- Assignee Dropdown (hidden by default) -->
+                                            <div id="people-assignee-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
+                                                <div class="p-1">
+                                                    <button type="button" onclick="selectPerson('assignee', '', 'Unassigned')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2">
+                                                        <div class="avatar placeholder">
+                                                            <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
+                                                                <span class="icon-[tabler--user-off] size-3"></span>
+                                                            </div>
+                                                        </div>
+                                                        <span>Unassigned</span>
+                                                    </button>
+                                                    @foreach($users as $u)
+                                                    <button type="button" onclick="selectPerson('assignee', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->assignee_id == $u->id ? 'bg-primary/10' : '' }}">
+                                                        <div class="avatar">
+                                                            <div class="w-6 rounded-full">
+                                                                <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
+                                                            </div>
+                                                        </div>
+                                                        <span>{{ $u->name }}</span>
+                                                        @if($task->assignee_id == $u->id)
+                                                        <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                        @endif
+                                                    </button>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Creator - Click to show dropdown -->
+                                        <div>
+                                            <label class="text-xs font-medium text-base-content/60 mb-1 block">Created By</label>
+                                            <button type="button" onclick="togglePeopleDropdown('creator')" class="btn btn-sm btn-outline w-full justify-start gap-2">
+                                                <div class="avatar">
+                                                    <div class="w-5 rounded-full">
+                                                        <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
+                                                    </div>
+                                                </div>
+                                                <span id="people-creator-display">{{ $task->creator->name }}</span>
+                                                <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-creator-chevron"></span>
+                                            </button>
+                                            <!-- Creator Dropdown (hidden by default) -->
+                                            <div id="people-creator-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
+                                                <div class="p-1">
+                                                    @foreach($users as $u)
+                                                    <button type="button" onclick="selectPerson('creator', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->created_by == $u->id ? 'bg-primary/10' : '' }}">
+                                                        <div class="avatar">
+                                                            <div class="w-6 rounded-full">
+                                                                <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
+                                                            </div>
+                                                        </div>
+                                                        <span>{{ $u->name }}</span>
+                                                        @if($task->created_by == $u->id)
+                                                        <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
+                                                        @endif
+                                                    </button>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-2 pt-2">
+                                            <button type="button" class="btn btn-primary btn-xs" onclick="savePeople()">
+                                                <span class="icon-[tabler--check] size-3.5"></span>
+                                                Save
+                                            </button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('people')">Cancel</button>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Department (Inbox workspaces only) -->
+                                @if($task->workspace->type->value === 'inbox')
+                                <div class="py-4">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-medium text-base-content/70">Department</label>
+                                        @if($task->canInlineEdit($user) && !$task->isClosed())
+                                            <button type="button" class="w-7 h-7 bg-[#F8F8FB] rounded-md flex items-center justify-center" onclick="toggleEdit('department')" title="Edit department">
+                                                <span class="icon-[tabler--pencil] size-3.5"></span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <!-- Display Mode -->
+                                    <div id="department-display" class="mt-2">
+                                        @if($task->department)
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm bg-info/10 text-info">
+                                                <span class="icon-[tabler--building] size-4"></span>
+                                                {{ $task->department->name }}
+                                            </span>
+                                        @else
+                                            <span class="text-base-content/40 text-sm">Not assigned</span>
+                                        @endif
+                                    </div>
+                                    <!-- Edit Mode -->
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                    <form id="department-edit" action="{{ route('tasks.update-department', $task) }}" method="POST" class="hidden mt-2">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="department_id" class="select select-bordered select-sm w-full">
+                                            <option value="">No Department</option>
+                                            @foreach($departments as $department)
+                                                <option value="{{ $department->id }}" {{ $task->department_id == $department->id ? 'selected' : '' }}>
+                                                    {{ $department->name }}
                                                 </option>
                                             @endforeach
                                         </select>
-                                    </div>
-
-                                    <!-- Priority Select -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Priority</label>
-                                        @if($task->workspace->type->value === 'inbox')
-                                            <select id="quick-priority-select" data-type="workspace" class="select select-bordered select-sm w-full">
-                                                <option value="">No Priority</option>
-                                                @foreach($workspacePriorities as $wsPriority)
-                                                    <option value="{{ $wsPriority->id }}" {{ $task->workspace_priority_id == $wsPriority->id ? 'selected' : '' }}>
-                                                        {{ $wsPriority->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @else
-                                            <select id="quick-priority-select" data-type="task" class="select select-bordered select-sm w-full">
-                                                <option value="">No Priority</option>
-                                                @foreach(\App\Modules\Task\Enums\TaskPriority::cases() as $priority)
-                                                    <option value="{{ $priority->value }}" {{ $task->priority == $priority ? 'selected' : '' }}>
-                                                        {{ $priority->label() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @endif
-                                    </div>
-
-                                    <!-- Progress Slider -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Progress</label>
-                                        <div class="flex items-center gap-2">
-                                            <input type="range"
-                                                   id="quick-progress-slider"
-                                                   min="0"
-                                                   max="100"
-                                                   step="5"
-                                                   value="{{ $task->progress ?? 0 }}"
-                                                   class="range range-primary range-sm flex-1"
-                                            />
-                                            <span class="text-sm font-medium min-w-[3rem] text-right" id="quick-progress-percentage">{{ $task->progress ?? 0 }}%</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex gap-2 pt-2">
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveQuickStats()">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save All
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('quick-stats')">Cancel</button>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-
-                            <!-- Department (Inbox workspaces only) -->
-                            @if($task->workspace->type->value === 'inbox')
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Department</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('department')" title="Edit department">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="department-display" class="mt-2">
-                                    @if($task->department)
-                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-sm bg-info/10 text-info">
-                                            <span class="icon-[tabler--building] size-4"></span>
-                                            {{ $task->department->name }}
-                                        </span>
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not assigned</span>
-                                    @endif
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <form id="department-edit" action="{{ route('tasks.update-department', $task) }}" method="POST" class="hidden mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <select name="department_id" class="select select-bordered select-sm w-full">
-                                        <option value="">No Department</option>
-                                        @foreach($departments as $department)
-                                            <option value="{{ $department->id }}" {{ $task->department_id == $department->id ? 'selected' : '' }}>
-                                                {{ $department->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="flex gap-2 mt-2">
-                                        <button type="submit" class="btn btn-primary btn-xs">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('department')">Cancel</button>
-                                    </div>
-                                </form>
-                                @endif
-                            </div>
-
-                            @endif
-
-                            <!-- Assignee & Created By (Combined Inline) -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Assignee / Creator</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('people')" title="Edit">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="people-display" class="mt-2">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <!-- Assignee -->
-                                        @if($task->assignee)
-                                            <div class="badge badge-sm gap-1.5 py-2.5">
-                                                <div class="avatar">
-                                                    <div class="w-4 rounded-full">
-                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
-                                                    </div>
-                                                </div>
-                                                {{ $task->assignee->name }}
-                                            </div>
-                                        @else
-                                            <span class="badge badge-sm badge-ghost gap-1">
-                                                <span class="icon-[tabler--user-off] size-3"></span>
-                                                Unassigned
-                                            </span>
-                                        @endif
-
-                                        <span class="text-base-content/30">•</span>
-
-                                        <!-- Creator -->
-                                        <div class="badge badge-sm badge-outline gap-1.5 py-2.5">
-                                            <div class="avatar">
-                                                <div class="w-4 rounded-full">
-                                                    <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
-                                                </div>
-                                            </div>
-                                            {{ $task->creator->name }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <div id="people-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
-                                    <input type="hidden" id="people-assignee-input" value="{{ $task->assignee_id }}">
-                                    <input type="hidden" id="people-creator-input" value="{{ $task->created_by }}">
-
-                                    <!-- Assignee - Click to show dropdown -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Assignee</label>
-                                        <button type="button" onclick="togglePeopleDropdown('assignee')" class="btn btn-sm btn-outline w-full justify-start gap-2">
-                                            @if($task->assignee)
-                                                <div class="avatar">
-                                                    <div class="w-5 rounded-full">
-                                                        <img src="{{ $task->assignee->avatar_url }}" alt="{{ $task->assignee->name }}" />
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <span class="icon-[tabler--user] size-4"></span>
-                                            @endif
-                                            <span id="people-assignee-display">{{ $task->assignee?->name ?? 'Unassigned' }}</span>
-                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-assignee-chevron"></span>
-                                        </button>
-                                        <!-- Assignee Dropdown (hidden by default) -->
-                                        <div id="people-assignee-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
-                                            <div class="p-1">
-                                                <button type="button" onclick="selectPerson('assignee', '', 'Unassigned')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2">
-                                                    <div class="avatar placeholder">
-                                                        <div class="bg-base-300 text-base-content rounded-full w-6 h-6 flex items-center justify-center">
-                                                            <span class="icon-[tabler--user-off] size-3"></span>
-                                                        </div>
-                                                    </div>
-                                                    <span>Unassigned</span>
-                                                </button>
-                                                @foreach($users as $u)
-                                                <button type="button" onclick="selectPerson('assignee', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->assignee_id == $u->id ? 'bg-primary/10' : '' }}">
-                                                    <div class="avatar">
-                                                        <div class="w-6 rounded-full">
-                                                            <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
-                                                        </div>
-                                                    </div>
-                                                    <span>{{ $u->name }}</span>
-                                                    @if($task->assignee_id == $u->id)
-                                                    <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
-                                                    @endif
-                                                </button>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Creator - Click to show dropdown -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Created By</label>
-                                        <button type="button" onclick="togglePeopleDropdown('creator')" class="btn btn-sm btn-outline w-full justify-start gap-2">
-                                            <div class="avatar">
-                                                <div class="w-5 rounded-full">
-                                                    <img src="{{ $task->creator->avatar_url }}" alt="{{ $task->creator->name }}" />
-                                                </div>
-                                            </div>
-                                            <span id="people-creator-display">{{ $task->creator->name }}</span>
-                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="people-creator-chevron"></span>
-                                        </button>
-                                        <!-- Creator Dropdown (hidden by default) -->
-                                        <div id="people-creator-dropdown" class="hidden mt-2 bg-base-100 rounded-lg border border-base-300 max-h-48 overflow-y-auto">
-                                            <div class="p-1">
-                                                @foreach($users as $u)
-                                                <button type="button" onclick="selectPerson('creator', '{{ $u->id }}', '{{ $u->name }}')" class="w-full text-left px-3 py-2 text-sm rounded hover:bg-base-200 flex items-center gap-2 {{ $task->created_by == $u->id ? 'bg-primary/10' : '' }}">
-                                                    <div class="avatar">
-                                                        <div class="w-6 rounded-full">
-                                                            <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" />
-                                                        </div>
-                                                    </div>
-                                                    <span>{{ $u->name }}</span>
-                                                    @if($task->created_by == $u->id)
-                                                    <span class="icon-[tabler--check] size-4 text-primary ml-auto"></span>
-                                                    @endif
-                                                </button>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex gap-2 pt-2">
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="savePeople()">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('people')">Cancel</button>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-                            <!-- Due Date & Created Date (Combined Inline) -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Created / Due</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('dates')" title="Edit dates">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="dates-display" class="mt-2">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <!-- Created Date -->
-                                        <span class="badge badge-sm badge-outline gap-1">
-                                            <span class="icon-[tabler--calendar-plus] size-3"></span>
-                                            {{ $task->created_at->format('M d, Y') }}
-                                        </span>
-
-                                        <span class="text-base-content/30">•</span>
-
-                                        <!-- Due Date -->
-                                        @if($task->due_date)
-                                            <span class="badge badge-sm {{ $task->isOverdue() ? 'badge-error' : 'badge-warning' }} gap-1">
-                                                <span class="icon-[tabler--calendar-due] size-3"></span>
-                                                {{ $task->due_date->format('M d, Y') }}
-                                                @if($task->isOverdue())
-                                                    (Overdue)
-                                                @endif
-                                            </span>
-                                        @else
-                                            <span class="badge badge-sm badge-ghost gap-1">
-                                                <span class="icon-[tabler--calendar-due] size-3"></span>
-                                                No Due Date
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                <div id="dates-edit" class="hidden mt-3 space-y-3 p-3 bg-base-200/50 rounded-lg">
-                                    <input type="hidden" id="dates-due-date-input" value="{{ $task->due_date?->format('Y-m-d') }}">
-                                    <input type="hidden" id="dates-created-date-input" value="{{ $task->created_at->format('Y-m-d') }}">
-
-                                    <!-- Created Date - Click to show calendar -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Created Date</label>
-                                        <button type="button" onclick="toggleDatesCalendar('created')" class="btn btn-sm btn-outline w-full justify-start gap-2">
-                                            <span class="icon-[tabler--calendar-plus] size-4"></span>
-                                            <span id="dates-created-display">{{ $task->created_at->format('M d, Y') }}</span>
-                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-created-chevron"></span>
-                                        </button>
-                                        <!-- Created Date Calendar (hidden by default) -->
-                                        <div id="dates-created-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <button type="button" onclick="changeDatesMonth('created', -1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
-                                                </button>
-                                                <span id="dates-created-month-year" class="font-semibold text-sm"></span>
-                                                <button type="button" onclick="changeDatesMonth('created', 1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
-                                                </button>
-                                            </div>
-                                            <div class="grid grid-cols-7 gap-1 mb-2">
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
-                                            </div>
-                                            <div id="dates-created-days" class="grid grid-cols-7 gap-1"></div>
-                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
-                                                <button type="button" onclick="setDatesQuickDate('created', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
-                                                <button type="button" onclick="setDatesQuickDate('created', 'yesterday', event)" class="btn btn-soft btn-primary btn-xs">Yesterday</button>
-                                                <button type="button" onclick="setDatesQuickDate('created', 'last-week', event)" class="btn btn-soft btn-primary btn-xs">Last Week</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Due Date - Click to show calendar -->
-                                    <div>
-                                        <label class="text-xs font-medium text-base-content/60 mb-1 block">Due Date</label>
-                                        <button type="button" onclick="toggleDatesCalendar('due')" class="btn btn-sm btn-outline w-full justify-start gap-2">
-                                            <span class="icon-[tabler--calendar-due] size-4"></span>
-                                            <span id="dates-due-display">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}</span>
-                                            <span class="icon-[tabler--chevron-down] size-4 ml-auto transition-transform" id="dates-due-chevron"></span>
-                                        </button>
-                                        <!-- Due Date Calendar (hidden by default) -->
-                                        <div id="dates-due-calendar" class="hidden mt-2 bg-base-100 rounded-lg p-3 border border-base-300">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <button type="button" onclick="changeDatesMonth('due', -1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-left] size-4"></span>
-                                                </button>
-                                                <span id="dates-due-month-year" class="font-semibold text-sm"></span>
-                                                <button type="button" onclick="changeDatesMonth('due', 1)" class="btn btn-ghost btn-xs btn-circle">
-                                                    <span class="icon-[tabler--chevron-right] size-4"></span>
-                                                </button>
-                                            </div>
-                                            <div class="grid grid-cols-7 gap-1 mb-2">
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Su</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Mo</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Tu</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">We</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Th</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Fr</div>
-                                                <div class="text-center text-xs font-medium text-base-content/50 py-1">Sa</div>
-                                            </div>
-                                            <div id="dates-due-days" class="grid grid-cols-7 gap-1"></div>
-                                            <div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-base-300">
-                                                <button type="button" onclick="setDatesQuickDate('due', 'today', event)" class="btn btn-soft btn-primary btn-xs">Today</button>
-                                                <button type="button" onclick="setDatesQuickDate('due', 'tomorrow', event)" class="btn btn-soft btn-primary btn-xs">Tomorrow</button>
-                                                <button type="button" onclick="setDatesQuickDate('due', 'next-week', event)" class="btn btn-soft btn-primary btn-xs">Next Week</button>
-                                                <button type="button" onclick="clearDatesField('due', event)" class="btn btn-soft btn-error btn-xs">Clear</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex gap-2 pt-2">
-                                        <button type="button" class="btn btn-primary btn-xs" onclick="saveDates()">
-                                            <span class="icon-[tabler--check] size-3.5"></span>
-                                            Save
-                                        </button>
-                                        <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('dates')">Cancel</button>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-
-                            <!-- Task Type(s) -->
-                            <div class="py-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-medium text-base-content/70">Type</label>
-                                    @if($task->canInlineEdit($user) && !$task->isClosed())
-                                        <button type="button" class="btn btn-soft btn-primary btn-xs btn-circle edit-btn" onclick="toggleEdit('type')" title="Edit type">
-                                            <span class="icon-[tabler--pencil] size-3.5"></span>
-                                        </button>
-                                    @endif
-                                </div>
-                                <!-- Display Mode -->
-                                <div id="type-display" class="mt-2 flex flex-wrap gap-1">
-                                    @if($task->types && count($task->types) > 0)
-                                        @foreach($task->types as $taskType)
-                                            <span class="badge badge-sm gap-1">
-                                                <span class="icon-[{{ $taskType->icon() }}] size-3"></span>
-                                                {{ $taskType->label() }}
-                                            </span>
-                                        @endforeach
-                                    @else
-                                        <span class="text-base-content/40 text-sm">Not set</span>
-                                    @endif
-                                </div>
-                                <!-- Edit Mode -->
-                                @if($task->canInlineEdit($user) && !$task->isClosed())
-                                    <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
-                                        @csrf
-                                        @method('PATCH')
-                                        <div class="space-y-2 p-2 bg-base-200/50 rounded-lg">
-                                            @foreach(\App\Modules\Task\Enums\TaskType::cases() as $type)
-                                                <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
-                                                    <input type="checkbox" name="type[]" value="{{ $type->value }}"
-                                                           class="checkbox checkbox-sm checkbox-primary"
-                                                        {{ $task->types && in_array($type, $task->types) ? 'checked' : '' }}>
-                                                    <span class="icon-[{{ $type->icon() }}] size-4 text-base-content/70"></span>
-                                                    <span class="text-sm">{{ $type->label() }}</span>
-                                                </label>
-                                            @endforeach
-                                        </div>
                                         <div class="flex gap-2 mt-2">
                                             <button type="submit" class="btn btn-primary btn-xs">
                                                 <span class="icon-[tabler--check] size-3.5"></span>
                                                 Save
                                             </button>
-                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('type')">Cancel</button>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('department')">Cancel</button>
                                         </div>
                                     </form>
-                                @endif
-                            </div>
-
-                            <!-- Workspace -->
-                            <div class="py-3">
-                                <label class="text-sm font-medium text-base-content/70">Workspace</label>
-                                <div class="mt-2">
-                                    <a href="{{ route('workspace.show', $task->workspace) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
-                                        <span class="icon-[tabler--folder] size-4"></span>
-                                        {{ $task->workspace->name }}
-                                    </a>
-                                </div>
-                            </div>
-
-                            <!-- Estimated Time -->
-                            @if($task->estimated_time)
-                            <div class="py-3 last:pb-0">
-                                <label class="text-sm font-medium text-base-content/70">Estimated Time</label>
-                                <div class="mt-2 inline-flex items-center gap-1.5 text-base-content">
-                                    <span class="icon-[tabler--clock] size-4 text-base-content/60"></span>
-                                    <span class="text-sm">{{ floor($task->estimated_time / 60) }}h {{ $task->estimated_time % 60 }}m</span>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tags -->
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--tags] size-5"></span>
-                            Tags
-                        </h2>
-
-                        <div class="flex flex-wrap gap-2">
-                            @forelse($task->tags as $tag)
-                                <div class="badge gap-1" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }}">
-                                    {{ $tag->name }}
-                                    @if($task->canEdit($user))
-                                        <form action="{{ route('tasks.tags.detach', [$task, $tag]) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="hover:text-error">
-                                                <span class="icon-[tabler--x] size-3"></span>
-                                            </button>
-                                        </form>
                                     @endif
                                 </div>
-                            @empty
-                                <p class="text-base-content/60 text-sm">No tags</p>
-                            @endforelse
-                        </div>
 
-{{--                        @if($task->canEdit($user) && $tags->diff($task->tags)->isNotEmpty())
-                            <form action="{{ route('tasks.tags.attach', $task) }}" method="POST" class="mt-3">
-                                @csrf
-                                <div class="flex gap-2">
-                                    <select name="tag_id" class="select select-bordered select-sm flex-1">
-                                        <option value="">Add tag...</option>
-                                        @foreach($tags->diff($task->tags) as $tag)
-                                            <option value="{{ $tag->id }}">{{ $tag->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="btn btn-primary btn-sm">Add</button>
-                                </div>
-                            </form>
-                        @endif--}}
-                    </div>
-                </div>
-
-                <!-- Watchers (hide for clients) -->
-                @if(!$isClient)
-                <div class="card bg-base-100 shadow">
-                    <div class="card-body">
-                        <h2 class="card-title text-lg">
-                            <span class="icon-[tabler--eye] size-5"></span>
-                            Watchers
-                            <span class="badge badge-sm">{{ $task->watchers->count() }}</span>
-                        </h2>
-
-                        <div class="flex flex-wrap gap-2">
-                            @forelse($task->watchers as $watcher)
-                                <div class="badge badge-lg gap-2">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-neutral text-neutral-content w-5 rounded-full">
-                                            <span class="text-xs">{{ substr($watcher->name, 0, 1) }}</span>
+                                @endif
+                                <!-- Task Type(s) -->
+                                <div class="py-4">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-normal text-[#525158]">Type</label>
+                                        @if($task->canInlineEdit($user) && !$task->isClosed())
+                                            <button type="button" class="w-7 h-7 bg-[#F8F8FB] rounded-md flex items-center justify-center" onclick="toggleEdit('type')" title="Edit type">
+                                                <span class="icon-[tabler--pencil] size-3.5"></span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <!-- Display Mode -->
+                                    <div id="type-display" class="mt-2 flex flex-wrap">
+                                        <div class="bg-[#EDECF0] py-1 px-2 rounded-md">
+                                            @if($task->types && count($task->types) > 0)
+                                                @foreach($task->types as $taskType)
+                                                    <span class="flex items-center gap-1 text-xs text-[#525158]">
+                                                        <span class="icon-[{{ $taskType->icon() }}]"></span>
+                                                        {{ $taskType->label() }}
+                                                    </span>
+                                                @endforeach
+                                            @else
+                                                <span class="text-base-content/40 text-sm">Not set</span>
+                                            @endif
                                         </div>
                                     </div>
-                                    {{ $watcher->name }}
-                                    @if($task->canEdit($user) || $watcher->id === $user->id)
-                                        <form action="{{ route('tasks.watchers.destroy', [$task, $watcher->id]) }}" method="POST" class="inline">
+                                    <!-- Edit Mode -->
+                                    @if($task->canInlineEdit($user) && !$task->isClosed())
+                                        <form id="type-edit" action="{{ route('tasks.update-type', $task) }}" method="POST" class="hidden mt-2">
                                             @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="hover:text-error">
-                                                <span class="icon-[tabler--x] size-3"></span>
-                                            </button>
+                                            @method('PATCH')
+                                            <div class="space-y-2 p-2 bg-base-200/50 rounded-lg">
+                                                @foreach(\App\Modules\Task\Enums\TaskType::cases() as $type)
+                                                    <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
+                                                        <input type="checkbox" name="type[]" value="{{ $type->value }}"
+                                                            class="checkbox checkbox-sm checkbox-primary"
+                                                            {{ $task->types && in_array($type, $task->types) ? 'checked' : '' }}>
+                                                        <span class="icon-[{{ $type->icon() }}] size-4 text-base-content/70"></span>
+                                                        <span class="text-sm">{{ $type->label() }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button type="submit" class="btn btn-primary btn-xs">
+                                                    <span class="icon-[tabler--check] size-3.5"></span>
+                                                    Save
+                                                </button>
+                                                <button type="button" class="btn btn-ghost btn-xs" onclick="toggleEdit('type')">Cancel</button>
+                                            </div>
                                         </form>
                                     @endif
                                 </div>
-                            @empty
-                                <p class="text-base-content/60 text-sm">No watchers</p>
-                            @endforelse
-                        </div>
 
+                                <!-- Workspace -->
+                                <div class="py-4">
+                                    <label class="text-sm font-medium text-[#525158]">Workspace</label>
+                                    <div class="mt-2">
+                                        <a href="{{ route('workspace.show', $task->workspace) }}" class="inline-flex items-center gap-1.5 text-primary hover:text-primary-focus transition-colors">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M3 10C3 8.34315 4.34315 7 6 7H18C19.6569 7 21 8.34315 21 10V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18V10Z" fill="#3ba5ff"/>
+                                                <path d="M7 12L7.75705 13.4384C8.58617 15.0137 10.2198 16 12 16C13.7802 16 15.4138 15.0137 16.243 13.4384L17 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M8 7C8 5.34315 9.34315 4 11 4H13C14.6569 4 16 5.34315 16 7V8H8V7Z" stroke="#3ba5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            {{ $task->workspace->name }}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Estimated Time -->
+                                @if($task->estimated_time)
+                                <div class="py-3 last:pb-0">
+                                    <label class="text-sm font-medium text-base-content/70">Estimated Time</label>
+                                    <div class="mt-2 inline-flex items-center gap-1.5 text-base-content">
+                                        <span class="icon-[tabler--clock] size-4 text-base-content/60"></span>
+                                        <span class="text-sm">{{ floor($task->estimated_time / 60) }}h {{ $task->estimated_time % 60 }}m</span>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    <!-- Divider -->
+                    <div class="w-full h border border-[#EDECF0]"></div>
+                    <!-- Tags -->
+                        <div class="card-body">
+                            <h2 class="card-title text-lg flex items-center gap-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20.59 13.41L13.42 20.58C13.2343 20.766 13.0137 20.9135 12.7709 21.0141C12.5281 21.1148 12.2678 21.1666 12.005 21.1666C11.7422 21.1666 11.4819 21.1148 11.2391 21.0141C10.9963 20.9135 10.7757 20.766 10.59 20.58L3.17322 13.1719C2.42207 12.4216 2 11.4035 2 10.3418V4C2 2.89543 2.89543 2 4 2H10.3431C11.404 2 12.4214 2.42143 13.1716 3.17157L20.59 10.59C20.9625 10.9647 21.1716 11.4716 21.1716 12C21.1716 12.5284 20.9625 13.0353 20.59 13.41Z" stroke="#3ba5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M7.50729 6C8.33169 6 9 6.67157 9 7.5C9 8.32843 8.33169 9 7.50729 9H7.49271C6.66831 9 6 8.32843 6 7.5C6 6.67157 6.66831 6 7.49271 6H7.50729Z" fill="#3ba5ff"/>
+                                </svg>
+                                <span class=" text-2xl font-semibold leading-6">Tags</span>
+                            </h2>
+
+                            <div class="flex flex-wrap gap-2">
+                                @forelse($task->tags as $tag)
+                                    <div class="badge gap-1 mt-6" style="background-color: {{ $tag->color }}20; color: {{ $tag->color }}">
+                                        {{ $tag->name }}
+                                        @if($task->canEdit($user))
+                                            <form action="{{ route('tasks.tags.detach', [$task, $tag]) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="hover:text-error">
+                                                    <span class="icon-[tabler--x] size-3"></span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-base-content/60 text-sm mt-6">No tags</p>
+                                @endforelse
+                            </div>
+
+    {{--                        @if($task->canEdit($user) && $tags->diff($task->tags)->isNotEmpty())
+                                <form action="{{ route('tasks.tags.attach', $task) }}" method="POST" class="mt-3">
+                                    @csrf
+                                    <div class="flex gap-2">
+                                        <select name="tag_id" class="select select-bordered select-sm flex-1">
+                                            <option value="">Add tag...</option>
+                                            @foreach($tags->diff($task->tags) as $tag)
+                                                <option value="{{ $tag->id }}">{{ $tag->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                                    </div>
+                                </form>
+                            @endif--}}
+                        </div>
+                    <!-- Divider -->
+                    <div class="w-full h border border-[#EDECF0]"></div>
+                    <!-- Watchers (hide for clients) -->
+                    @if(!$isClient)
+                        <div class="card-body">
+                            <h2 class="card-title text-lg flex items-center gap-2 mb-6">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9998 6C8.8373 6 6.77147 7.56534 4.49695 9.84056C3.32082 11.0171 3.32082 12.999 4.49225 14.1532C6.67955 16.3084 8.95266 18 11.9998 18C15.047 18 17.3201 16.3084 19.5074 14.1532C20.6835 12.9944 20.6835 11.0056 19.5074 9.84675C17.3201 7.69159 15.047 6 11.9998 6ZM3.08252 8.42656C5.4483 6.06005 8.00814 4 11.9998 4C15.8793 4 18.648 6.19224 20.9111 8.42211C22.8823 10.3643 22.8823 13.6357 20.9111 15.5779C18.648 17.8078 15.8793 20 11.9998 20C8.12042 20 5.35167 17.8078 3.08854 15.5779C1.11275 13.6311 1.13493 10.3747 3.08252 8.42656Z" fill="#3ba5ff"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10ZM8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12Z" fill="#3ba5ff"/>
+                                </svg>
+                                <span class="text-xl font-semibold text-[#17151C]">Watchers</span>
+                                <span class="py-0.5 px-1.5 bg-[#EDECF0] rounded-md text-xs">{{ $task->watchers->count() }}</span>
+                            </h2>
+
+                            <div class="flex flex-wrap gap-2">
+                                @forelse($task->watchers as $watcher)
+                                    <div class="py-1 pl-1 pr-2 flex gap-2 bg-[#F8F8FB] rounded-2xl">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-[#00a63e] w-6 flex! text-white items-center justify-center rounded-full">
+                                                <span class="text-xs">{{ substr($watcher->name, 0, 1) }}</span>
+                                            </div>
+                                        </div>
+                                        <span>{{ $watcher->name }}</span>
+                                        @if($task->canEdit($user) || $watcher->id === $user->id)
+                                            <form action="{{ route('tasks.watchers.destroy', [$task, $watcher->id]) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="hover:text-error">
+                                                    <span class="icon-[tabler--x] size-3"></span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-base-content/60 text-sm">No watchers</p>
+                                @endforelse
+                            </div>
+
+                        </div>
                     </div>
+                    @endif
                 </div>
-                @endif
             </div>
         </div>
     </div>
@@ -1910,39 +1979,39 @@ function updateQuickStatsDisplay(statusData, priorityData, priorityType, progres
     // Build status badge HTML
     let statusHtml = '';
     if (statusData) {
-        statusHtml = `<span class="badge badge-sm" style="background-color: ${statusData.background_color}20; color: ${statusData.background_color}">${statusData.name}</span>`;
+        statusHtml = `<span class="py-1 px-2 rounded-md text-xs" style="background-color: ${statusData.background_color}20; color: ${statusData.background_color}">${statusData.name}</span>`;
     } else {
-        statusHtml = '<span class="badge badge-sm badge-ghost">No Status</span>';
+        statusHtml = '<span class="py-1 px-2 rounded-md text-xs badge-ghost">No Status</span>';
     }
 
     // Build priority badge HTML
     let priorityHtml = '';
     if (priorityData) {
         if (priorityType === 'workspace') {
-            priorityHtml = `<span class="badge badge-sm" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
+            priorityHtml = `<span class="py-1 px-2 rounded-md text-xs" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
                 <span class="icon-[tabler--flag] size-3 mr-0.5"></span>
                 ${priorityData.name}
             </span>`;
         } else {
-            priorityHtml = `<span class="badge badge-sm" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
-                <span class="icon-[${priorityData.icon}] size-3 mr-0.5"></span>
+            priorityHtml = `<span class="py-1 px-2 rounded-md text-xs" style="background-color: ${priorityData.color}15; color: ${priorityData.color}">
+                <span class=" size-3 mr-0.5"></span>
                 ${priorityData.label}
             </span>`;
         }
     } else {
-        priorityHtml = '<span class="badge badge-sm badge-ghost">No Priority</span>';
+        priorityHtml = '<span class="py-1 px-2 rounded-md text-xs badge-ghost">No Priority</span>';
     }
 
     // Build progress badge HTML
-    const progressClass = progress === 100 ? 'badge-success' : 'badge-primary';
-    const progressHtml = `<span class="badge badge-sm ${progressClass} badge-outline">${progress}%</span>`;
+    const progressClass = progress === 100 ? 'bg-success' : 'bg-primary';
+    const progressHtml = `<span class="py-1 px-2 rounded-md text-xs bg-primary text-white ${progressClass} badge-outline">${progress}%</span>`;
 
     displayEl.innerHTML = `
         <div class="flex items-center gap-2 flex-wrap">
             ${statusHtml}
-            <span class="text-base-content/30">•</span>
+            
             ${priorityHtml}
-            <span class="text-base-content/30">•</span>
+            
             ${progressHtml}
         </div>
     `;
