@@ -11,7 +11,7 @@
 @endphp
 
 @section('content')
-<div class="p-4 md:p-6 pt-0!">
+<div class="p-4 md:p-6 pt-0! pr-0!">
     <div class="max-w mx-auto">
         
 
@@ -102,7 +102,7 @@
                     <div class="card-body">
                         <div class="flex flex-col items-start gap-2">
                             @if($task->status)
-                                <div class="py-1 px-2 rounded-md text-xs mb-4" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
+                                <div class="py-1 px-2 rounded-md text-xs mb-2" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
                                     {{ $task->status->name }}
                                 </div>
                             @endif

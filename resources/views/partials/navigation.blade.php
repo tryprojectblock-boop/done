@@ -131,7 +131,7 @@
 
             <!-- Add Button (only for team members) -->
             <div class="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
-                <button id="add-dropdown" type="button" class="dropdown-toggle btn btn-primary btn-sm gap-1" aria-haspopup="menu" aria-expanded="false" aria-label="Add menu">
+                <button id="add-dropdown" type="button" class="dropdown-toggle btn btn-primary btn-sm gap-1 box-no-shadow" aria-haspopup="menu" aria-expanded="false" aria-label="Add menu">
                     <span class="icon-[tabler--plus] size-4"></span>
                     <span class="hidden sm:inline">Add</span>
                     <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 transition-transform"></span>
