@@ -62,9 +62,9 @@ main {
 }
 
 .task-description p{
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
+    font-size: 16px !important;
+    line-height: 24px !important;
+    font-weight: 400 !important;
 }
 
 .task-comments-section .tab-active{

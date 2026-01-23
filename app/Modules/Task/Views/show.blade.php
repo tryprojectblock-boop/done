@@ -100,8 +100,13 @@
                 <!-- Description -->
                 <div class="rounded-md bg-base-100">
                     <div class="card-body">
-                        <div class="flex items-center gap-2">
-                            <h1 class="font-semibold text-[32px] text-[#17151C]  {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
+                        <div class="flex flex-col items-start gap-2">
+                            @if($task->status)
+                                <div class="py-1 px-2 rounded-md text-xs mb-4" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }}">
+                                    {{ $task->status->name }}
+                                </div>
+                            @endif
+                            <h1 class="font-semibold text-[32px] block leading-9 text-[#17151C] {{ $task->isClosed() ? 'line-through opacity-60' : '' }}">
                                 {{ $task->title }}
                             </h1>
                             @if($task->is_private)
@@ -125,11 +130,13 @@
                     </div>
                     <!-- Subtasks (only show for parent tasks, not for subtasks) -->
                     <div class="card-body">
-                        <!-- Header -->
-                        <div class="flex items-center justify-between bg-[#F8F8FB] rounded-md px-3 py-[7px]">
-                            <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Sub-task</h2>
-                            <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Actions</h2>
-                        </div>
+                        @if($task->subtasks->count() > 0)
+                            <!-- Header -->
+                            <div class="flex items-center justify-between bg-[#F8F8FB] rounded-md px-3 py-[7px]">
+                                <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Sub-task</h2>
+                                <h2 class="text-sm leading-4.5 font-medium text-[#525158]">Actions</h2>
+                            </div>
+                        @endif
                     @if(!$task->parentTask)
                     <div id="subtasks-section">
                         <div class=" bg-base-100" id="subtasks-card">
@@ -141,28 +148,27 @@
                                 </h2> -->
                                 <div class="space-y-2" id="subtasks-list">
                                     @forelse($task->subtasks as $subtask)
-                                    <div class="flex items-center border-b border-[#EDECF0] justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                                    <a href="{{ route('tasks.show', $subtask) }}" class="flex items-center border-b border-[#EDECF0] justify-between px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer no-underline">
                                         <div class="flex items-center gap-4">
                                             @if($subtask->status)
                                                 <span class="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded" style="background-color: {{ $subtask->status->background_color }}20; color: {{ $subtask->status->background_color }}">{{ $subtask->status->name }}</span>
                                             @endif
-                                            <span class="text-gray-900 {{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
+                                            <span class="text-gray-900 flex-1 {{ $subtask->isClosed() ? 'line-through' : '' }}">{{ $subtask->title }}</span>
                                         </div>
-                                        <a  href="{{ route('tasks.show', $subtask) }}" class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+                                        <span class="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors inline-block" onclick="event.preventDefault(); event.stopPropagation();">
                                             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
-                                        </a>
-                                    </div>
+                                        </span>
+                                    </a>
                                     @empty
                                         <p id="subtasks-empty-message" class="text-base-content/60 text-sm">No subtasks yet</p>
                                     @endforelse
                                 </div>
-                                <div class="mt-3">
-                                    <button type="button" onclick="openSubtaskDrawer()" class="btn btn-sm btn-ghost">
-                                        <span class="icon-[tabler--plus] size-4"></span>
-                                        Add Subtask
+                                <div class="mt-4">
+                                    <button type="button" onclick="openSubtaskDrawer()" class=" border border-[#B8B7BB] p-2 pr-3 rounded-md hover:bg-gray-50">
+                                        <span class="text-[#17151C]">Add Subtask</span>
                                     </button>
                                 </div>
                             </div>
@@ -203,7 +209,7 @@
                             <div class="flex items-center border-b border-[#EDECF0] justify-between px-4 py-4 hover:bg-gray-50 transition-colors" data-attachment-id="{{ $attachment->id }}">
                                 <div class="flex items-center gap-4">
                                     <div class="flex-1 min-w-0">
-                                        <p class="font-medium text-gray-900">{{ $attachment->original_name }}</p>
+                                        <p class="text-[#525158] text-sm font-medium">{{ $attachment->original_name }}</p>
                                         <p class="text-xs text-base-content/60">{{ $attachment->getFormattedSize() }}</p>
                                     </div>
                                 </div>
@@ -2722,7 +2728,7 @@ function createAttachmentElement(attachment) {
         <form action="${attachment.delete_url}" method="POST" class="inline">
             <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.content || ''}">
             <input type="hidden" name="_method" value="DELETE">
-            <button type="submit" class="btn btn-ghost btn-xs text-error"
+            <button type="submit" class="w-7 h-7 flex items-center justify-center rounded-md border border-[#B8B7BB] hover:bg-red-50 transition-colors"
                     onclick="return confirm('Delete this attachment?')">
                 <span class="icon-[tabler--trash] size-4"></span>
             </button>
@@ -2730,14 +2736,12 @@ function createAttachmentElement(attachment) {
     ` : '';
 
     return `
-        <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg group" data-attachment-id="${attachment.id}">
-            <span class="icon-[${attachment.icon_class}] size-8 text-base-content/60"></span>
+        <div class="flex items-center gap-3 p-4 rounded-lg group" data-attachment-id="${attachment.id}">
             <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">${escapeHtml(attachment.original_name)}</p>
-                <p class="text-xs text-base-content/60">${attachment.formatted_size}</p>
+                <p class="text-[#525158] text-sm font-medium truncate">${escapeHtml(attachment.original_name)}</p>
             </div>
-            <div class="flex gap-1">
-                <a href="${attachment.download_url}" class="btn btn-ghost btn-xs">
+            <div class="flex gap-2">
+                <a href="${attachment.download_url}" class="w-7 h-7 flex items-center justify-center rounded-md border border-[#B8B7BB] hover:bg-gray-50 transition-colors">
                     <span class="icon-[tabler--download] size-4"></span>
                 </a>
                 ${deleteButton}
