@@ -13,7 +13,7 @@
 @section('content')
 <div class="p-4 md:p-6 pt-0!">
     <div class="max-w mx-auto">
-        
+
 
         <!-- Success/Error Messages -->
         @if(session('success'))
@@ -94,7 +94,7 @@
                             <!-- <p class="text-base-content/60 mt-1">
                                 Created by {{ $task->creator->name }} on {{ $task->created_at->format('M d, Y') }}
                             </p> -->
-                        </div>                    
+                        </div>
                     </div>
                 </div>
                 <!-- Description -->
@@ -196,7 +196,7 @@
                             <span id="upload-btn-text" class="text-base">Upload File</span>
                         </button>
                     </div>
-                    <div class="card-body">   
+                    <div class="card-body">
                         @if($task->attachments->isNotEmpty())
                             <!-- Header -->
                             <div class="flex items-center justify-between bg-[#F8F8FB] rounded-md px-3 py-[7px]">
@@ -223,7 +223,7 @@
                                         <form action="{{ route('tasks.attachments.destroy', $attachment) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" 
+                                            <button type="submit"
                                                     class="w-7 h-7 flex items-center justify-center rounded-md border border-[#B8B7BB] hover:bg-red-50 transition-colors"
                                                     onclick="return confirm('Delete this attachment?')"
                                                     title="Delete">
@@ -234,16 +234,15 @@
                                 </div>
                             </div>
                         @empty
-                            <p id="attachments-empty-message" class="text-base-content/60 text-sm px-6 py-4">No attachments yet</p>
                         @endforelse
                     </div>
-                        
+
                     </div>
                 </div>
 
                 <!-- Comments -->
                 <div class="rounded-md bg-base-100 shadow">
-                    
+
                         @php
                             $publicCommentsCount = $task->comments->where('is_private', false)->count();
                             $privateCommentsCount = $task->comments->where('is_private', true)->count();
@@ -381,7 +380,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Activity Log -->
                 <div class="card bg-base-100 shadow">
                     <div class="card-body">
@@ -687,7 +686,7 @@
                                                     <span class="text-base leading-6 font-normal">
                                                         {{ $task->created_at->format('M d, Y') }}
                                                     </span>
-                                                </div> 
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="flex items-center justify-between">
@@ -1375,8 +1374,8 @@ function switchFilterTab(type) {
             badgeElement.id = '';
             badgeElement.textContent = {{ $visibleCommentsCount }};
         }
-        
-        
+
+
     } else if (type === 'public') {
         // Update icon
         if (iconElement) {
@@ -1391,7 +1390,7 @@ function switchFilterTab(type) {
             badgeElement.id = 'public-count-badge';
             badgeElement.textContent = {{ $publicCommentsCount }};
         }
-        
+
     } else if (type === 'private') {
         // Update icon
         if (iconElement) {
@@ -2167,9 +2166,9 @@ function updateQuickStatsDisplay(statusData, priorityData, priorityType, progres
     displayEl.innerHTML = `
         <div class="flex items-center gap-2 flex-wrap">
             ${statusHtml}
-            
+
             ${priorityHtml}
-            
+
             ${progressHtml}
         </div>
     `;
