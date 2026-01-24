@@ -24,9 +24,13 @@
                         @else
                             <span class="icon-[tabler--checkbox] w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0"></span>
                         @endif
-                        <h3 class="font-semibold text-[#17151C] text-base leading-5">App Settings - Rating</h3>
+                        <h3 class="font-semibold text-[#17151C] text-base leading-5">{{ $task->title }}</h3>
                     </div>
-                    <div class="text-sm text-[#525158] flex items-center gap-2 font-sm leading-[18px] font-normal mt-0.5"><span class="font-mono text-xs text-base-content/60">{{ $task->task_number }}</span> <span class="w-2 h-2 rounded-full bg-[#E0E0E0]"></span> <span>{{ $task->workspace->name }}</span></div>
+                    <div class="text-sm text-[#525158] flex items-center gap-2 font-sm leading-[18px] font-normal mt-0.5">
+                        <span class="font-mono text-xs text-[#525158]">{{ $task->task_number }}</span> 
+                        <span class="w-2 h-2 rounded-full bg-[#E0E0E0]"></span> 
+                        <span>{{ $task->workspace->name }}</span>
+                    </div>
                     
                 </div>
             </td>
