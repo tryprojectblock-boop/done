@@ -151,6 +151,21 @@ class TaskService implements TaskServiceInterface
         $sortDirection = $filters['direction'] ?? 'desc';
         $allowedSortFields = ['created_at', 'updated_at', 'due_date', 'priority', 'title', 'task_number'];
 
+        // When showing all tasks (is_closed not set), show open tasks first, closed tasks at end
+        if (!isset($filters['is_closed'])) {
+            $query->orderByRaw('
+                CASE
+                    WHEN closed_at IS NOT NULL THEN 1
+                    WHEN EXISTS (
+                        SELECT 1 FROM workflow_statuses
+                        WHERE workflow_statuses.id = tasks.status_id
+                        AND workflow_statuses.type = "closed"
+                    ) THEN 1
+                    ELSE 0
+                END ASC
+            ');
+        }
+
         if (in_array($sortField, $allowedSortFields)) {
             $query->orderBy($sortField, $sortDirection);
         }

@@ -59,12 +59,10 @@ class TaskController extends Controller
         } elseif ($taskFilter === 'overdue') {
             $filters['is_closed'] = false;
             $filters['overdue_only'] = true;
-        } else {
-            // Default "all" shows open tasks only
-            $filters['is_closed'] = false;
         }
+        // "all" tab: don't filter by is_closed, show both open and closed tasks
 
-        $tasks = $this->taskService->getTasksForUser($user, $filters, 10);
+        $tasks = $this->taskService->getTasksForUser($user, $filters, 50);
 
         // Get task stats for tabs - apply same base filters as TaskService::getTasksForUser()
         // Get all company IDs the user belongs to

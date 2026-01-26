@@ -59,6 +59,7 @@ class DiscussionController extends Controller
         $members = User::where('company_id', $user->company_id)
             ->where('id', '!=', $user->id)
             ->where('role', '!=', User::ROLE_GUEST)
+            ->with('workspaces')
             ->get();
 
         // Get guests from user's workspaces
@@ -130,6 +131,7 @@ class DiscussionController extends Controller
         $members = User::where('company_id', $user->company_id)
             ->where('id', '!=', $discussion->created_by)
             ->where('role', '!=', User::ROLE_GUEST)
+            ->with('workspaces')
             ->get();
 
         // Get guests from user's workspaces
