@@ -136,42 +136,49 @@
                 </div>
 
                 @if($recentActivities->count() > 0)
-                <div class="space-y-4 relative">
+                <div class="space-y-4">
                     <!-- Timeline Line -->
-                    <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-base-200"></div>
+                    <!-- <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-base-200"></div> -->
 
                     @foreach($recentActivities as $activity)
                     @php
                         $typeValue = $activity->type instanceof \App\Modules\Task\Enums\ActivityType ? $activity->type->value : (string)$activity->type;
                         $iconInfo = $activityIcons[$typeValue] ?? ['icon' => 'tabler--activity', 'color' => 'neutral'];
                     @endphp
-                    <div class="flex gap-3 relative">
+                    <div class="flex gap-4 relative">
                         <!-- Icon -->
-                        <div class="w-8 h-8 rounded-full bg-{{ $iconInfo['color'] }}/10 flex items-center justify-center z-10 shrink-0">
-                            <span class="icon-[{{ $iconInfo['icon'] }}] size-4 text-{{ $iconInfo['color'] }}"></span>
+                        @if($activity->user)
+                        <div class="relative flex flex-col items-center">
+                            <div class="w-8 h-8 avatar rounded-full flex items-center justify-center z-10 bg-white">
+                                <img src="{{ $activity->user->avatar_url }}" alt="{{ $activity->user->name }}" class="w-full h-full object-cover rounded-full" />
+                            </div>
+                            <!-- Connecting line - starts after avatar with gap -->
+                            @if(!$loop->last)
+                                <div class="w-0.5 bg-gray-300 flex-1 mt-3"></div>
+                            @endif
                         </div>
+                        @endif
 
                         <!-- Content -->
-                        <div class="flex-1 min-w-0 pb-2">
+                        <div class="flex-1 pb-8">
                             <div class="flex items-start gap-2">
-                                @if($activity->user)
-                                <div class="avatar shrink-0">
-                                    <div class="w-5 h-5 rounded-full">
-                                        <img src="{{ $activity->user->avatar_url }}" alt="{{ $activity->user->name }}" />
-                                    </div>
-                                </div>
-                                @endif
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-base-content line-clamp-2">
-                                        {{ $activity->getFormattedDescription() }}
+                                    @php
+                                        $fullDescription = $activity->getFormattedDescription();
+                                        $userName = $activity->user?->name ?? 'Someone';
+                                        $action = trim(str_replace($userName, '', $fullDescription));
+                                    @endphp
+                                    <p class="text-base text-[#17151C] pb-1">
+                                        <span>{{ $userName }}</span>
+                                        <span class="text-[#525158]">{{ $action }}</span>
                                     </p>
                                     <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                        @if($activity->task)
+                                        <!-- @if($activity->task)
                                         <a href="{{ route('tasks.show', $activity->task) }}" class="text-xs text-primary hover:underline truncate max-w-[200px]" title="{{ $activity->task->title }}">
                                             {{ $activity->task->task_number }} - {{ Str::limit($activity->task->title, 30) }}
                                         </a>
-                                        @endif
-                                        <span class="text-xs text-base-content/40">
+                                        @endif -->
+                                        <span class="text-sm text-[#B8B7BB]">
                                             {{ $activity->created_at->diffForHumans() }}
                                         </span>
                                     </div>
@@ -302,7 +309,7 @@
                 </div>
                 <div class="space-y-3">
                     @foreach($workspace->members->take(5) as $member)
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 mb-6">
                         <div class="avatar">
                             <div class="w-8 rounded-full">
                                 <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
@@ -319,7 +326,7 @@
                     </div>
                     @endforeach
                     @if($workspace->members->count() > 5)
-                    <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'people']) }}" class="btn btn-ghost btn-sm w-full">
+                    <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'people']) }}" class="bg-primary text-white rounded-md py-2 px-4 w-full">
                         View all {{ $workspace->members->count() }} members
                     </a>
                     @endif

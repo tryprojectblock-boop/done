@@ -414,7 +414,7 @@
                                         <div class="flex-1 pb-8">
                                             <p class="text-base text-[#17151C] pb-1">
                                                 <span>{{ $userName }}</span>
-                                                <span class="text-[#525158] ">{{ $action }}</span>
+                                                <span class="text-[#525158]">{{ $action }}</span>
                                             </p>
                                             <!-- <p class="text-base text-[#17151C] pb-1">{{ $activity->getFormattedDescription() }}</p> -->
                                             <p class="text-sm text-[#B8B7BB]">{{ $activity->created_at->diffForHumans() }}</p>
