@@ -434,13 +434,14 @@
                 $existingMemberIds = $workspace->members->pluck('id')->toArray();
                 $companyId = auth()->user()->company_id;
 
-                // Get available members from company_user pivot table
+                // Get available members from company_user pivot table (both active and invited)
                 $availableMembers = \App\Models\User::query()
                     ->join('company_user', 'users.id', '=', 'company_user.user_id')
                     ->where('company_user.company_id', $companyId)
                     ->whereNotIn('users.id', $existingMemberIds)
-                    ->where('users.status', \App\Models\User::STATUS_ACTIVE)
+                    ->whereIn('users.status', [\App\Models\User::STATUS_ACTIVE, \App\Models\User::STATUS_INVITED])
                     ->select('users.*', 'company_user.role as company_role')
+                    ->orderBy('users.status') // Active users first, then invited
                     ->orderBy('users.name')
                     ->get();
             @endphp
@@ -450,7 +451,6 @@
             <div class="form-control mb-4">
                 <label class="label">
                     <span class="label-text font-medium">Select Team Members <span class="text-error">*</span></span>
-                    <span class="label-text-alt text-base-content/50">Select multiple members</span>
                 </label>
                 <div class="relative">
                     <!-- Selected members chips container -->
@@ -467,6 +467,7 @@
                                 $userRoleData = \App\Models\User::ROLES[$availableUser->company_role] ?? null;
                                 $userRoleLabel = $userRoleData['label'] ?? ucfirst($availableUser->company_role);
                                 $userRoleColor = $userRoleData['color'] ?? 'neutral';
+                                $isInvited = $availableUser->status === \App\Models\User::STATUS_INVITED;
                             @endphp
                             <div class="modal-member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
                                  data-id="{{ $availableUser->id }}"
@@ -478,19 +479,24 @@
                                 <div class="flex items-center justify-center w-5 h-5 border-2 border-base-300 rounded modal-member-checkbox transition-colors">
                                     <span class="modal-member-check icon-[tabler--check] size-4 text-white hidden"></span>
                                 </div>
-                                <div class="avatar {{ $availableUser->avatar_url ? '' : 'placeholder' }}">
-                                    @if($availableUser->avatar_url)
+                                @if($availableUser->avatar_url)
+                                    <div class="avatar">
                                         <div class="w-9 rounded-full">
                                             <img src="{{ $availableUser->avatar_url }}" alt="{{ $availableUser->name }}" class="object-cover">
                                         </div>
-                                    @else
-                                        <div class="bg-primary text-primary-content rounded-full w-9 h-9 flex items-center justify-center">
-                                            <span class="text-xs">{{ $availableUser->initials }}</span>
-                                        </div>
-                                    @endif
-                                </div>
+                                    </div>
+                                @else
+                                    <div class="w-9 h-9 rounded-full bg-base-200 flex items-center justify-center">
+                                        <span class="text-xs font-medium text-base-content/70">{{ $availableUser->initials }}</span>
+                                    </div>
+                                @endif
                                 <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-sm truncate">{{ $availableUser->name }}</p>
+                                    <p class="font-medium text-sm truncate">
+                                        {{ $availableUser->name }}
+                                        @if($isInvited)
+                                            <span class="badge badge-warning badge-xs ml-1">Invited</span>
+                                        @endif
+                                    </p>
                                     <p class="text-xs text-base-content/50 truncate">{{ $availableUser->email }}</p>
                                 </div>
                                 <span class="badge badge-{{ $userRoleColor }} badge-sm">{{ $userRoleLabel }}</span>

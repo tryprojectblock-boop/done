@@ -51,6 +51,57 @@
                                    class="input input-bordered w-full" placeholder="Enter a clear title for your discussion" required>
                         </div>
 
+                        <!-- Discussion Type & Workspace in same row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Discussion Type -->
+                            <div class="form-control">
+                                <label class="label" for="discussion-type">
+                                    <span class="label-text font-medium">Discussion Type <span class="text-base-content/50 font-normal">(Optional)</span></span>
+                                </label>
+                                <select name="type" id="discussion-type" data-select='{
+                                    "placeholder": "Select a type...",
+                                    "hasSearch": true,
+                                    "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
+                                    "toggleClasses": "advance-select-toggle",
+                                    "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
+                                    "optionClasses": "advance-select-option selected:active",
+                                    "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
+                                    "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
+                                }' class="hidden">
+                                    <option value="">Select a type</option>
+                                    @foreach($types as $value => $label)
+                                        <option value="{{ $value }}" {{ old('type') === $value ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Workspace -->
+                            <div class="form-control">
+                                <label class="label" for="discussion-workspace">
+                                    <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
+                                </label>
+                                <select name="workspace_id" id="discussion-workspace" data-select='{
+                                    "placeholder": "Select a workspace...",
+                                    "hasSearch": true,
+                                    "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
+                                    "toggleClasses": "advance-select-toggle",
+                                    "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
+                                    "optionClasses": "advance-select-option selected:active",
+                                    "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
+                                    "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
+                                }' class="hidden">
+                                    <option value="">No Workspace (General)</option>
+                                    @foreach($workspaces as $workspace)
+                                        <option value="{{ $workspace->id }}" {{ old('workspace_id') == $workspace->id ? 'selected' : '' }}>
+                                            {{ $workspace->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Details (Rich Text Editor) -->
                         <x-quill-editor
                             name="details"
@@ -96,68 +147,7 @@
                 </div>
             </div>
 
-            <!-- Card 2: Settings -->
-            <div class="card bg-base-100 shadow">
-                <div class="card-body">
-                    <h2 class="card-title text-lg mb-4">
-                        <span class="icon-[tabler--settings] size-5"></span>
-                        Settings
-                    </h2>
-
-                    <div class="space-y-4">
-                        <!-- Discussion Type -->
-                        <div class="form-control">
-                            <label class="label" for="discussion-type">
-                                <span class="label-text font-medium">Discussion Type <span class="text-base-content/50 font-normal">(Optional)</span></span>
-                            </label>
-                            <select name="type" id="discussion-type" data-select='{
-                                "placeholder": "Select a type...",
-                                "hasSearch": true,
-                                "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
-                                "toggleClasses": "advance-select-toggle",
-                                "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
-                                "optionClasses": "advance-select-option selected:active",
-                                "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
-                                "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
-                            }' class="hidden">
-                                <option value="">Select a type</option>
-                                @foreach($types as $value => $label)
-                                    <option value="{{ $value }}" {{ old('type') === $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Workspace -->
-                        <div class="form-control">
-                            <label class="label" for="discussion-workspace">
-                                <span class="label-text font-medium">Workspace <span class="text-base-content/50 font-normal">(Optional)</span></span>
-                            </label>
-                            <select name="workspace_id" id="discussion-workspace" data-select='{
-                                "placeholder": "Select a workspace...",
-                                "hasSearch": true,
-                                "toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
-                                "toggleClasses": "advance-select-toggle",
-                                "dropdownClasses": "advance-select-menu max-h-52 overflow-y-auto",
-                                "optionClasses": "advance-select-option selected:active",
-                                "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block\"></span></div>",
-                                "extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content/90 absolute top-1/2 end-3 -translate-y-1/2\"></span>"
-                            }' class="hidden">
-                                <option value="">No Workspace (General)</option>
-                                @foreach($workspaces as $workspace)
-                                    <option value="{{ $workspace->id }}" {{ old('workspace_id') == $workspace->id ? 'selected' : '' }}>
-                                        {{ $workspace->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 3: Participants -->
+            <!-- Card 2: Participants -->
             <div class="card bg-base-100 shadow">
                 <div class="card-body">
                     <h2 class="card-title text-lg mb-4">
@@ -187,7 +177,14 @@
                                         <span class="font-medium text-sm">Select All</span>
                                     </label>
                                     @foreach($members as $member)
-                                        <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors" data-id="{{ $member->id }}" data-name="{{ $member->name }}" data-search="{{ strtolower($member->name) }}">
+                                        @php
+                                            $memberWorkspaceIds = $member->workspaces->pluck('id')->toArray();
+                                        @endphp
+                                        <div class="member-option flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors"
+                                             data-id="{{ $member->id }}"
+                                             data-name="{{ $member->name }}"
+                                             data-search="{{ strtolower($member->name) }}"
+                                             data-workspaces="{{ implode(',', $memberWorkspaceIds) }}">
                                             <div class="avatar">
                                                 <div class="w-8 rounded-full">
                                                     <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
@@ -260,6 +257,12 @@
         </form>
     </div>
 </div>
+
+<style>
+.workspace-hidden {
+    display: none !important;
+}
+</style>
 
 @push('scripts')
 <script>
@@ -391,14 +394,77 @@ document.addEventListener('DOMContentLoaded', function() {
     const memberOptions = document.querySelectorAll('.member-option');
     const noMemberResults = document.getElementById('no-member-results');
     const selectAllCheckbox = document.getElementById('select-all-members');
+    const workspaceSelect = document.getElementById('discussion-workspace');
     let selectedMembers = [];
     let memberHighlightIndex = -1;
+    let currentWorkspaceId = '';
+
+    // Filter members based on selected workspace
+    function filterMembersByWorkspace(workspaceId) {
+        currentWorkspaceId = workspaceId;
+        let visibleCount = 0;
+
+        memberOptions.forEach(option => {
+            const memberWorkspaces = option.dataset.workspaces ? option.dataset.workspaces.split(',') : [];
+
+            // If no workspace selected, show all members
+            // If workspace selected, show only members in that workspace
+            if (!workspaceId || workspaceId === '' || memberWorkspaces.includes(workspaceId)) {
+                option.classList.remove('workspace-hidden');
+                visibleCount++;
+            } else {
+                option.classList.add('workspace-hidden');
+                // Remove from selection if hidden
+                const memberId = option.dataset.id;
+                const index = selectedMembers.findIndex(m => m.id === memberId);
+                if (index > -1) {
+                    selectedMembers.splice(index, 1);
+                    option.querySelector('.member-check').classList.add('hidden');
+                    option.classList.remove('bg-primary/10');
+                }
+            }
+        });
+
+        updateSelectedMembers();
+        updateSelectAllCheckbox();
+
+        // Show no results if all members are hidden
+        if (visibleCount === 0) {
+            noMemberResults.textContent = 'No members in this workspace';
+            noMemberResults.classList.remove('hidden');
+        } else {
+            noMemberResults.textContent = 'No members found';
+            noMemberResults.classList.add('hidden');
+        }
+    }
+
+    // Listen for workspace changes
+    if (workspaceSelect) {
+        // Handle both native select and custom select (FlyonUI)
+        workspaceSelect.addEventListener('change', function() {
+            filterMembersByWorkspace(this.value);
+        });
+
+        // For FlyonUI advance-select, also observe for value changes
+        const observer = new MutationObserver(function() {
+            filterMembersByWorkspace(workspaceSelect.value);
+        });
+        observer.observe(workspaceSelect, { attributes: true, childList: true, subtree: true });
+    }
+
+    // Get members visible in current workspace filter
+    function getWorkspaceVisibleMembers() {
+        return Array.from(memberOptions).filter(opt => !opt.classList.contains('workspace-hidden'));
+    }
 
     // Select All checkbox state update function
     function updateSelectAllCheckbox() {
         if (selectAllCheckbox) {
-            const totalMembers = memberOptions.length;
-            const selectedCount = selectedMembers.length;
+            const visibleMembers = getWorkspaceVisibleMembers();
+            const totalMembers = visibleMembers.length;
+            const selectedCount = selectedMembers.filter(m =>
+                visibleMembers.some(opt => opt.dataset.id === m.id)
+            ).length;
             selectAllCheckbox.checked = selectedCount === totalMembers && totalMembers > 0;
             selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalMembers;
         }
@@ -407,20 +473,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Select All checkbox click handler
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
+            const visibleMembers = getWorkspaceVisibleMembers();
             if (this.checked) {
-                // Select all members
-                selectedMembers = [];
-                memberOptions.forEach(option => {
+                // Select all visible members (respecting workspace filter)
+                visibleMembers.forEach(option => {
                     const id = option.dataset.id;
                     const name = option.dataset.name;
-                    selectedMembers.push({ id, name });
+                    if (!selectedMembers.find(m => m.id === id)) {
+                        selectedMembers.push({ id, name });
+                    }
                     option.querySelector('.member-check').classList.remove('hidden');
                     option.classList.add('bg-primary/10');
                 });
             } else {
-                // Deselect all members
-                selectedMembers = [];
-                memberOptions.forEach(option => {
+                // Deselect all visible members
+                visibleMembers.forEach(option => {
+                    const id = option.dataset.id;
+                    const index = selectedMembers.findIndex(m => m.id === id);
+                    if (index > -1) selectedMembers.splice(index, 1);
                     option.querySelector('.member-check').classList.add('hidden');
                     option.classList.remove('bg-primary/10');
                 });
@@ -440,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getVisibleMemberOptions() {
-        return Array.from(memberOptions).filter(opt => !opt.classList.contains('hidden'));
+        return Array.from(memberOptions).filter(opt => !opt.classList.contains('hidden') && !opt.classList.contains('workspace-hidden'));
     }
 
     function highlightMemberOption(index) {
@@ -465,8 +535,13 @@ document.addEventListener('DOMContentLoaded', function() {
         let visibleCount = 0;
         memberOptions.forEach(option => {
             const name = option.dataset.search;
-            if (name.includes(searchTerm)) { option.classList.remove('hidden'); visibleCount++; }
-            else { option.classList.add('hidden'); }
+            const isWorkspaceVisible = !option.classList.contains('workspace-hidden');
+            if (name.includes(searchTerm) && isWorkspaceVisible) {
+                option.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                option.classList.add('hidden');
+            }
         });
         noMemberResults.classList.toggle('hidden', visibleCount > 0);
         if (memberDropdown.classList.contains('hidden')) showMemberDropdown();

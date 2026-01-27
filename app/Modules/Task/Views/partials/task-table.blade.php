@@ -29,19 +29,19 @@
                     <div class="text-sm text-[#525158] flex items-center gap-2 font-sm leading-[18px] font-normal mt-0.5">
                         <span class="font-mono text-xs text-[#525158]">{{ $task->task_number }}</span> 
                         <span class="w-2 h-2 rounded-full bg-[#E0E0E0]"></span> 
-                        <span>{{ $task->workspace->name }}</span>
+                        <span>{{ $task->workspace?->name ?? 'No Workspace' }}</span>
                     </div>
                     
                 </div>
             </td>
             <td class="py-4 px-6">
-                @if($task->isClosed())
-                    <span class="text-xs leading-4 font-semibold py-1 px-2 rounded-md badge-neutral border-0">
-                        Closed
-                    </span>
-                @elseif($task->status)
+                @if($task->status)
                     <span class="text-xs leading-4 font-semibold py-1 px-2 rounded-md border-0" style="background-color: {{ $task->status->background_color }}20; color: {{ $task->status->background_color }};">
                         {{ $task->status->name }}
+                    </span>
+                @elseif($task->isClosed())
+                    <span class="text-xs leading-4 font-semibold py-1 px-2 rounded-md badge-neutral border-0">
+                        Closed
                     </span>
                 @endif
             </td>
