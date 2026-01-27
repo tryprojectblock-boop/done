@@ -45,6 +45,33 @@
                             <h1 class="text-[32px] leading-9 font-semibold text-[#17151C] pb-4">{{ $workspace->name }}</h1>
                         </div>
                     </div>
+                    <!-- Member Avatars and Invite Button -->
+                    <div class="flex items-center gap-3 mt-2">
+                        <!-- Member Avatar Group -->
+                        <div class="flex -space-x-2">
+                            @foreach($workspace->members->take(5) as $member)
+                            <div class="avatar border-2 border-white rounded-full" title="{{ $member->name }}">
+                                <div class="w-8 rounded-full">
+                                    <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" />
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($workspace->members->count() > 5)
+                            <div class="avatar placeholder border-2 border-white rounded-full">
+                                <div class="bg-base-200 text-base-content/70 w-8 rounded-full">
+                                    <span class="text-xs font-medium">+{{ $workspace->members->count() - 5 }}</span>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        <!-- Invite Team Member Button -->
+                        @if($workspace->isOwner(auth()->user()) || $workspace->getMemberRole(auth()->user())?->isAdmin())
+                        <button type="button" onclick="openInviteModal()" class="btn btn-circle btn-sm btn-ghost border border-dashed border-base-300 hover:border-primary hover:bg-primary/10" title="Add Team Member">
+                            <span class="icon-[tabler--plus] size-4"></span>
+                        </button>
+                            <label>Invite Team member</label>
+                        @endif
+                    </div>
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2 mt-1">
                                 <span class="badge badge-{{ $workspace->type->badgeColor() }}">{{ $workspace->type->label() }}</span>
@@ -425,4 +452,9 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+<!-- Include Invite Member Modal -->
+@if($workspace->isOwner(auth()->user()) || $workspace->getMemberRole(auth()->user())?->isAdmin())
+    @include('workspace::partials.invite-member-modal')
+@endif
 @endsection

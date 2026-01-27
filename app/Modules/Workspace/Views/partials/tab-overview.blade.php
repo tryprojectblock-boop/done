@@ -100,13 +100,94 @@
         </div>
 
         <!-- Recent Activity -->
+        @php
+            // Get recent task activities for this workspace
+            $taskIds = \App\Modules\Task\Models\Task::where('workspace_id', $workspace->id)->pluck('id');
+            $recentActivities = \App\Modules\Task\Models\TaskActivity::whereIn('task_id', $taskIds)
+                ->with(['task', 'user'])
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+
+            // Activity type icons and colors
+            $activityIcons = [
+                'created' => ['icon' => 'tabler--plus', 'color' => 'success'],
+                'updated' => ['icon' => 'tabler--edit', 'color' => 'info'],
+                'status_changed' => ['icon' => 'tabler--arrows-exchange', 'color' => 'primary'],
+                'priority_changed' => ['icon' => 'tabler--flag', 'color' => 'warning'],
+                'assignee_changed' => ['icon' => 'tabler--user-plus', 'color' => 'secondary'],
+                'due_date_changed' => ['icon' => 'tabler--calendar', 'color' => 'info'],
+                'description_changed' => ['icon' => 'tabler--file-text', 'color' => 'neutral'],
+                'title_changed' => ['icon' => 'tabler--edit', 'color' => 'info'],
+                'comment_added' => ['icon' => 'tabler--message', 'color' => 'primary'],
+                'closed' => ['icon' => 'tabler--check', 'color' => 'success'],
+                'reopened' => ['icon' => 'tabler--refresh', 'color' => 'warning'],
+                'attachment_added' => ['icon' => 'tabler--paperclip', 'color' => 'info'],
+                'attachment_removed' => ['icon' => 'tabler--trash', 'color' => 'error'],
+            ];
+        @endphp
         <div class="border border-[#EDECF0] rounded-xl">
             <div class="card-body">
-                <h2 class="card-title text-lg mb-4 text-[#17151C]">Recent Activity</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="card-title text-lg text-[#17151C]">Recent Activity</h2>
+                    @if($recentActivities->count() > 0)
+                    <a href="{{ route('workspace.show', ['workspace' => $workspace, 'tab' => 'tasks']) }}" class="text-sm text-primary hover:underline">View all</a>
+                    @endif
+                </div>
+
+                @if($recentActivities->count() > 0)
+                <div class="space-y-4 relative">
+                    <!-- Timeline Line -->
+                    <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-base-200"></div>
+
+                    @foreach($recentActivities as $activity)
+                    @php
+                        $typeValue = $activity->type instanceof \App\Modules\Task\Enums\ActivityType ? $activity->type->value : (string)$activity->type;
+                        $iconInfo = $activityIcons[$typeValue] ?? ['icon' => 'tabler--activity', 'color' => 'neutral'];
+                    @endphp
+                    <div class="flex gap-3 relative">
+                        <!-- Icon -->
+                        <div class="w-8 h-8 rounded-full bg-{{ $iconInfo['color'] }}/10 flex items-center justify-center z-10 shrink-0">
+                            <span class="icon-[{{ $iconInfo['icon'] }}] size-4 text-{{ $iconInfo['color'] }}"></span>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0 pb-2">
+                            <div class="flex items-start gap-2">
+                                @if($activity->user)
+                                <div class="avatar shrink-0">
+                                    <div class="w-5 h-5 rounded-full">
+                                        <img src="{{ $activity->user->avatar_url }}" alt="{{ $activity->user->name }}" />
+                                    </div>
+                                </div>
+                                @endif
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-base-content line-clamp-2">
+                                        {{ $activity->getFormattedDescription() }}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                        @if($activity->task)
+                                        <a href="{{ route('tasks.show', $activity->task) }}" class="text-xs text-primary hover:underline truncate max-w-[200px]" title="{{ $activity->task->title }}">
+                                            {{ $activity->task->task_number }} - {{ Str::limit($activity->task->title, 30) }}
+                                        </a>
+                                        @endif
+                                        <span class="text-xs text-base-content/40">
+                                            {{ $activity->created_at->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
                 <div class="text-center py-8 text-base-content/50">
                     <span class="icon-[tabler--activity] size-12 mb-2"></span>
                     <p>No recent activity</p>
+                    <p class="text-sm mt-1">Activity will appear here when tasks are created or updated</p>
                 </div>
+                @endif
             </div>
         </div>
     </div>
