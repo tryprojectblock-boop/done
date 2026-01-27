@@ -28,88 +28,89 @@
     $tasksLabel = $isInbox ? 'Tickets' : 'Tasks';
 @endphp
 <div class="p-4 md:p-6">
-    <div class="max-w mx-auto">
-        <!-- Header -->
-        <div class="mb-6">
-            <div class="flex items-center gap-2 text-sm text-base-content/60 mb-2">
-                <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
-                <span class="icon-[tabler--chevron-right] size-4"></span>
-                <a href="{{ route('workspace.index') }}" class="hover:text-primary">Workspaces</a>
-                <span class="icon-[tabler--chevron-right] size-4"></span>
-                <span>{{ $workspace->name }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <!-- Workspace Icon/Color -->
-                    <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white" style="background-color: {{ $workspace->color ?? $workspace->type->themeColor() }}">
-                        <span class="icon-[{{ $workspace->type->icon() }}] size-8"></span>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-base-content">{{ $workspace->name }}</h1>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="badge badge-{{ $workspace->type->badgeColor() }}">{{ $workspace->type->label() }}</span>
-                            <span class="badge badge-{{ $workspace->status->color() }}">{{ $workspace->status->label() }}</span>
+    <div class="flex items-center gap-2 text-sm text-base-content/60 mb-[30px]">
+            <a href="{{ route('dashboard') }}" class="hover:text-primary">Dashboard</a>
+            <span class="icon-[tabler--chevron-right] size-4"></span>
+            <a href="{{ route('workspace.index') }}" class="hover:text-primary">Workspaces</a>
+            <span class="icon-[tabler--chevron-right] size-4"></span>
+            <span>{{ $workspace->name }}</span>
+        </div>
+        <div class="max-w mx-auto bg-white py-9">
+            <!-- Header -->
+            <div class="mb-6 p-5 pt-0">
+                <div class="w-full">
+                    <div class="flex items-center gap-4">
+                        <!-- Workspace Icon/Color -->
+                        <div>
+                            <h1 class="text-[32px] leading-9 font-semibold text-[#17151C] pb-4">{{ $workspace->name }}</h1>
                         </div>
                     </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
-                    @if($workspace->type->value !== 'inbox' || $showInboxTabs)
-                    <!-- Add Task/Ticket Button -->
-                    <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary">
-                        <span class="icon-[tabler--plus] size-5"></span>
-                        Add {{ $taskLabel }}
-                    </a>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 mt-1">
+                                <span class="badge badge-{{ $workspace->type->badgeColor() }}">{{ $workspace->type->label() }}</span>
+                                <span class="badge badge-{{ $workspace->status->color() }}">{{ $workspace->status->label() }}</span>
+                            </div>
+                        <div class="flex items-center gap-[9px]">
+                        @if($workspace->status !== \App\Modules\Workspace\Enums\WorkspaceStatus::ARCHIVED)
+                        @if($workspace->type->value !== 'inbox' || $showInboxTabs)
+                        <!-- Add Task/Ticket Button -->
+                        <a href="{{ route('tasks.create', ['workspace' => $workspace->uuid]) }}" class="btn btn-primary btn-no-shadow py-2 pl-3 pr-4">
+                            <span class="icon-[tabler--plus] size-5"></span>
+                            Add {{ $taskLabel }}
+                        </a>
 
-                    <!-- Add File Button -->
-                    <a href="{{ route('drive.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-outline btn-primary">
-                        <span class="icon-[tabler--file-upload] size-5"></span>
-                        Add File
-                    </a>
-                    @endif
+                        <!-- Add File Button -->
+                        <a href="{{ route('drive.create', ['workspace_id' => $workspace->uuid]) }}" class="btn btn-outline btn-no-shadow border-[#B8B7BB]">
+                            <svg width="14" height="17" viewBox="0 0 14 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0 14.1667V2.5C0 1.83696 0.263581 1.20126 0.732422 0.732422C1.20126 0.263581 1.83696 0 2.5 0H7.15495L7.32015 0.00813802C7.7015 0.04614 8.05998 0.214899 8.33333 0.488281L12.8451 5L12.9557 5.12207C13.1987 5.41858 13.3332 5.79165 13.3333 6.17838V14.1667C13.3333 14.8297 13.0698 15.4654 12.6009 15.9342C12.1321 16.4031 11.4964 16.6667 10.8333 16.6667H2.5C1.83696 16.6667 1.20126 16.4031 0.732422 15.9342C0.263581 15.4654 0 14.8297 0 14.1667ZM5.83333 11.6667V10H4.16667C3.70643 10 3.33333 9.6269 3.33333 9.16667C3.33333 8.70643 3.70643 8.33333 4.16667 8.33333H5.83333V6.66667C5.83333 6.20643 6.20643 5.83333 6.66667 5.83333C7.1269 5.83333 7.5 6.20643 7.5 6.66667V8.33333H9.16667C9.6269 8.33333 10 8.70643 10 9.16667C10 9.6269 9.6269 10 9.16667 10H7.5V11.6667C7.5 12.1269 7.1269 12.5 6.66667 12.5C6.20643 12.5 5.83333 12.1269 5.83333 11.6667ZM1.66667 14.1667L1.67074 14.2489C1.68964 14.4397 1.77402 14.6191 1.91081 14.7559C2.06709 14.9121 2.27899 15 2.5 15H10.8333C11.0543 15 11.2662 14.9121 11.4225 14.7559C11.5788 14.5996 11.6667 14.3877 11.6667 14.1667V6.17838L7.15495 1.66667H2.5C2.27899 1.66667 2.06709 1.75453 1.91081 1.91081C1.75453 2.06709 1.66667 2.27899 1.66667 2.5V14.1667Z" fill="#17151C"/>
+                            </svg>
+                            <span class="text-[#17151C]">Add File</span>
+                        </a>
+                        @endif
 
-                    <!-- Settings Dropdown (only for workspace owner or admin) -->
-                    @if($workspace->isOwner(auth()->user()) || auth()->user()->isAdminOrHigher())
-                    <div class="dropdown dropdown-end">
-                        <button id="workspace-settings-dropdown" type="button" class="dropdown-toggle btn btn-ghost" aria-haspopup="menu" aria-expanded="false" aria-label="Settings">
-                            <span class="icon-[tabler--settings] size-5"></span>
-                            Settings
-                            <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4"></span>
+                        <!-- Settings Dropdown (only for workspace owner or admin) -->
+                        @if($workspace->isOwner(auth()->user()) || auth()->user()->isAdminOrHigher())
+                        <div class="dropdown dropdown-end">
+                            <button id="workspace-settings-dropdown" type="button" class="dropdown-toggle btn btn-primary btn-no-shadow" aria-haspopup="menu" aria-expanded="false" aria-label="Settings">
+                                <span class="icon-[tabler--settings] size-5"></span>
+                                Settings
+                                <span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-48" role="menu" aria-orientation="vertical" aria-labelledby="workspace-settings-dropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('workspace.settings', $workspace) }}">
+                                        <span class="icon-[tabler--settings] size-5"></span>
+                                        Workspace Settings
+                                    </a>
+                                </li>
+                                <li class="dropdown-divider"></li>
+                                <li>
+                                    <button type="button" class="dropdown-item" onclick="openModal('archiveModal')">
+                                        <span class="icon-[tabler--archive] size-5"></span>
+                                        Archive Workflow
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item text-error" onclick="openModal('deleteModal')">
+                                        <span class="icon-[tabler--trash] size-5"></span>
+                                        Delete Workflow
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        @endif
+                        @else
+                        <!-- Archived workspace actions -->
+                        <button type="button" class="btn btn-success" onclick="openModal('restoreModal')">
+                            <span class="icon-[tabler--archive-off] size-5"></span>
+                            Restore Workflow
                         </button>
-                        <ul class="dropdown-menu dropdown-open:opacity-100 hidden min-w-48" role="menu" aria-orientation="vertical" aria-labelledby="workspace-settings-dropdown">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('workspace.settings', $workspace) }}">
-                                    <span class="icon-[tabler--settings] size-5"></span>
-                                    Workspace Settings
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <button type="button" class="dropdown-item" onclick="openModal('archiveModal')">
-                                    <span class="icon-[tabler--archive] size-5"></span>
-                                    Archive Workflow
-                                </button>
-                            </li>
-                            <li>
-                                <button type="button" class="dropdown-item text-error" onclick="openModal('deleteModal')">
-                                    <span class="icon-[tabler--trash] size-5"></span>
-                                    Delete Workflow
-                                </button>
-                            </li>
-                        </ul>
+                        <button type="button" class="btn btn-error btn-outline" onclick="openModal('deleteModal')">
+                            <span class="icon-[tabler--trash] size-5"></span>
+                            Delete
+                        </button>
+                        @endif
                     </div>
-                    @endif
-                    @else
-                    <!-- Archived workspace actions -->
-                    <button type="button" class="btn btn-success" onclick="openModal('restoreModal')">
-                        <span class="icon-[tabler--archive-off] size-5"></span>
-                        Restore Workflow
-                    </button>
-                    <button type="button" class="btn btn-error btn-outline" onclick="openModal('deleteModal')">
-                        <span class="icon-[tabler--trash] size-5"></span>
-                        Delete
-                    </button>
-                    @endif
                 </div>
             </div>
         </div>
@@ -150,10 +151,13 @@
         @endif
 
         <!-- Module Tabs (Pill Style) -->
-        <div class="inline-flex p-1 bg-base-200 rounded-xl mb-6 flex-wrap gap-1 tablist-layout">
+        <div class="inline-flex rounded-xl mb-[30px] flex-wrap gap-1 tablist-layout px-5!">
             <a href="{{ route('workspace.show', $workspace) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 {{ !request()->has('tab') || request('tab') === 'overview' ? 'bg-primary text-primary-content shadow-sm' : 'text-base-content/60 hover:text-primary hover:bg-primary/10' }}">
-                <span class="icon-[tabler--home] size-5"></span>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.50065 8.33203C2.04041 8.33203 1.66732 7.95894 1.66732 7.4987C1.66732 7.03846 2.04041 6.66537 2.50065 6.66537L17.5007 6.66536C17.9609 6.66536 18.334 7.03846 18.334 7.4987C18.334 7.95894 17.9609 8.33203 17.5007 8.33203L2.50065 8.33203Z" fill="#3BA5FF"/>
+                <path d="M2.49935 13.332C2.03911 13.332 1.66602 12.9589 1.66602 12.4987C1.66602 12.0385 2.03911 11.6654 2.49935 11.6654L10.8327 11.6654C11.2929 11.6654 11.666 12.0385 11.666 12.4987C11.666 12.9589 11.2929 13.332 10.8327 13.332L2.49935 13.332Z" fill="#3BA5FF"/>
+                </svg>
                 <span>Overview</span>
             </a>
             @if($workspace->type->value !== 'inbox' || $showInboxTabs)
